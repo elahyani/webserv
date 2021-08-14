@@ -5,9 +5,9 @@ NAME = webserv
 FLAGS = -Wall -Wextra -Werror -std=c++98
 
 SRCS = main.cpp \
-		server.cpp
+		Server.cpp
 			
-HDRS = server.hpp
+HDRS = Server.hpp
 
 OBJS = $(SRCS:.cpp=.o)
 
