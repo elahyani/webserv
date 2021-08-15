@@ -60,7 +60,7 @@ Server & Server::operator=(Server const & ths)
 {
     if (this != &ths)
     {
-        
+        // need to add all the attributes: any allocation means deepcopy
     }
     return *this;
 }
