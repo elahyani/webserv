@@ -10,15 +10,14 @@ Server::Server(short port)
     if ((_sockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw SocketFailedToCreate();
     
-
     std::memset(&_myAddr, 0, sizeof(_myAddr));
-
     _addrLen = sizeof(_myAddr);
     _myAddr.sin_family = AF_INET;
     _myAddr.sin_port = htons(port); // >= 5000
     _myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(_sockFd, (struct sockaddr *)&_myAddr, sizeof(_myAddr))  == -1)
         throw SocketFailedToBind();
+    
     //Listen
     if (listen(_sockFd, 50) == -1)
         throw SocketFailedToListen();
@@ -31,10 +30,11 @@ Server::Server(short port)
         if ((_newSockFd = accept(_sockFd, (struct sockaddr *)&_cliAddr, &_addrLen)) == -1)
             throw SocketFailedToAccept();
         
-
         // recv
         char buffer[1024] = {0};
-        if (recv(_newSockFd, buffer, sizeof(buffer), 0) == -1)
+        int valRead = recv(_newSockFd, buffer, sizeof(buffer), 0);
+        std::cout << buffer << std::endl;
+        if(valRead == -1)
             throw SocketFailedToRecv();
         char hello[13] = "Hello World!";
         if(send(_newSockFd, hello, strlen(hello), 0) == -1)
@@ -60,7 +60,8 @@ Server & Server::operator=(Server const & ths)
 {
     if (this != &ths)
     {
-        // need to add all the attributes: any allocation means deepcopy
+        // need to add all the attributes
+        //any dynamic allocation means deepcopy
     }
     return *this;
 }
@@ -69,12 +70,12 @@ Server & Server::operator=(Server const & ths)
 
 const char * Server::SocketFailedToCreate::what() const throw()
 {
-    return "Socket hasn't been created";
+    return "can not create socket";
 }
 
 const char * Server::SocketFailedToBind::what() const throw()
 {
-    return "Socket hasn't been bind";
+    return "can not bind the socket";
 }
 
 const char * Server::SocketFailedToListen::what() const throw()

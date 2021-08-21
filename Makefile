@@ -33,6 +33,7 @@ clean:
 
 fclean: clean
 	@rm -rf $(NAME)
+	@rm -rf *.dSYM
 	@echo "\033[0;31m"
 	@echo "			The binary file has been removed!\n"
 	@echo "\033[0m"
