@@ -29,14 +29,28 @@ Server::Server(short port)
         std::memset(&_cliAddr, 0, sizeof(_cliAddr));
         if ((_newSockFd = accept(_sockFd, (struct sockaddr *)&_cliAddr, &_addrLen)) == -1)
             throw SocketFailedToAccept();
-        
+        // select work 
+
+            FD_ZERO(&_fds);
+            _tv.tv_sec = 2;
+            _tv.tv_usec = 0;
+            FD_SET(_newSockFd, &_fds);
+            select(_newSockFd + 1, &_fds, &_fds, NULL, &_tv);
+            if (!FD_ISSET(_newSockFd, &_fds))
+                throw TimedOut();
+    
         // recv
-        char buffer[1024] = {0};
+        char buffer[1024];
+        std::memset(buffer, 0, sizeof(buffer));
         int valRead = recv(_newSockFd, buffer, sizeof(buffer), 0);
         std::cout << buffer << std::endl;
         if(valRead == -1)
             throw SocketFailedToRecv();
-        char hello[13] = "Hello World!";
+            
+        // char hello[13] = "Hello World!";
+        if (!FD_ISSET(_newSockFd, &_fds))
+                throw TimedOut();
+        char hello[80] = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 14\n\n HEY THERE !!!!";
         if(send(_newSockFd, hello, strlen(hello), 0) == -1)
             throw SocketFailedToSend();
         std::cout << "Hello msg has been send" << std::endl;
@@ -96,4 +110,9 @@ const char * Server::SocketFailedToRecv::what() const throw()
 const char * Server::SocketFailedToSend::what() const throw()
 {
     return "Server can not message to client";
+}
+
+const char * Server::TimedOut::what() const throw()
+{
+    return "Server timed out";
 }

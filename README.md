@@ -7,3 +7,4 @@ https://medium.com/from-the-scratch/http-server-what-do-you-need-to-know-to-buil
 http://www.cas.mcmaster.ca/~qiao/courses/cs3mh3/tutorials/socket.html
 https://www.forcepoint.com/cyber-edu/osi-model
 https://devopedia.org/byte-ordering
+https://en.wikipedia.org/wiki/List_of_HTTP_status_code

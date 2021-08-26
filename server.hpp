@@ -21,6 +21,8 @@ private:
     struct sockaddr_in  _cliAddr;
     socklen_t           _addrLen;
     int                 _newSockFd;
+    fd_set              _fds;
+    struct timeval      _tv;
 
 public:
     Server();
@@ -57,6 +59,12 @@ public:
     {
     public:
         const char * what() const throw();
+    };
+
+    class TimedOut : public std::exception
+    {
+    public:
+        const char *what() const throw();
     };
 };
 
