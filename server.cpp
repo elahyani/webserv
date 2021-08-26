@@ -42,6 +42,7 @@ Server::Server(short port)
         // recv
         char buffer[1024];
         std::memset(buffer, 0, sizeof(buffer));
+        
         int valRead = recv(_newSockFd, buffer, sizeof(buffer), 0);
         std::cout << buffer << std::endl;
         if(valRead == -1)
