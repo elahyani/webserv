@@ -10,6 +10,7 @@ Server::Server(short port)
     if ((_sockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw SocketFailedToCreate();
     
+	//Socket binding 
     std::memset(&_myAddr, 0, sizeof(_myAddr));
     _addrLen = sizeof(_myAddr);
     _myAddr.sin_family = AF_INET;
@@ -30,7 +31,6 @@ Server::Server(short port)
         if ((_newSockFd = accept(_sockFd, (struct sockaddr *)&_cliAddr, &_addrLen)) == -1)
             throw SocketFailedToAccept();
         // select work 
-
             FD_ZERO(&_fds);
             _tv.tv_sec = 2;
             _tv.tv_usec = 0;
