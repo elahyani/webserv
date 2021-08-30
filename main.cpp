@@ -8,9 +8,9 @@ int main(int ac, char **av)
             exit(EXIT_FAILURE);
         Server server(std::atoi(av[1]));
     }
-    catch(const std::exception& e)
+    catch(const std::exception& exp)
     {
-        std::cerr << "Error: " << e.what() << '\n';
+        std::cerr << "Error: " << exp.what() << '\n';
     }
     return 0;
 }

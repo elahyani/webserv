@@ -1,7 +1,5 @@
 #include "Server.hpp"
 
-Server::Server(){}
-
 Server::Server(short port)
 {
     (void)_cliFd;
