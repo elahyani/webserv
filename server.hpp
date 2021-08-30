@@ -30,42 +30,7 @@ public:
     Server(Server const & ths);
     ~Server();
     Server & operator=(const Server & ths);
-    class SocketFailedToCreate : public std::exception
-    {
-    public:
-        const char * what() const throw();
-    };
-    class SocketFailedToBind : public std::exception
-    {
-    public:
-        const char * what() const throw();
-    };
-    class SocketFailedToListen : public std::exception
-    {
-    public:
-        const char * what() const throw();
-    };
-    class SocketFailedToAccept : public std::exception
-    {
-    public:
-        const char * what() const throw();
-    };
-    class SocketFailedToRecv : public std::exception
-    {
-    public:
-        const char * what() const throw();
-    };
-    class SocketFailedToSend : public std::exception
-    {
-    public:
-        const char * what() const throw();
-    };
-
-    class TimedOut : public std::exception
-    {
-    public:
-        const char *what() const throw();
-    };
+	
 };
 
 #endif
