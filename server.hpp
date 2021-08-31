@@ -2,6 +2,7 @@
 # define SERVER_HPP
 
 # include <iostream>
+# include <cstring>
 # include <string>
 # include <sys/socket.h>
 # include <sys/types.h>
@@ -11,6 +12,7 @@
 # include <arpa/inet.h>
 # include <fcntl.h>
 # include <unistd.h>
+# include <sys/stat.h>
 
 class Server
 {
@@ -26,7 +28,7 @@ private:
 
 public:
     Server();
-    Server(short port);
+    Server(short port, char *fileName);
     Server(Server const & ths);
     ~Server();
     Server & operator=(const Server & ths);

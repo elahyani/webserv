@@ -1,10 +1,19 @@
 #include "Server.hpp"
 
-Server::Server(short port)
+Server::Server(short port, char *fileName)
 {
     (void)_cliFd;
 
-    //Create a socket
+	//Response file
+	struct stat st;
+	stat(fileName, &st);
+	int fdRes = open(fileName, O_RDONLY);
+	if (fdRes < 0)
+		throw std::runtime_error("Unable to open response file.");
+	char buffRes[st.st_size + 1];
+	read(fdRes, buffRes, st.st_size);
+
+	//Socket creating
     if ((_sockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw std::runtime_error("Unable to create a socket.");
     
@@ -40,24 +49,28 @@ Server::Server(short port)
     
         // recv
         char buffer[1024];
-        // std::memset(buffer, 0, sizeof(buffer));
+        std::memset(buffer, 0, sizeof(buffer));
         
-        int valRead = recv(_newSockFd, buffer, sizeof(buffer), 0);
+        int valRead = recv(_newSockFd, buffer, sizeof(buffer), 0); 
+
 		std::cout << "################ RESQUEST ################" << std::endl;
         std::cout << buffer << std::endl;
+
         if(valRead == -1)
             throw std::runtime_error("Unable to receive the request from client.");
             
         if (!FD_ISSET(_newSockFd, &_fds))
                 throw std::runtime_error("server timed out");
-		
-		std::string msg = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 47\n\n<html><body><H1>Hello world</H1></body></html>";
-		const char *msgToSend = msg.c_str();
+
+		std::string msgRes = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(st.st_size) + "Content-Type: text/plain\n\n" + buffRes;
+		const char *msgToSend = msgRes.c_str();
 
         if(send(_newSockFd, msgToSend, strlen(msgToSend), 0) == -1)
             throw std::runtime_error("Unable to send the response from client.");
+
 		std::cout << "################ RESPONSE ################" << std::endl;
         std::cout << msgToSend << std::endl << std::endl;
+
         close(_newSockFd);
     }
 }
