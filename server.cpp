@@ -62,8 +62,9 @@ Server::Server(short port, char *fileName)
         if (!FD_ISSET(_newSockFd, &_fds))
                 throw std::runtime_error("server timed out");
 
-		std::string msgRes = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(st.st_size) + "Content-Type: text/plain\n\n" + buffRes;
+		std::string msgRes = "HTTP/1.1 200 OK\n Content-Type: text/plain\nContent-Length: " + std::to_string(st.st_size) + "\n\n" + buffRes;
 		const char *msgToSend = msgRes.c_str();
+		// std::cout << msgRes.length() << std::endl;
 
         if(send(_newSockFd, msgToSend, strlen(msgToSend), 0) == -1)
             throw std::runtime_error("Unable to send the response from client.");
