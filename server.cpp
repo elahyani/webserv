@@ -71,7 +71,6 @@ Server::Server(short port, char *fileName)
 
 		std::cout << "################ RESPONSE ################" << std::endl;
         std::cout << msgToSend << std::endl << std::endl;
-
         close(_newSockFd);
     }
 }
