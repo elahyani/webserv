@@ -54,7 +54,7 @@ Server::Server(short port, char *fileName)
         char buffer[1024];
         std::memset(buffer, 0, sizeof(buffer));
         int valRead = recv(_newSockFd, buffer, sizeof(buffer), 0); 
-        std::cout << buffer << std::endl;
+        std::cout << buffer << std::endl;                               // Request
         if(valRead == -1)
             throw std::runtime_error("Unable to receive the request from client.");
         
