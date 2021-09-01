@@ -43,10 +43,14 @@ Server::Server(short port, char *fileName)
         std::memset(_buffReq, 0, sizeof(_buffReq));
         int valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
 
+
         std::cout << _buffReq << std::endl;
         if(valRead == -1)
 			throw std::runtime_error("Unable to receive the request from client.");
+		// send the request content
 
+		Request Request(_buffReq);
+		
 		std::cout << "################ RESPONSE ################" << std::endl;
 		//Response file <html>
 			struct stat st;
