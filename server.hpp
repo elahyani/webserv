@@ -14,6 +14,8 @@
 # include <fstream>
 # include <unistd.h>
 # include <sys/stat.h>
+# include "Request.hpp"
+class Request;
 
 class Server
 {

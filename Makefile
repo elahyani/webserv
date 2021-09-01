@@ -1,5 +1,3 @@
-# Creating a Binary file
-
 NAME = webserv
 
 FLAGS = -Wall -Wextra -Werror -std=c++98
@@ -15,22 +13,22 @@ OBJS = $(SRCS:.cpp=.o)
 all: $(NAME)
 
 $(NAME): $(OBJS) 
+	@echo "\033[4;37mMaking the object files\033[0m: \033[1;32m{DONE!}\033[0m"
 	@clang++ $(FLAGS) $(OBJS) -o $(NAME)
-	@echo "\033[4;37mCreating the binary file\033[0m: \033[1;33mDONE!\033[0m\n"
+	@echo "\033[4;37m\nLinking the object files into \033[1;33mwebserv\033[0m\033[0m: \033[1;32m{DONE!}\033[0m"
 
 %.o: %.cpp $(HDRS)
-	@echo "\033[0;33m"
-	clang++ $(FLAGS) -c $< -o $@
-	@echo "\033[0m"
+	@clang++ $(FLAGS) -c $< -o $@
+
 
 
 clean:
 	@rm -rf $(OBJS)
-	@echo "\033[4;37mDeleting the object files\033[0m: \033[1;32mDONE!\033[0m"
+	@echo "\033[4;37mDeleting the object files\033[0m: \033[1;32m{DONE!}\033[0m"
 
 fclean: clean
 	@rm -rf $(NAME)
 	@rm -rf *.dSYM
-	@echo "\033[4;37mDeleting the binary file\033[0m: \033[1;32mDONE!\033[0m"
+	@echo "\033[4;37mDeleting \033[1;33mwebserv\033[0m\033[0m: \033[1;32m{DONE!}\033[0m"
 
 re: fclean all
