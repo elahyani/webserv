@@ -27,7 +27,6 @@ private:
     fd_set              _fds;
 
 public:
-    Server();
     Server(short port, char *fileName);
     Server(Server const & ths);
     ~Server();
