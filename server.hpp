@@ -7,10 +7,11 @@
 # include <sys/socket.h>
 # include <sys/types.h>
 # include <sys/select.h>
-# include <limits.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
-# include <fcntl.h>
+// # include <fcntl.h>
+# include <iostream>
+# include <fstream>
 # include <unistd.h>
 # include <sys/stat.h>
 
@@ -25,6 +26,7 @@ private:
     int                 _newSockFd;
     fd_set              _fds;
     struct timeval      _tv;
+	char				*_buffRes;
 
 public:
     Server();
