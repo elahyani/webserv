@@ -1,0 +1,55 @@
+<html>
+	<body>
+		<main id="main">
+			<header>
+			<h1 id="title">Survey Form</h1>
+			<p id="description">About Survey Form</p>
+			</header>
+			<form id="survey-form">
+			<div class="form-class">
+				<label id="name-label" for="name">Name</label>
+				<input id="name" type="text" placeholder="Enter Your Name" required />
+			</div>
+			<div class="form-class">
+				<label id="email-label" for="email">Email</label>
+				<input id="email" type="email" placeholder="Enter Your Email" required />
+			</div>
+			<div class="form-class">
+				<label id="number-label" for="number">Age</label>
+				<input id="number" type="number" name="Age" min="13" max="73" placeholder="Enter Your Age" />
+			</div>
+			<div class="form-class">
+				<p>What's the color of your eyes?</p>
+				<select id="dropdown" name="color" >
+				<option disabled selected value>Select a color</option>
+				<option value="blue">Blue</option>
+				<option value="yellow">Yellow</option>
+				<option value="black">Black</option>
+				<option value="green">Green</option>
+				<option value="other">Other</option>
+				</select>
+			</div>
+			<div class="form-class">
+				<p>Which operating system do you prefer?</p>
+				<label> <input name="os" value="Windows OS" type="radio" checked/>Windows OS</label>
+				<label> <input name="os" value="Mac OS" type="radio" />Mac OS</label>
+				<label> <input name="os" value="Linux OS" type="radio" />Linux OS</label>
+			</div>
+			<div class="form-class">
+				<p>Select a country from this list:</p>
+				<label> <input name="country" value="Morocco" type="checkbox" />Morocco</label>
+				<label> <input name="country" value="Tunis" type="checkbox" />Tunis</label>
+				<label> <input name="country" value="Egypt" type="checkbox" />Egypt</label>
+				<label> <input name="country" value="Other" type="checkbox" />Other</label>
+			</div>
+			
+				<div class="form-class">
+					<textarea id="comments" placeholder="Enter your comment here..."></textarea>
+				</div>
+				<div class="form-class">
+					<button type="submit" id="submit">Submit</button>
+				</div>
+			</form>
+		</main>
+  </body>
+</html>
