@@ -10,3 +10,4 @@ https://devopedia.org/byte-ordering
 https://en.wikipedia.org/wiki/List_of_HTTP_status_code
 https://www.xplg.com/top-10-http-status-codes/
 
+https://www.cisco.com/c/en/us/support/docs/security/web-security-appliance/117995-qna-wsa-00.html

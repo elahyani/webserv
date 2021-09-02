@@ -1,20 +1,10 @@
 #include "Server.hpp"
 
-Server::Server(short port, char *fileName)
+Server::Server(short port, char *fileName): _port(port)
 {
-	//Socket creating
-    if ((_sockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        throw std::runtime_error("Unable to create a socket.");
-    
-	//Socket binding 
-    std::memset(&_myAddr, 0, sizeof(_myAddr));
-    _addrLen = sizeof(_myAddr);
-    _myAddr.sin_family = AF_INET;
-    _myAddr.sin_port = htons(port); // >= 5000
-    _myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(_sockFd, (struct sockaddr *)&_myAddr, sizeof(_myAddr))  == -1)
-        throw std::runtime_error("Unable to bind the socket");
-    
+	// Socket: creating && binding 
+	createBindSocket();
+
     //Listen
     if (listen(_sockFd, 50) == -1)
         throw std::runtime_error("Unable to listen for connections.");
@@ -47,6 +37,7 @@ Server::Server(short port, char *fileName)
         std::cout << _buffReq << std::endl;
         if(valRead == -1)
 			throw std::runtime_error("Unable to receive the request from client.");
+		
 		// send the request content
 		/* Request req(_buffReq);*/
 
@@ -107,4 +98,19 @@ Server & Server::operator=(Server const & ths)
     return *this;
 }
 
-	void createSocket();
+void Server::createBindSocket()
+{
+	//Socket creating
+    if ((_sockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+        throw std::runtime_error("Unable to create a socket.");
+    
+	//Socket binding 
+    std::memset(&_myAddr, 0, sizeof(_myAddr));
+    _addrLen = sizeof(_myAddr);
+    _myAddr.sin_family = AF_INET;
+    _myAddr.sin_port = htons(_port);
+    _myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(_sockFd, (struct sockaddr *)&_myAddr, sizeof(_myAddr))  == -1)
+        throw std::runtime_error("Unable to bind the socket");
+    
+}
