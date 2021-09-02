@@ -20,6 +20,7 @@ class Server
 {
 private:
     int                 _sockFd;
+	short				_port;
     struct sockaddr_in  _myAddr;
     struct sockaddr_in  _cliAddr;
     socklen_t           _addrLen;
