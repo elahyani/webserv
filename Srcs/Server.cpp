@@ -19,9 +19,9 @@ Server::Server(short port, char *fileName)
     if (listen(_sockFd, 50) == -1)
         throw std::runtime_error("Unable to listen for connections.");
 
-    //Accept
     while (true)
     {
+    	//Accept
 		std::cout << "<WAITING CONNECTION TO ESTABLISGH/>" << std::endl;
 		std::memset(&_cliAddr, 0, sizeof(_cliAddr));
         if ((_newSockFd = accept(_sockFd, (struct sockaddr *)&_cliAddr, &_addrLen)) == -1)
@@ -29,8 +29,8 @@ Server::Server(short port, char *fileName)
         // select work 
             FD_ZERO(&_fds);
 			struct timeval      _tv;
-            _tv.tv_sec = 2;
-            _tv.tv_usec = 0;
+            _tv.tv_sec = 1;
+            _tv.tv_usec = 5;
             FD_SET(_newSockFd, &_fds);
             if(select(_newSockFd + 1, &_fds, &_fds, NULL, &_tv) == -1)
 				throw std::runtime_error("Select unable to manipulexing I/O");
@@ -48,9 +48,8 @@ Server::Server(short port, char *fileName)
         if(valRead == -1)
 			throw std::runtime_error("Unable to receive the request from client.");
 		// send the request content
+		/* Request req(_buffReq);*/
 
-		Request Request(_buffReq);
-		
 		std::cout << "################ RESPONSE ################" << std::endl;
 		//Response file <html>
 			struct stat st;
@@ -107,3 +106,5 @@ Server & Server::operator=(Server const & ths)
     }
     return *this;
 }
+
+	void createSocket();

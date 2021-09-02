@@ -31,6 +31,8 @@ public:
     Server(Server const & ths);
     ~Server();
     Server & operator=(const Server & ths);
+	
+	void createBindSocket();
 };
 
 #endif
