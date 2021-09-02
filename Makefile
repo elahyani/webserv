@@ -8,7 +8,17 @@ SRCS = main.cpp \
 			
 HDRS = Server.hpp Request.hpp
 
-OBJS = $(SRCS:.cpp=.o)
+HDRS_PATH = Headers
+HDRS_NAME = Server.hpp
+
+
+OBJS_PATH = Objs
+OBJS_NAME = $(SRCS_NAME:.cpp=.o)
+
+# addprefix
+SRCS = $(addprefix $(SRCS_PATH)/,$(SRCS_NAME));
+HDRS = $(addprefix $(HDRS_PATH)/,$(HDRS_NAME));
+OBJS = $(addprefix $(OBJS_PATH)/,$(OBJS_NAME));
 
 all: $(NAME)
 

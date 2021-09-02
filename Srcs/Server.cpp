@@ -32,11 +32,11 @@ Server::Server(short port, char *fileName)
     if (listen(_sockFd, 50) == -1)
         throw std::runtime_error("Unable to listen for connections.");
 
-    //Accept
     while (true)
     {
-        std::cout << "<WAITING CONNECTION TO ESTABLISGH/>" << std::endl;
-        std::memset(&_cliAddr, 0, sizeof(_cliAddr));
+    	//Accept
+		std::cout << "<WAITING CONNECTION TO ESTABLISGH/>" << std::endl;
+		std::memset(&_cliAddr, 0, sizeof(_cliAddr));
         if ((_newSockFd = accept(_sockFd, (struct sockaddr *)&_cliAddr, &_addrLen)) == -1)
             throw std::runtime_error("Unable to accept the connection.");
         // select work
@@ -100,8 +100,13 @@ Server &Server::operator=(Server const &ths)
 {
     if (this != &ths)
     {
-        // need to add all the attributes
-        //any dynamic allocation means deepcopy
+		this->_sockFd = ths._sockFd;
+		this->_myAddr = ths._myAddr;
+		this->_addrLen = ths._addrLen;
+		this->_newSockFd = ths._newSockFd;
+		this->_fds = ths._fds;
     }
     return *this;
 }
+
+	void createSocket();
