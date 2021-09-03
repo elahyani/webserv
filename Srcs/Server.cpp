@@ -43,6 +43,7 @@ Server::Server(short port, char *fileName): _port(port)
 
         req.parseRequest();
         req.printRequest();
+        // exit(1);
 		std::cout << "################ RESPONSE ################" << std::endl;
 		//Response file <html>
 			struct stat st;

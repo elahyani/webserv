@@ -6,7 +6,7 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/02 18:10:29 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/03 19:04:34 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,36 +41,65 @@ void Request::parseRequest()
     std::istringstream s(content);
     while (std::getline(s, tmp))
     {
-        std::cout << tmp << std::endl;
+        // std::cout << "-> " << tmp << std::endl;
         if (!this->method.size() && !this->pVersion.size())
         {
-            this->tokenize(tmp, " ");
+            this->split(tmp, " ");
             this->method = this->mapTmp[0];
             this->urlPath = this->mapTmp[1];
             this->pVersion = this->mapTmp[2];
+            for (size_t i = 0; i < this->method.size(); i++)
+            {
+                if (islower(this->method[i]))
+                {
+                    std::cout << "Bad Request: syntax error!" << std::endl;
+                    this->requestError = true;
+                }
+            }
             for (std::map<std::string, std::string>::iterator it = methods.begin(); it != methods.end(); ++it)
             {
                 if (it->second == this->method)
                     break;
-                std::cout << "Bad Request!" << std::endl;
+                else
+                {
+                    std::cout << "Bad Request: method not allowed!" << std::endl;
+                    this->requestError = true;
+                }
+            }
+            if (this->urlPath.find("?") != std::string::npos)
+            {
+                this->urlQuery = this->urlPath.substr(this->urlPath.find("?") + 1);
+                this->urlPath = this->urlPath.substr(0, this->urlPath.find("?"));
+            }
+            if (this->pVersion.find("HTTP/1.1") == std::string::npos)
+            {
+                std::cout << "|" << pVersion << "|" << std::endl;
+                std::cout << "Bad Request: wrrong http version!" << std::endl;
+                this->requestError = true;
             }
         }
-        if (tmp.find("Host") != std::string::npos)
-            this->headers["Host"] = tmp.substr(tmp.find("Host") + 6);
-        if (tmp.find("User-Agent") != std::string::npos)
-            this->headers["User-Agent"] = tmp.substr(tmp.find("User-Agent") + 12);
-        if (tmp.find("Connection") != std::string::npos)
-            this->headers["Connection"] = tmp.substr(tmp.find("Connection") + 12);
-        if (tmp.find("Content-Type") != std::string::npos)
-            this->headers["Content-Type"] = tmp.substr(tmp.find("Content-Type") + 14);
-        if (tmp.find("Content-Length") != std::string::npos)
-            this->headers["Content-Length"] = tmp.substr(tmp.find("Content-Length") + 16);
-        if (tmp.find("Transfer-Encoding") != std::string::npos)
-            this->headers["Transfer-Encoding"] = tmp.substr(tmp.find("Transfer-Encoding") + 19);
+        else if (!headers["Host"].size() && tmp.find("Host") != std::string::npos)
+            headers["Host"] = tmp.substr(tmp.find(": ") + 2);
+        else if (!headers["User-Agent"].size() && tmp.find("User-Agent") != std::string::npos)
+            headers["User-Agent"] = tmp.substr(tmp.find(": ") + 2);
+        else if (!headers["Connection"].size() && tmp.find("Connection") != std::string::npos)
+            headers["Connection"] = tmp.substr(tmp.find(": ") + 2);
+        else if (!headers["Content-Type"].size() && tmp.find("Content-Type") != std::string::npos)
+            headers["Content-Type"] = tmp.substr(tmp.find(": ") + 2);
+        else if (!headers["Content-Length"].size() && tmp.find("Content-Length") != std::string::npos)
+            headers["Content-Length"] = std::stoi(tmp.substr(tmp.find(": ") + 2));
+        else if (!headers["Transfer-Encoding"].size() && tmp.find("Transfer-Encoding") != std::string::npos)
+            headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
     }
+    // parseBody();
     this->startLine["method"] = method;
     this->startLine["url"] = urlPath;
     this->startLine["pVersion"] = pVersion;
+}
+
+void Request::parseBody()
+{
+    // body parser
 }
 
 void Request::printRequest()
@@ -89,7 +118,7 @@ void Request::printRequest()
     std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
 }
 
-void Request::tokenize(std::string line, std::string splitter)
+void Request::split(std::string line, std::string splitter)
 {
     int i = 0;
     int start = 0;
