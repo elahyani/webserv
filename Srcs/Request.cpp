@@ -6,7 +6,7 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/04 13:19:00 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/04 16:33:50 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,21 @@ Request::Request(int &_newSockFd)
     int valRead;
     char _buffReq[1024] = {0};
 
-    std::memset(_buffReq, 0, sizeof(_buffReq));
-    valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
-    if (valRead == -1)
-        throw std::runtime_error("Unable to receive the request from client.");
-    this->content = _buffReq;
+    while (true)
+    {
+        std::memset(_buffReq, 0, sizeof(_buffReq));
+        valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
+        if (valRead == -1)
+            throw std::runtime_error("Unable to receive the request from client.");
+        else if (valRead == 0)
+            break;
+        else
+        {
+            _buffReq[valRead] = '\0';
+            content.append(_buffReq);
+        }
+    }
+    // this->content = _buffReq;
     this->methods.push_back("GET");
     this->methods.push_back("POST");
     this->methods.push_back("DELETE");
@@ -54,6 +64,8 @@ void Request::parseRequest()
             if (!this->method.size() && !this->pVersion.size())
             {
                 this->split(tmp, " ");
+                for (size_t i = 0; i < mapTmp.size(); i++)
+                    std::cout << mapTmp[i] << std::endl;
                 if (this->mapTmp.size() == 3)
                 {
                     if (mapTmp[0] != methods[0] && mapTmp[0] != methods[1] && mapTmp[0] != methods[2])
@@ -76,7 +88,7 @@ void Request::parseRequest()
                     }
                 }
                 else
-                    throw std::invalid_argument("Bad Request: Too much arguments!");
+                    throw std::invalid_argument("Bad Request: Too much or too few arguments!");
             }
             else if (!headers["Host"].size() && tmp.find("Host") != std::string::npos)
                 headers["Host"] = tmp.substr(tmp.find(": ") + 2);
@@ -104,6 +116,7 @@ void Request::parseRequest()
     }
     this->startLine["method"] = method;
     this->startLine["url"] = urlPath;
+    this->startLine["query"] = urlQuery;
     this->startLine["pVersion"] = pVersion;
 }
 
@@ -116,8 +129,6 @@ void Request::parseBody()
     {
         std::cout << "-> " << tmp << std::endl;
     }
-
-    // body parser
 }
 
 void Request::printRequest()
@@ -151,6 +162,61 @@ void Request::split(std::string line, std::string splitter)
     this->mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
 }
 
+std::string Request::getMethod()
+{
+    return this->startLine["method"];
+}
+
+std::string Request::getUrlPath()
+{
+    return this->startLine["url"];
+}
+
+std::string Request::getUrlQuery()
+{
+    return this->startLine["query"];
+}
+
+std::string Request::getProtocol()
+{
+    return this->headers["pVersion"];
+}
+
+std::string Request::getHost()
+{
+    return this->headers["Host"];
+}
+
+std::string Request::getConection()
+{
+    return this->headers["Connection"];
+}
+
+std::string Request::getContentType()
+{
+    return this->headers["Content-Type"];
+}
+
+std::string Request::getContentLength()
+{
+    return this->headers["ontent-Length"];
+}
+
+std::string Request::getTransferEncoding()
+{
+    return this->headers["Transfer-Encoding"];
+}
+
+std::string Request::getBoundry()
+{
+    return this->headers["Boundary"];
+}
+
+std::vector<Bodies> Request::getBody()
+{
+    return this->bodies;
+}
+
 // std::string Request::reqErrorMsg(int &status)
 // {
 //     /**
@@ -168,6 +234,6 @@ void Request::split(std::string line, std::string splitter)
 //      * 411 Length Required
 //      * 412 Precondition Failed
 //      * 413 Payload Too Large
-//      * 414 URI Too Longe
+//      * 414 URI Too Long
 //     */
 // }

@@ -6,7 +6,7 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 13:44:07 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/04 13:09:47 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/04 15:48:06 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,19 @@ public:
     void printRequest();
     void split(std::string, std::string);
     std::string reqErrorMsg(int &);
+    
+
+    std::string getMethod();
+    std::string getUrlPath();
+    std::string getUrlQuery();
+    std::string getProtocol();
+    std::string getHost();
+    std::string getConection();
+    std::string getContentType();
+    std::string getContentLength();
+    std::string getTransferEncoding();
+    std::string getBoundry();
+    std::vector<Bodies> getBody();
 };
 
 #endif
