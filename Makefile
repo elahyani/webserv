@@ -9,7 +9,8 @@ SRCS_NAME = main.cpp \
 		Request.cpp
 
 HDRS_PATH = Headers
-HDRS_NAME = Server.hpp Request.hpp
+HDRS_NAME = Server.hpp \
+			Request.hpp
 
 
 OBJS_PATH = Objs

@@ -14,18 +14,21 @@
 # include <unistd.h>
 # include <sys/stat.h>
 # include "Request.hpp"
+# define MAX_CLIENTS 1024
 class Request;
 
 class Server
 {
 private:
-    int                 _sockFd;
+    int                 _masterSockFd;
 	short				_port;
     struct sockaddr_in  _myAddr;
-    struct sockaddr_in  _cliAddr;
     socklen_t           _addrLen;
     int                 _newSockFd;
-    fd_set              _fds;
+    fd_set              _readFds;
+    int                 _sockClients[1024];
+    int                 _maxSockFd;
+    int                 _sockFd;
 
 public:
     Server(short port, char *fileName);
