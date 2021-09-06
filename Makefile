@@ -6,11 +6,14 @@ SRCS_PATH = Srcs
 
 SRCS_NAME = main.cpp \
 		Server.cpp \
-		Request.cpp
+		Request.cpp \
+		# Response.cpp 
 
 HDRS_PATH = Headers
 HDRS_NAME = Server.hpp \
-			Request.hpp
+			Request.hpp \
+			# Response.hpp 
+
 
 
 OBJS_PATH = Objs
