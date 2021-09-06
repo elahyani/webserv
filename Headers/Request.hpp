@@ -6,7 +6,7 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 13:44:07 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/04 15:48:06 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/05 17:27:14 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ struct Bodies
     std::string contentType;
     std::string contentLength;
     std::string body;
+    std::string contentDesp;
 };
 
 class Request
@@ -39,30 +40,23 @@ private:
     std::string urlPath;
     std::string urlQuery; // .?.....
     std::string pVersion; // http/1.1
-    std::string host;
-    std::string connection;
-    std::string contentType;
-    std::string contentLength;
-    std::string transferEncoding;
-    std::string boundry;
-    std::string body;
     std::vector<Bodies> bodies;
     std::string content;
     bool requestError;
 
 public:
     Request();
-    Request(int &_newSockFd);
     Request(const Request &src);
     Request &operator=(const Request &rhs);
     ~Request();
 
+    void readRequest(int &);
     void parseRequest();
     void parseBody();
+    bool checkRequest(std::string &);
     void printRequest();
     void split(std::string, std::string);
     std::string reqErrorMsg(int &);
-    
 
     std::string getMethod();
     std::string getUrlPath();
@@ -75,6 +69,7 @@ public:
     std::string getTransferEncoding();
     std::string getBoundry();
     std::vector<Bodies> getBody();
+    std::string getHeaderVal(std::string key);
 };
 
 #endif

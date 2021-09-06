@@ -3,6 +3,7 @@
 Server::Server(short port, char *fileName) : _port(port)
 {
     // Socket: creating && binding
+    Request req;
     createBindSocket();
 
     //Listen
@@ -54,8 +55,8 @@ Server::Server(short port, char *fileName) : _port(port)
         // throw std::runtime_error("Unable to receive the request from client.");
 
         // send the request content
-        Request req(_newSockFd);
 
+        req.readRequest(_newSockFd);
         req.parseRequest();
         req.printRequest();
         // exit(1);

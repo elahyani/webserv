@@ -3,18 +3,37 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
+/*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/04 18:51:00 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/06 09:52:21 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
-Request::Request() {}
+Request::Request()
+{
+	// this->content = _buffReq;
+	this->methods.push_back("GET");
+	this->methods.push_back("POST");
+	this->methods.push_back("DELETE");
+}
 
-bool checkRequest(std::string &req)
+Request::Request(const Request &src)
+{
+	(void)src;
+}
+
+Request &Request::operator=(const Request &rhs)
+{
+	(void)rhs;
+	return *this;
+}
+
+Request::~Request() {}
+
+bool Request::checkRequest(std::string &req)
 {
 	std::string data;
 	size_t i;
@@ -36,10 +55,10 @@ bool checkRequest(std::string &req)
 	return true;
 }
 
-Request::Request(int &_newSockFd)
+void Request::readRequest(int &_newSockFd)
 {
 	int valRead;
-	char _buffReq[1024] = {0};
+	char _buffReq[2048] = {0};
 
 	while (true)
 	{
@@ -47,34 +66,15 @@ Request::Request(int &_newSockFd)
 		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
 		if (valRead == -1)
 			throw std::runtime_error("Unable to receive the request from client.");
-		// else if (valRead == 0)
-		//     break;
-		// else
-		// {
 		_buffReq[valRead] = '\0';
 		content.append(_buffReq);
-		// }
 		if (checkRequest(content))
 			break;
 	}
-	// this->content = _buffReq;
-	this->methods.push_back("GET");
-	this->methods.push_back("POST");
-	this->methods.push_back("DELETE");
+	std::cout << "------------------------------->\n"
+			  << content << std::endl;
+	exit(1);
 }
-
-Request::Request(const Request &src)
-{
-	(void)src;
-}
-
-Request &Request::operator=(const Request &rhs)
-{
-	(void)rhs;
-	return *this;
-}
-
-Request::~Request() {}
 
 void Request::parseRequest()
 {
@@ -84,7 +84,7 @@ void Request::parseRequest()
 	{
 		while (std::getline(s, tmp))
 		{
-			std::cout << "-> " << tmp << std::endl;
+			// std::cout << "-> " << tmp << std::endl;
 			if (!this->method.size() && !this->pVersion.size())
 			{
 
@@ -125,7 +125,7 @@ void Request::parseRequest()
 				headers["Content-Length"] = tmp.substr(tmp.find(": ") + 2);
 			else if (!headers["Transfer-Encoding"].size() && tmp.find("Transfer-Encoding") != std::string::npos)
 				headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
-			std::cout << "len:" << tmp.find("Content-Length") << std::endl;
+			// std::cout << "len:" << tmp.find("Content-Length") << std::endl;
 		}
 		// std::cout << "OUT tmp: |" << tmp << "|" << std::endl;
 		if (tmp.find("\r\n\r\n") != std::string::npos)
@@ -168,7 +168,7 @@ void Request::printRequest()
 	std::cout << "Content Type      -> " << this->headers["Content-Type"] << std::endl;
 	std::cout << "Content Length    -> " << this->headers["Content-Length"] << std::endl;
 	std::cout << "Transfer Encoding -> " << this->headers["Transfer-Encoding"] << std::endl;
-	std::cout << "Boundry           -> " << boundry << std::endl;
+	// std::cout << "Boundry           -> " << boundry << std::endl;
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
 }
 
@@ -246,20 +246,22 @@ std::vector<Bodies> Request::getBody()
 // std::string Request::reqErrorMsg(int &status)
 // {
 //     /**
-//      * 400 bad erquest
-//      * 401 Unauthorized
-//      * 402 Payement Required
-//      * 403 Forbidden
-//      * 404 Not Found
-//      * 405 Method Nod Allowed
-//      * 406 Not Acceptable
-//      * 407 Proxy Authentication Required
-//      * 408 Request timeout
-//      * 409 Conflict
-//      * 410 Gone
-//      * 411 Length Required
-//      * 412 Precondition Failed
-//      * 413 Payload Too Large
-//      * 414 URI Too Long
+//		* S_OK 200
+//		* S_MOVED_PERM 301
+//		* S_TEMP_REDIR 307
+//		* S_BAD_REQ 400
+//		* S_FORBIDDEN 403
+//		* S_NOT_FOUND 404
+//		* S_METHOD_NOT_ALLOWED 405
+//		* S_LENGTH_REQUIRED 411
+//		* S_PAY_LOAD_TOO_LARGE 413
+//		* S_URI_TOO_LONG 414
+//		* S_UNSUPPORTED_MEDIA_TYPE 415
+//		* S_INTERNAL_SERVER_ERROR 500
+//		* S_NOT_IMPLEMENTED 501
+//		* S_BAD_GATEWAY 502
+//		* S_GATEWAY_TIMEOUT 504
+//		* S_HTTP_VERSION_NOT_SUPPORTED 505
 //     */
+
 // }
