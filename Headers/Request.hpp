@@ -6,7 +6,7 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 13:44:07 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/05 17:27:14 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/06 14:46:42 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,24 +33,25 @@ class Request
 {
 private:
     std::map<std::string, std::string> headers;
-    std::vector<std::string> methods;
     std::map<std::string, std::string> startLine;
     std::map<int, std::string> mapTmp;
+    std::vector<std::string> methods;
+    std::vector<Bodies> bodies;
+    std::string content;
     std::string method; // GET POST DELETE
     std::string urlPath;
     std::string urlQuery; // .?.....
     std::string pVersion; // http/1.1
-    std::vector<Bodies> bodies;
-    std::string content;
+    int _newSockFd;
     bool requestError;
 
 public:
-    Request();
+    Request(int);
     Request(const Request &src);
     Request &operator=(const Request &rhs);
     ~Request();
 
-    void readRequest(int &);
+    void readRequest();
     void parseRequest();
     void parseBody();
     bool checkRequest(std::string &);
@@ -70,6 +71,9 @@ public:
     std::string getBoundry();
     std::vector<Bodies> getBody();
     std::string getHeaderVal(std::string key);
+    std::string getStartLineVal(std::string key);
 };
 
 #endif
+
+// curl -i -X POST -H "Content-Type: multipart/form-data" -F "data=@Makefile" http://localhost:5000/

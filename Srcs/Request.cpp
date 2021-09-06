@@ -6,15 +6,14 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/06 09:52:21 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/06 14:46:31 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
-Request::Request()
+Request::Request(int sockFd) : content(""), method(""), urlPath(""), urlQuery(""), pVersion(""), _newSockFd(sockFd)
 {
-	// this->content = _buffReq;
 	this->methods.push_back("GET");
 	this->methods.push_back("POST");
 	this->methods.push_back("DELETE");
@@ -45,8 +44,8 @@ bool Request::checkRequest(std::string &req)
 	}
 	if (req.find("Content-Length") != std::string::npos)
 	{
-
 		data = req.substr(i + 4);
+		data = data.substr(0, data.length() - 4);
 		if (data.find("\r\n\r\n") == std::string::npos)
 		{
 			return false;
@@ -55,25 +54,24 @@ bool Request::checkRequest(std::string &req)
 	return true;
 }
 
-void Request::readRequest(int &_newSockFd)
+void Request::readRequest()
 {
 	int valRead;
-	char _buffReq[2048] = {0};
+	char _buffReq[16384] = {0};
 
 	while (true)
 	{
 		std::memset(_buffReq, 0, sizeof(_buffReq));
-		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
+		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq) - 1, 0);
 		if (valRead == -1)
 			throw std::runtime_error("Unable to receive the request from client.");
 		_buffReq[valRead] = '\0';
 		content.append(_buffReq);
+		std::cout << ".........." << _buffReq << ".........." << std::endl;
 		if (checkRequest(content))
 			break;
 	}
-	std::cout << "------------------------------->\n"
-			  << content << std::endl;
-	exit(1);
+	std::cout << content << std::endl;
 }
 
 void Request::parseRequest()
@@ -188,54 +186,14 @@ void Request::split(std::string line, std::string splitter)
 	this->mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
 }
 
-std::string Request::getMethod()
+std::string Request::getHeaderVal(std::string key)
 {
-	return this->startLine["method"];
+	return this->headers[key];
 }
 
-std::string Request::getUrlPath()
+std::string Request::getStartLineVal(std::string key)
 {
-	return this->startLine["url"];
-}
-
-std::string Request::getUrlQuery()
-{
-	return this->startLine["query"];
-}
-
-std::string Request::getProtocol()
-{
-	return this->headers["pVersion"];
-}
-
-std::string Request::getHost()
-{
-	return this->headers["Host"];
-}
-
-std::string Request::getConection()
-{
-	return this->headers["Connection"];
-}
-
-std::string Request::getContentType()
-{
-	return this->headers["Content-Type"];
-}
-
-std::string Request::getContentLength()
-{
-	return this->headers["ontent-Length"];
-}
-
-std::string Request::getTransferEncoding()
-{
-	return this->headers["Transfer-Encoding"];
-}
-
-std::string Request::getBoundry()
-{
-	return this->headers["Boundary"];
+	return this->startLine[key];
 }
 
 std::vector<Bodies> Request::getBody()

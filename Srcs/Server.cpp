@@ -5,7 +5,6 @@ Server::Server(short port, char *fileName) : _port(port)
     for (int i = 0; i < MAX_CLIENTS; i++)
         _sockClients[i] = 0;
     // Socket: creating && binding
-    Request req;
     createBindSocket();
 
     //Listen
@@ -64,12 +63,13 @@ Server::Server(short port, char *fileName) : _port(port)
             // throw std::runtime_error("Unable to receive the request from client.");
 
             // send the request content
-            Request req;
 
-            req.readRequest(_newSockFd);
+            Request req(_newSockFd);
+
+            req.readRequest();
             req.parseRequest();
             req.printRequest();
-            // exit(1);
+            exit(1);
             std::cout << "################ RESPONSE ################" << std::endl;
             //Response file <html>
             struct stat st;
