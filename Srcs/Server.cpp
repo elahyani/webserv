@@ -70,9 +70,12 @@ Server::Server(short port, char *fileName) : _port(port)
             req.parseRequest();
             req.printRequest();
 
-            // Response resp(req);
+            std::cout << "°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
 
-            // resp.buildResponse();
+            Response resp(req);
+
+            resp.buildHeaders();
+            resp.buildResponse();
             exit(1);
             std::cout << "################ RESPONSE ################" << std::endl;
             //Response file <html>

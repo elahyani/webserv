@@ -13,10 +13,8 @@
 # include <fstream>
 # include <unistd.h>
 # include <sys/stat.h>
-// #include "Response.hpp"
-// class Response;
-#include "Request.hpp"
-class Request;
+# include "Request.hpp"
+# include "Response.hpp"
 
 # define MAX_CLIENTS 1024
 
