@@ -13,6 +13,8 @@
 # include <fstream>
 # include <unistd.h>
 # include <sys/stat.h>
+# include <algorithm>
+# include <list>
 # include "Request.hpp"
 class Request;
 
@@ -26,11 +28,12 @@ private:
     socklen_t           _addrLen;
     int                 _newSockFd;
     fd_set              _readFds;
-    fd_set              _masterFds;
+    // fd_set              _masterFds;
     // fd_set              _writeFds;
     // fd_set              _expFds;
     int                 _maxSockFd;
     int                 _sockFd;
+	std::list<int>		_listSocketFds;
 
 public:
     Server(short port, char *fileName);
@@ -41,6 +44,7 @@ public:
 	void createSocket();
 	void bindSocket();
 	void listenToClient();
+	void exampleOfResponse(char *);
 };
 
 #endif
