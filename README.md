@@ -11,3 +11,6 @@ https://en.wikipedia.org/wiki/List_of_HTTP_status_code
 https://www.xplg.com/top-10-http-status-codes/
 
 https://www.cisco.com/c/en/us/support/docs/security/web-security-appliance/117995-qna-wsa-00.html
+https://therighttutorial.wordpress.com/2014/06/09/multi-client-server-chat-application-using-socket-programming-tcp/
+https://vidyakv.wordpress.com/2011/11/29/multi-client-chat-server-in-c/
+https://gnomezgrave.com/2015/03/03/simple-client-server-chat-program-using-select/

@@ -13,10 +13,10 @@
 # include <fstream>
 # include <unistd.h>
 # include <sys/stat.h>
+# include <algorithm>
+# include <list>
 # include "Request.hpp"
 # include "Response.hpp"
-
-# define MAX_CLIENTS 1024
 
 class Server
 {
@@ -24,12 +24,16 @@ private:
     int                 _masterSockFd;
 	short				_port;
     struct sockaddr_in  _myAddr;
+    struct sockaddr_in  _clientAddr;
     socklen_t           _addrLen;
     int                 _newSockFd;
     fd_set              _readFds;
-    int                 _sockClients[1024];
+    // fd_set              _masterFds;
+    // fd_set              _writeFds;
+    // fd_set              _expFds;
     int                 _maxSockFd;
     int                 _sockFd;
+	std::list<int>		_listSocketFds;
 
 public:
     Server(short port, char *fileName);
@@ -37,7 +41,10 @@ public:
     ~Server();
     Server & operator=(const Server & ths);
 	
-	void createBindSocket();
+	void createSocket();
+	void bindSocket();
+	void listenToClient();
+	void exampleOfResponse(char *);
 };
 
 #endif

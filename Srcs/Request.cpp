@@ -6,7 +6,7 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/07 16:59:29 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/08 18:54:51 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,6 +131,7 @@ void Request::parseRequest()
 		}
 		if (this->headers["Boundary"].size() && tmp.find(this->headers["Boundary"]) != std::string::npos)
 			parseBody();
+		checkReqErrors();
 		// exit(1);
 	}
 	catch (const std::exception &e)
@@ -196,8 +197,14 @@ void Request::parseBody()
 
 int Request::checkReqErrors()
 {
+	std::string pVersion = this->protocol.substr(this->protocol.find("/") + 1);
+
+	if (pVersion.compare("1.1") != 0)
+		this->statusCode = 505;
 	if (this->protocol.compare("HTTP/1.1") != 0)
+	{
 		this->statusCode = 400;
+	}
 	if (this->startLine["method"].compare("GET") != 0 && this->startLine["method"].compare("POST") != 0 && this->startLine["method"].compare("DELETE") != 0)
 		this->statusCode = 400;
 	if (this->method.compare("POST") == 0)
@@ -227,9 +234,12 @@ void Request::printRequest()
 	std::cout << "Content Length    -> |" << this->headers["Content-Length"] << "|" << std::endl;
 	std::cout << "Transfer Encoding -> |" << this->headers["Transfer-Encoding"] << "|" << std::endl;
 	std::cout << "Boundary          -> |" << this->headers["Boundary"] << "|" << std::endl;
-	std::cout << "Content-Dispos... -> |" << this->bodiesList[0].contentDesp << "|" << std::endl;
-	std::cout << "Content-Type      -> |" << this->bodiesList[0].contentType << "|" << std::endl;
-	std::cout << "Body              -> |" << this->bodiesList[0].body << "|" << std::endl;
+	if (this->bodiesList.size())
+	{
+		std::cout << "Content-Dispos... -> |" << this->bodiesList[0].contentDesp << "|" << std::endl;
+		std::cout << "Content-Type      -> |" << this->bodiesList[0].contentType << "|" << std::endl;
+		std::cout << "Body              -> |" << this->bodiesList[0].body << "|" << std::endl;
+	}
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
 }
 
