@@ -33,7 +33,7 @@ private:
     // fd_set              _expFds;
     int                 _maxSockFd;
     int                 _sockFd;
-	std::list<int>		_listSocketFds;
+	std::vector<int>	_accptSockFds;
 
 public:
     Server(short port, char *fileName);

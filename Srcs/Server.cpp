@@ -34,17 +34,17 @@ Server::Server(short port, char *fileName) : _port(port)
 					FD_SET(_newSockFd, &_readFds);
 					std::cout << "################ RESQUEST ################" << std::endl;
 					// send the request content
-					Request req(_newSockFd);
+					// Request req(_newSockFd);
 					
-					req.parseRequest();
-					req.printRequest();
+					// req.parseRequest();
+					// req.printRequest();
 					// exit(1);
 					std::cout << "################ RESPONSE ################" << std::endl;
 					this->exampleOfResponse(fileName);
-					_listSocketFds.push_back(_newSockFd);
+					_accptSockFds.push_back(_newSockFd);
 				}
 		}
-		for(std::list<int>::iterator it = _listSocketFds.begin(); it != _listSocketFds.end(); it++)
+		for(std::vector<int>::iterator it = _accptSockFds.begin(); it != _accptSockFds.end(); it++)
 		{
 			FD_SET(*it, &_readFds);
 			if (*it > 0 && *it > _maxSockFd)
@@ -53,8 +53,8 @@ Server::Server(short port, char *fileName) : _port(port)
 		iSelect = select(_maxSockFd + 1, &_readFds, NULL, NULL, &_tv);
 		if(iSelect > 0)
 		{
-			// std::cout << "list_size: "<< _listSocketFds.size() << std::endl;
-			for(std::list<int>::iterator it = _listSocketFds.begin(); it != _listSocketFds.end(); it++)
+			std::cout << "list_size: "<< _accptSockFds.size() << std::endl;
+			for(std::vector<int>::iterator it = _accptSockFds.begin(); it != _accptSockFds.end(); it++)
 			{
 				if(FD_ISSET(*it, &_readFds))
 				{
@@ -63,7 +63,7 @@ Server::Server(short port, char *fileName) : _port(port)
 					if (valRead == 0)
 					{
 						close(*it);
-						_listSocketFds.remove(*it);
+						_accptSockFds.erase(it);
 					}
 					else
 					{
@@ -72,7 +72,7 @@ Server::Server(short port, char *fileName) : _port(port)
 					}
 					break ;
 				}
-			// std::cout << "list_size: "<< _listSocketFds.size() << std::endl;
+			std::cout << "list_size: "<< _accptSockFds.size() << std::endl;
 			}
 		}
 
@@ -157,7 +157,7 @@ void Server::exampleOfResponse(char *fileName)
 	msgRes += "HTTP/1.1 200 OK\n"; // HTTP-version code msg
 	msgRes += "Content-Type: text/html\n";
 	msgRes += "Content-Length: " + std::to_string(st.st_size);
-	msgRes += "\n\n"; //blank-line
+	msgRes += "\r\n\r\n"; //blank-line
 	//Body
 	msgRes += _buffRes;
 	delete [] _buffRes;
