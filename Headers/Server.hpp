@@ -12,6 +12,7 @@
 # include <iostream>
 # include <fstream>
 # include <unistd.h>
+# include <fcntl.h>
 # include <sys/stat.h>
 # include <algorithm>
 # include <list>
@@ -31,6 +32,7 @@ private:
 	int					_maxSockFd;
 	int					_sockFd;
 	std::vector<int>	_accptSockFds;
+	char*	_fileName;
 
 public:
     Server(short port, char *fileName);
@@ -41,6 +43,11 @@ public:
 	void createSocket();
 	void bindSocket();
 	void listenToClient();
+
+	void newConnectHandling();
+	void existConnectHandling();
+
+
 	void exampleOfResponse(char *);
 };
 

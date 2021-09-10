@@ -22,3 +22,5 @@ https://www.wallpaperup.com/26256/abstract_fractal_cg_digital_art_artistic_patte
 https://www.fi.muni.cz/usr/jkucera/tic/tic0305.html
 
 http://www.w3big.com/cplusplus/cpp-web-programming.html
+
+http://nginx.org/en/docs/beginners_guide.html
