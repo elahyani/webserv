@@ -21,7 +21,7 @@ Server::Server(short port, char *fileName) : _port(port)
 			_maxSockFd = _masterSockFd;
         // select work
 		int timeout = 1;
-		struct timeval _tv = {timeout, 0}; // set the time to chek
+		struct timeval _tv = {timeout, 0}; // set the time
 		int iSelect = select(_maxSockFd + 1, &_readFds, NULL, NULL, &_tv);
 		if (iSelect > 0)
 		{
@@ -53,7 +53,6 @@ Server::Server(short port, char *fileName) : _port(port)
 		iSelect = select(_maxSockFd + 1, &_readFds, NULL, NULL, &_tv);
 		if(iSelect > 0)
 		{
-			std::cout << "list_size: "<< _accptSockFds.size() << std::endl;
 			for(std::vector<int>::iterator it = _accptSockFds.begin(); it != _accptSockFds.end(); it++)
 			{
 				if(FD_ISSET(*it, &_readFds))
@@ -62,17 +61,17 @@ Server::Server(short port, char *fileName) : _port(port)
 					int valRead = recv(*it, _buffRes, sizeof(_buffRes), 0);
 					if (valRead == 0)
 					{
+						std::cout << "Instant socket: " << std::to_string(*it) << std::endl;
 						close(*it);
 						_accptSockFds.erase(it);
 					}
 					else
 					{
 						if (send(*it, _buffRes, valRead , 0) != valRead)
-							throw std::runtime_error("Unable to send Response in socket file descriptor " + std::to_string(*it));	
+							throw std::runtime_error("Unable to send Response in socket file descriptor " + std::to_string(*it));
 					}
 					break ;
 				}
-			std::cout << "list_size: "<< _accptSockFds.size() << std::endl;
 			}
 		}
 
@@ -116,7 +115,7 @@ void Server::createSocket()
 {
     if ((_masterSockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw std::runtime_error("Unable to create a socket.");
-	// setsockopt
+	// set socket option
 	int opt = 1;
 	if (setsockopt(_masterSockFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1)
 		throw std::runtime_error("Unable to set socket option.");

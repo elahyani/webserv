@@ -21,18 +21,15 @@ class Request;
 class Server
 {
 private:
-    int                 _masterSockFd;
+	int					_masterSockFd;
 	short				_port;
-    struct sockaddr_in  _myAddr;
-    struct sockaddr_in  _clientAddr;
-    socklen_t           _addrLen;
-    int                 _newSockFd;
-    fd_set              _readFds;
-    // fd_set              _masterFds;
-    // fd_set              _writeFds;
-    // fd_set              _expFds;
-    int                 _maxSockFd;
-    int                 _sockFd;
+	struct sockaddr_in 	_myAddr;
+	struct sockaddr_in 	_clientAddr;
+	socklen_t			_addrLen;
+	int					_newSockFd;
+	fd_set				_readFds;
+	int					_maxSockFd;
+	int					_sockFd;
 	std::vector<int>	_accptSockFds;
 
 public:

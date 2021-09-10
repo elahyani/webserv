@@ -14,4 +14,11 @@ https://www.cisco.com/c/en/us/support/docs/security/web-security-appliance/11799
 https://therighttutorial.wordpress.com/2014/06/09/multi-client-server-chat-application-using-socket-programming-tcp/
 https://vidyakv.wordpress.com/2011/11/29/multi-client-chat-server-in-c/
 https://gnomezgrave.com/2015/03/03/simple-client-server-chat-program-using-select/
+
+
+<!-- CGI  -->
 https://www.oreilly.com/openbook/cgi/ch00_01.html
+https://www.wallpaperup.com/26256/abstract_fractal_cg_digital_art_artistic_pattern_psychedelic.html
+https://www.fi.muni.cz/usr/jkucera/tic/tic0305.html
+
+http://www.w3big.com/cplusplus/cpp-web-programming.html
