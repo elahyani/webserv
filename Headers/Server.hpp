@@ -29,9 +29,11 @@ private:
 	socklen_t			_addrLen;
 	int					_newSockFd;
 	fd_set				_readFds;
+	fd_set				_tmpReadFds;
+	fd_set				_writeFds;
 	int					_maxSockFd;
 	int					_sockFd;
-	std::vector<int>	_accptSockFds;
+	std::vector<int>	_sockFds;
 	char*	_fileName;
 
 public:
@@ -45,7 +47,7 @@ public:
 	void listenToClient();
 
 	void newConnectHandling();
-	void existConnectHandling();
+	void existConnectHandling(std::vector<int>::iterator &);
 
 
 	void exampleOfResponse(char *);
