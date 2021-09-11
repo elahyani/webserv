@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/10 17:21:27 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/11 18:02:55 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,13 @@ private:
 	size_t clientMaxBodySize;
 	std::map<int, std::string> errorsPages;
 	std::string root;
-	std::string serverName;
+	std::vector<std::string> serverName;
 	int serversNumber;
 	bool inServer;
 	int errorCode;
 	std::string errorPagePath;
 	std::string filename;
+	std::map<int, std::string> mapTmp;
 
 public:
 	HttpServer();
@@ -51,6 +52,7 @@ public:
 	void semiColonChecker(std::string &buffer);
 	void checkFile(int ac, char **av);
 	void checkUnit(std::string);
+	void split(std::string line, char splitter);
 };
 
 #endif
