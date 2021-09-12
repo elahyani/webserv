@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:24:18 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/11 18:15:41 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/12 15:23:22 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,6 +103,42 @@ void HttpServer::checkUnit(std::string buffer)
 	}
 }
 
+void HttpServer::checkMissingAttrs()
+{
+	if (this->inServer)
+		throw std::invalid_argument("Exception:\tSyntax Error");
+	else if (!this->serversNumber)
+		throw std::invalid_argument("Exception:\tServer Not Found");
+	else if (this->ports.empty())
+		throw std::invalid_argument("Exception:\tListening port not found!");
+	else if (!this->host.size())
+		throw std::invalid_argument("Exception:\tHost not found!");
+	else if (this->serverName.empty())
+		throw std::invalid_argument("Exception:\tServer_name not found!");
+	else if (!this->clientMaxBodySize)
+		throw std::invalid_argument("Exception:\tClient_max_body_size not found!");
+	else if (this->errorsPages.empty())
+		throw std::invalid_argument("Exception:\tError page not found!");
+	else if (!this->root.size())
+		throw std::invalid_argument("Exception:\tRoot not found!");
+}
+
+void HttpServer::checkHost(std::string hostBuffer)
+{
+	size_t i = -1;
+	int dots = 0;
+
+	while (hostBuffer[++i])
+	{
+		if (hostBuffer[i] == '.')
+			dots++;
+		if (!std::isdigit(hostBuffer[i]) && hostBuffer[i] != '.')
+			throw std::invalid_argument("Exception:\tinvalid format of Host1");
+	}
+	if (dots != 3)
+		throw std::invalid_argument("Exception:\tinvalid format of Host2");
+}
+
 void HttpServer::parseConfigFile(int ac, char **av)
 {
 	checkFile(ac, av);
@@ -117,8 +153,14 @@ void HttpServer::parseConfigFile(int ac, char **av)
 	while (std::getline(file, buffer))
 	{
 		// trim buffer
-		std::cout << ">>>>>>>>>>>> " << trimContent(buffer) << std::endl;
+		buffer = trimContent(buffer);
 
+		if (buffer.find("#") != std::string::npos)
+		{
+			buffer = buffer.substr(0, buffer.find_first_of('#'));
+			buffer = trimContent(buffer);
+			std::cout << "BUFFER AFTER: ********************>>>> |" << buffer << "|" << std::endl;
+		}
 		// buffer.erase(std::remove_if(buffer.begin(), buffer.end(), ::isspace), buffer.end());
 		// std::cout << ">>>>>>>>>>>> " << buffer << std::endl;
 		if (buffer.compare("[") == 0)
@@ -162,6 +204,8 @@ void HttpServer::parseConfigFile(int ac, char **av)
 					semiColonChecker(buffer);
 					this->host = (buffer.substr(buffer.find(":") + 1));
 					this->host.pop_back();
+					this->host = trimContent(this->host);
+					checkHost(this->host);
 					if (!this->host.size())
 						throw std::invalid_argument("Exception:\tHost not found");
 				}
@@ -232,6 +276,7 @@ void HttpServer::parseConfigFile(int ac, char **av)
 			}
 			else if (buffer.find("error_page") != std::string::npos)
 			{
+				std::cout << "BUFFER =========================> |" << buffer << "|" << std::endl;
 				semiColonChecker(buffer);
 				buffer.pop_back();
 
@@ -265,12 +310,15 @@ void HttpServer::parseConfigFile(int ac, char **av)
 				// std::cout << "error page path ---> " << errorPagePath << std::endl;
 				this->errorsPages.insert(std::pair<int, std::string>(this->errorCode, this->errorPagePath));
 			}
+			else if (buffer.find("location:") != std::string::npos)
+			{
+				this->location.parseLocation(filename);
+			}
 		}
+		std::cout << ">>>>>>>>>>>> " << buffer << std::endl;
 	}
-	if (this->inServer)
-		throw std::invalid_argument("Syntax Error");
-	if (this->ports.empty())
-		throw std::invalid_argument("Exception:\tListening port not found!");
+	//* CHECK IF AN ATTR IS MISSING HERE
+	checkMissingAttrs();
 }
 
 void HttpServer::printContentData()

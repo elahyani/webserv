@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/11 18:02:55 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/12 15:13:15 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ private:
 	std::string errorPagePath;
 	std::string filename;
 	std::map<int, std::string> mapTmp;
+	Location location;
 
 public:
 	HttpServer();
@@ -53,6 +54,8 @@ public:
 	void checkFile(int ac, char **av);
 	void checkUnit(std::string);
 	void split(std::string line, char splitter);
+	void checkMissingAttrs();
+	void checkHost(std::string);
 };
 
 #endif
