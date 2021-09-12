@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/12 12:31:00 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/12 23:46:38 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,22 +41,24 @@ Request::Request(int &_newSockFd)
 	int valRead;
 	char _buffReq[1024] = {0};
 
-	while (true)
+	std::memset(_buffReq, 0, sizeof(_buffReq));
+	while ((valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0)) > 0)
 	{
-		std::memset(_buffReq, 0, sizeof(_buffReq));
-		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
+		// valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
 		// if (valRead == -1)
 		// 	throw std::runtime_error("Unable to receive the request from client.");
 		// else if (valRead == 0)
 		//     break;
 		// else
 		// {
+			std::cout << " valRead == " << std::to_string(valRead) << std::endl;
 		_buffReq[valRead] = '\0';
 		content.append(_buffReq);
 		// }
 		if (checkRequest(content))
 			break;
 	}
+			std::cout << " valRead == " << std::to_string(valRead) << std::endl;
 	// this->content = _buffReq;
 	this->methods.push_back("GET");
 	this->methods.push_back("POST");

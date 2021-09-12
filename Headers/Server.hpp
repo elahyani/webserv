@@ -28,14 +28,14 @@ private:
 	struct sockaddr_in 	_clientAddr;
 	socklen_t			_addrLen;
 	int					_newSockFD;
+	fd_set				_masterFDs;
 	fd_set				_readFDs;
-	fd_set				_tmpReadFDs;
 	fd_set				_writeFDs;
 	int					_maxSockFD;
-	int					_sockFD;
 	char*				_fileName;
 
 public:
+	Server();
     Server(short port, char *fileName);
     Server(Server const & ths);
     ~Server();
@@ -50,6 +50,7 @@ public:
 
 
 	void exampleOfResponse(char *);
+	void createSockets();
 };
 
 #endif
