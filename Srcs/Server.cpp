@@ -2,47 +2,35 @@
 
 Server::Server(short port, char *fileName) : _port(port), _fileName(fileName)
 {
-    // for(int i = 0; i < MAX_CLI
     // Socket creating
     this->createSocket();
-    FD_ZERO(&_readFds);
-    FD_ZERO(&_writeFds);
+    FD_ZERO(&_readFDs);
+    FD_ZERO(&_writeFDs);
 
 	// Bind socket
 	this->bindSocket();
-	FD_SET(_masterSockFd, &_readFds);
-	_maxSockFd = (_masterSockFd > _maxSockFd) ? _masterSockFd : _maxSockFd;
-	_sockFds.push_back(_masterSockFd);
+	FD_SET(_masterSockFD, &_readFDs);
+	FD_SET(_masterSockFD, &_writeFDs);
+	_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
 
     // Listen to client in socket 
 	this->listenToClient();
 	for(;;)
     {
-    	FD_ZERO(&_tmpReadFds); // tmp of fd_set for select
-		_tmpReadFds = _readFds;
-    	std::cout << "\t\t<WAITING FOR INCOMING CONNECTION/>" << std::endl;
-		std::cout << "SocketsFDs size: " << _sockFds.size() << std::endl;
+    	FD_ZERO(&_tmpReadFDs); // tmp of fd_set for select
+		_tmpReadFDs = _readFDs;
+    	// std::cout << "\t\t<WAITING FOR INCOMING CONNECTION/>" << std::endl;
 		int timeout = 1;
 		struct timeval _tv = {timeout, 0}; // set the time
-		int selectRet = select(_maxSockFd + 1, &_tmpReadFds, NULL, NULL, &_tv);
+		int selectRet = select(_maxSockFD + 1, &_tmpReadFDs, &_writeFDs, NULL, &_tv);
 		if (selectRet < 0)
 			throw std::runtime_error("Unable to select work socket.");
-		for(std::vector<int>::iterator it = _sockFds.begin(); it != _sockFds.end(); it++)
-		{
-			if(FD_ISSET(*it, &_tmpReadFds))
+		if (selectRet > 0)
+			for (int i = 0; i < _maxSockFD + 1; i++)
 			{
-				if(*it == _masterSockFd)
-				{
-					this->newConnectHandling();
-					break ;
-				}
-				else
-				{
-					this->existConnectHandling(it);
-					break ;
-				}
+				if(FD_ISSET(i, &_tmpReadFDs))
+					(i == _masterSockFD) ? this->newConnectHandling(i) : this->existConnectHandling(i);
 			}
-		}
     }
 }
 
@@ -56,8 +44,8 @@ Server::Server(Server const &ths)
 // Destructor
 Server::~Server()
 {
-    close(_masterSockFd);
-	close(_newSockFd);
+    close(_masterSockFD);
+	close(_newSockFD);
 }
 
 // Assignment operator=
@@ -65,14 +53,14 @@ Server &Server::operator=(Server const &ths)
 {
     if (this != &ths)
     {
-        this->_masterSockFd = ths._masterSockFd;
+        this->_masterSockFD = ths._masterSockFD;
 		this->_port = ths._port;
         this->_myAddr = ths._myAddr;
         this->_addrLen = ths._addrLen;
-        this->_newSockFd = ths._newSockFd;
-        this->_readFds = ths._readFds;
-		this->_maxSockFd = ths._maxSockFd;
-		this->_sockFd = ths._sockFd;
+        this->_newSockFD = ths._newSockFD;
+        this->_readFDs = ths._readFDs;
+		this->_maxSockFD = ths._maxSockFD;
+		this->_sockFD = ths._sockFD;
     }
     return *this;
 }
@@ -80,13 +68,13 @@ Server &Server::operator=(Server const &ths)
 // Socket creating
 void Server::createSocket()
 {
-    if ((_masterSockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((_masterSockFD = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw std::runtime_error("Unable to create a socket.");
-	fcntl(_masterSockFd, F_SETFL, O_NONBLOCK);
+	fcntl(_masterSockFD, F_SETFL, O_NONBLOCK);
 
 	// set socket option
 	int opt = 1;
-	if (setsockopt(_masterSockFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1)
+	if (setsockopt(_masterSockFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1)
 		throw std::runtime_error("Unable to set socket option.");
 }
 
@@ -98,14 +86,14 @@ void Server::bindSocket()
     _myAddr.sin_family = AF_INET;
     _myAddr.sin_port = htons(_port);
     _myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(_masterSockFd, (struct sockaddr *)&_myAddr, sizeof(_myAddr)) == -1)
+    if (bind(_masterSockFD, (struct sockaddr *)&_myAddr, sizeof(_myAddr)) == -1)
         throw std::runtime_error("Unable to bind the socket");
 }
 
 // Listen for incoming connections from client
 void Server::listenToClient()
 {
-	if (listen(_masterSockFd, 5) == -1)
+	if (listen(_masterSockFD, 5) == -1)
 		throw std::runtime_error("Unable to listen for connections.");
 }
 
@@ -120,7 +108,7 @@ void Server::exampleOfResponse(char *fileName)
 	char *_buffRes = new char[st.st_size + 1];
 	fdRes.read(_buffRes, st.st_size);
 	fdRes.close();
-	std::string msgRes; // will hold the data that we will send
+	std::string msgRes; // Will hold the data that we will send
 	//Header
 	msgRes += "HTTP/1.1 200 OK\n"; // HTTP-version code msg
 	msgRes += "Content-Type: text/html\n";
@@ -129,54 +117,52 @@ void Server::exampleOfResponse(char *fileName)
 	//Body
 	msgRes += _buffRes;
 	delete [] _buffRes;
-	if (FD_ISSET(_newSockFd, &_writeFds))
-		if (send(_newSockFd, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
+	if (FD_ISSET(_newSockFD, &_writeFDs))
+		if (send(_newSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
 			throw std::runtime_error("Unable to send the response from client.");
 }
 
-void Server::newConnectHandling()
+void Server::newConnectHandling(int &sockFD)
 {
-	std::cout << "An master socket: ID: " << std::to_string(_masterSockFd) << std::endl;
-	if ((_newSockFd = accept(_masterSockFd, (struct sockaddr *)&_clientAddr, &_addrLen)) == -1)
+	// char _buffRes[1024] = {0};
+	std::cout << "An master socket: ID: " << std::to_string(_masterSockFD) << std::endl;
+	if ((_newSockFD = accept(sockFD, (struct sockaddr *)&_clientAddr, &_addrLen)) == -1)
 		throw std::runtime_error("Unable to accept the connection.");
-	std::cout << "MyAdrr: " << _myAddr.sin_addr.s_addr << " ClientAddr: " << _clientAddr.sin_addr.s_addr << std::endl;
-	FD_SET(_newSockFd, &_readFds);
-	FD_SET(_newSockFd, &_writeFds);
+	std::cout << "New connection , socket fd is " << std::to_string(_newSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(_clientAddr.sin_port) << std::endl;
+	fcntl(_newSockFD, F_SETFL, O_NONBLOCK);
+	FD_SET(_newSockFD, &_readFDs);
 	std::cout << "################ RESQUEST ################" << std::endl;
+	FD_SET(_newSockFD, &_writeFDs);
+	// recv(_newSockFD, _buffRes, strlen(_buffRes), 0);
+	// std::cout << "======== 1 ========> " << _buffRes << std::endl;
 	// send the request content
-	// Request req(_newSockFd);
+	Request req(_newSockFD);
 	
-	// req.parseRequest();
-	// req.printRequest();
-	// exit(1);
-	_sockFds.push_back(_newSockFd);
-	std::cout << "An new accept socket: ID: " << std::to_string(_newSockFd) << std::endl;
-	if(_newSockFd > _maxSockFd)
-		_maxSockFd = _newSockFd;
+	req.parseRequest();
+	req.printRequest();
+	if(_newSockFD > _maxSockFD)
+		_maxSockFD = _newSockFD;
 	std::cout << "################ RESPONSE ################" << std::endl;
 	this->exampleOfResponse(_fileName);
 }
 
-void Server::existConnectHandling(std::vector<int>::iterator & _existSock)
+void Server::existConnectHandling(int &existSockFD)
 {
-	char _buffRes[1024];
-	int valRead = recv(*_existSock, _buffRes, sizeof(_buffRes), 0);
+	char _buffRes[1024] = {0};
+	int valRead = recv(existSockFD, _buffRes, sizeof(_buffRes), 0);
+	std::cout << "======== 2 ========> " << _buffRes << std::endl;
 	if (valRead == 0)
 	{
-		std::cout << "Removed socket: " << std::to_string(*_existSock) << std::endl;
-		close(*_existSock);
-		FD_CLR(*_existSock, &_readFds);
-		FD_CLR(*_existSock, &_writeFds);
-		std::cout << "New size before removing socket: " << _sockFds.size() << std::endl;
-		_sockFds.erase(_existSock);
-		std::cout << "New size after removing socket: " << _sockFds.size() << std::endl;
-
+		std::cout << "Removed socket: " << std::to_string(existSockFD) << std::endl;
+		close(existSockFD);
+		FD_CLR(existSockFD, &_readFDs);
+		FD_CLR(existSockFD, &_writeFDs);
 	}
 	else
 	{
 		_buffRes[valRead] = '\0';
-		if (FD_ISSET(*_existSock, &_writeFds))
-			if (send(*_existSock, _buffRes, valRead , 0) != valRead)
-				throw std::runtime_error("Unable to send Response in socket file descriptor " + std::to_string(*_existSock));
+		if (FD_ISSET(existSockFD, &_writeFDs))
+			if (send(existSockFD, _buffRes, valRead , 0) != valRead)
+				throw std::runtime_error("Unable to send Response in socket file descriptor " + std::to_string(existSockFD));
 	}
 }

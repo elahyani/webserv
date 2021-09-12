@@ -22,19 +22,18 @@ class Request;
 class Server
 {
 private:
-	int					_masterSockFd;
+	int					_masterSockFD;
 	short				_port;
 	struct sockaddr_in 	_myAddr;
 	struct sockaddr_in 	_clientAddr;
 	socklen_t			_addrLen;
-	int					_newSockFd;
-	fd_set				_readFds;
-	fd_set				_tmpReadFds;
-	fd_set				_writeFds;
-	int					_maxSockFd;
-	int					_sockFd;
-	std::vector<int>	_sockFds;
-	char*	_fileName;
+	int					_newSockFD;
+	fd_set				_readFDs;
+	fd_set				_tmpReadFDs;
+	fd_set				_writeFDs;
+	int					_maxSockFD;
+	int					_sockFD;
+	char*				_fileName;
 
 public:
     Server(short port, char *fileName);
@@ -46,8 +45,8 @@ public:
 	void bindSocket();
 	void listenToClient();
 
-	void newConnectHandling();
-	void existConnectHandling(std::vector<int>::iterator &);
+	void newConnectHandling(int &);
+	void existConnectHandling(int &);
 
 
 	void exampleOfResponse(char *);

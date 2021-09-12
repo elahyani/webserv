@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/04 18:51:00 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/12 12:31:00 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,8 +45,8 @@ Request::Request(int &_newSockFd)
 	{
 		std::memset(_buffReq, 0, sizeof(_buffReq));
 		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
-		if (valRead == -1)
-			throw std::runtime_error("Unable to receive the request from client.");
+		// if (valRead == -1)
+		// 	throw std::runtime_error("Unable to receive the request from client.");
 		// else if (valRead == 0)
 		//     break;
 		// else
