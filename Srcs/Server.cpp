@@ -1,37 +1,17 @@
 #include "Server.hpp"
-#include <set>
 
 Server::Server() {}
 
-Server::Server(std::vector<short> & ports, char *fileName) :  _maxSockFD(0), _fileName(fileName)
+Server::Server(std::vector<short> & ports, char *fileName) : _ports(ports), _maxSockFD(0), _fileName(fileName)
 {
-		FD_ZERO(&_masterFDs);
-	// foreach server
-	// {
-		for(std::vector<short>::iterator i = ports.begin(); i != ports.end(); ++i) {
-			_port = *i;
-			std::cout << _port << std::endl;
-			this->createSocket();
+	this->createMasterSockets();
 
-			// Socket creating
-			// Bind socket
-			this->bindSocket();
-			FD_SET(_masterSockFD, &_masterFDs);
-			_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
-
-			// Listen to client in socket 
-			this->listenToClient();
-			_masterSockFDs.push_back(_masterSockFD);
-		}
-		FD_ZERO(&_writeFDs);
-		_writeFDs = _masterFDs;
-	// }
     std::cout << "\t<Server running... waiting for connections./>" << std::endl;
 	for(;;) {
-    	FD_ZERO(&_readFDs); // tmp of fd_set for select
+    	FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
 		int timeout = 1;
-		struct timeval _tv = {timeout, 0}; // set the time
+		struct timeval _tv = {timeout, 0};
 		int selectRet = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
 		if (selectRet < 0)
 			throw std::runtime_error("Unable to select work socket.");
@@ -103,7 +83,7 @@ void Server::bindSocket()
     _addrLen = sizeof(_myAddr);
     _myAddr.sin_family = AF_INET;
     _myAddr.sin_port = htons(_port);
-    _myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    _myAddr.sin_addr.s_addr = htonl(INADDR_ANY); //Check for IP
     if (bind(_masterSockFD, (struct sockaddr *)&_myAddr, sizeof(_myAddr)) == -1)
         throw std::runtime_error("Unable to bind the socket");
 }
@@ -209,11 +189,24 @@ void Server::existConnectHandling(int &existSockFD)
 }
 
 
-void Server::createSockets()
+void Server::createMasterSockets()
 {
-
-	// std::set<int> ports;
-	// ports.insert(80);
-	// ports.insert(80);
-	// ports.insert(8090);
+	FD_ZERO(&_masterFDs);
+	// foreach server
+	// {
+	for(std::vector<short>::iterator i = _ports.begin(); i != _ports.end(); ++i) {
+		_port = *i;
+		std::cout << _port << std::endl;
+		// Socket creating
+		this->createSocket();	
+		// Bind socket
+		this->bindSocket();
+		FD_SET(_masterSockFD, &_masterFDs);
+		_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
+		// Listen to client in socket 
+		this->listenToClient();
+		_masterSockFDs.push_back(_masterSockFD);
+	}
+	FD_ZERO(&_writeFDs);
+	_writeFDs = _masterFDs;
 }

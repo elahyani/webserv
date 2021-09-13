@@ -17,6 +17,7 @@
 # include <algorithm>
 # include <vector>
 # include <map>
+// # include "ConfigFileParser.hpp"
 # include "Request.hpp"
 class Request;
 
@@ -26,7 +27,7 @@ private:
 	int							_masterSockFD;
 	std::vector<int>			_masterSockFDs;
 	short						_port;
-	// short						_port;
+	std::vector<short>			_ports;
 	struct sockaddr_in 			_myAddr;
 	struct sockaddr_in 			_clientAddr;
 	socklen_t					_addrLen;
@@ -40,6 +41,7 @@ private:
 public:
 	Server();
     Server(std::vector<short> &, char *);
+    // Server(std::vector<HttpsServer> &, char *);
     Server(Server const &);
     ~Server();
     Server & operator=(const Server &);
@@ -52,7 +54,7 @@ public:
 	void existConnectHandling(int &);
 
 	void exampleOfResponse(char *, int &);
-	void createSockets();
+	void createMasterSockets();
 };
 
 #endif

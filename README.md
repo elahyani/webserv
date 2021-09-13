@@ -24,3 +24,4 @@ https://www.fi.muni.cz/usr/jkucera/tic/tic0305.html
 http://www.w3big.com/cplusplus/cpp-web-programming.html
 
 http://nginx.org/en/docs/beginners_guide.html
+http://www.csce.uark.edu/~sgauch/cgicode/
