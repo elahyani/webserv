@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
+/*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 13:44:07 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/04 15:48:06 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/13 11:00:55 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,8 @@ private:
 
 public:
     Request();
-    Request(int &_newSockFd);
+	Request(const std::string & buffer);
+    // Request(int &_newSockFd);
     Request(const Request &src);
     Request &operator=(const Request &rhs);
     ~Request();

@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/12 23:46:38 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/13 12:26:17 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,52 +14,64 @@
 
 Request::Request() {}
 
-bool checkRequest(std::string &req)
+// bool checkRequest(std::string &req)
+// {
+// 	std::string data;
+// 	size_t i;
+
+// 	i = req.find("\r\n\r\n");
+// 	if (i == std::string::npos)
+// 	{
+// 		return false;
+// 	}
+// 	if (req.find("Content-Length") != std::string::npos)
+// 	{
+
+// 		data = req.substr(i + 4);
+// 		if (data.find("\r\n\r\n") == std::string::npos)
+// 		{
+// 			return false;
+// 		}
+// 	}
+// 	return true;
+// }
+
+// Request::Request(int &_newSockFd)
+// {
+// 	int valRead;
+// 	char _buffReq[1024] = {0};
+
+// 	while (true)
+// 	{
+// 		std::memset(_buffReq, 0, sizeof(_buffReq));
+// 		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
+// 		// if (valRead == -1)
+// 		// 	throw std::runtime_error("Unable to receive the request from client.");
+// 		// else if (valRead == 0)
+// 		//     break;
+// 		// else
+// 		// {
+// 		std::cout << " valRead == " << std::to_string(valRead) << std::endl;
+// 		_buffReq[valRead] = '\0';
+// 		content.append(_buffReq);
+// 		// }
+// 		if (checkRequest(content))
+// 			break;
+// 	}
+// 			std::cout << " valRead == " << std::to_string(valRead) << std::endl;
+// 	// this->content = _buffReq;
+// 	this->methods.push_back("GET");
+// 	this->methods.push_back("POST");
+// 	this->methods.push_back("DELETE");
+// }
+
+Request::Request(const std::string &buffer) : content("")
 {
-	std::string data;
-	size_t i;
-
-	i = req.find("\r\n\r\n");
-	if (i == std::string::npos)
-	{
-		return false;
-	}
-	if (req.find("Content-Length") != std::string::npos)
-	{
-
-		data = req.substr(i + 4);
-		if (data.find("\r\n\r\n") == std::string::npos)
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-Request::Request(int &_newSockFd)
-{
-	int valRead;
-	char _buffReq[1024] = {0};
-
-	std::memset(_buffReq, 0, sizeof(_buffReq));
-	while ((valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0)) > 0)
-	{
-		// valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq), 0);
-		// if (valRead == -1)
-		// 	throw std::runtime_error("Unable to receive the request from client.");
-		// else if (valRead == 0)
-		//     break;
-		// else
-		// {
-			std::cout << " valRead == " << std::to_string(valRead) << std::endl;
-		_buffReq[valRead] = '\0';
-		content.append(_buffReq);
-		// }
-		if (checkRequest(content))
-			break;
-	}
-			std::cout << " valRead == " << std::to_string(valRead) << std::endl;
-	// this->content = _buffReq;
+	// content.append(_buffReq);
+	this->content.append(buffer);
+	std::cout << "**************************************"  << std::endl;
+	std::cout << content  << std::endl;
+	std::cout << "**************************************"  << std::endl;
 	this->methods.push_back("GET");
 	this->methods.push_back("POST");
 	this->methods.push_back("DELETE");
@@ -86,7 +98,7 @@ void Request::parseRequest()
 	{
 		while (std::getline(s, tmp))
 		{
-			std::cout << "-> " << tmp << std::endl;
+			// std::cout << "-> " << tmp << std::endl;
 			if (!this->method.size() && !this->pVersion.size())
 			{
 
@@ -96,7 +108,10 @@ void Request::parseRequest()
 				if (this->mapTmp.size() == 3)
 				{
 					if (mapTmp[0] != methods[0] && mapTmp[0] != methods[1] && mapTmp[0] != methods[2])
+					{
+						std::cout << "---------<<< " << mapTmp[0] << std::endl;
 						throw std::invalid_argument("Bad Request: Method Not Allowed");
+					}
 					if (mapTmp[1].at(0) != '/')
 						throw std::invalid_argument("Bad Request: Absolute path required!");
 					if (mapTmp[2].find("HTTP/1.1") != std::string::npos)
@@ -127,7 +142,7 @@ void Request::parseRequest()
 				headers["Content-Length"] = tmp.substr(tmp.find(": ") + 2);
 			else if (!headers["Transfer-Encoding"].size() && tmp.find("Transfer-Encoding") != std::string::npos)
 				headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
-			std::cout << "len:" << tmp.find("Content-Length") << std::endl;
+			// std::cout << "len:" << tmp.find("Content-Length") << std::endl;
 		}
 		// std::cout << "OUT tmp: |" << tmp << "|" << std::endl;
 		if (tmp.find("\r\n\r\n") != std::string::npos)

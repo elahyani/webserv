@@ -15,31 +15,34 @@
 # include <fcntl.h>
 # include <sys/stat.h>
 # include <algorithm>
-# include <list>
+# include <vector>
+# include <map>
 # include "Request.hpp"
 class Request;
 
 class Server
 {
 private:
-	int					_masterSockFD;
-	short				_port;
-	struct sockaddr_in 	_myAddr;
-	struct sockaddr_in 	_clientAddr;
-	socklen_t			_addrLen;
-	int					_newSockFD;
-	fd_set				_masterFDs;
-	fd_set				_readFDs;
-	fd_set				_writeFDs;
-	int					_maxSockFD;
-	char*				_fileName;
+	int							_masterSockFD;
+	std::vector<int>			_masterSockFDs;
+	short						_port;
+	// short						_port;
+	struct sockaddr_in 			_myAddr;
+	struct sockaddr_in 			_clientAddr;
+	socklen_t					_addrLen;
+	fd_set						_masterFDs;
+	fd_set						_readFDs;
+	fd_set						_writeFDs;
+	int							_maxSockFD;
+	char*						_fileName;
+	std::map<int, std::string>	_clients;
 
 public:
 	Server();
-    Server(short port, char *fileName);
-    Server(Server const & ths);
+    Server(std::vector<short> &, char *);
+    Server(Server const &);
     ~Server();
-    Server & operator=(const Server & ths);
+    Server & operator=(const Server &);
 	
 	void createSocket();
 	void bindSocket();
@@ -48,9 +51,10 @@ public:
 	void newConnectHandling(int &);
 	void existConnectHandling(int &);
 
-
-	void exampleOfResponse(char *);
+	void exampleOfResponse(char *, int &);
 	void createSockets();
 };
 
 #endif
+
+
