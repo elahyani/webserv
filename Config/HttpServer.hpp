@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/12 15:13:15 by ichejra          ###   ########.fr       */
+/*   Created: 2021/09/13 11:22:44 by ichejra           #+#    #+#             */
+/*   Updated: 2021/09/13 17:37:51 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,6 @@
 #define HTTPSERVER_HPP
 
 #include "Location.hpp"
-#include <iostream>
-#include <string>
-#include <map>
-#include <vector>
-#include <fstream>
-#include <cctype>
 
 class HttpServer
 {
@@ -30,32 +24,38 @@ private:
 	std::map<int, std::string> errorsPages;
 	std::string root;
 	std::vector<std::string> serverName;
-	int serversNumber;
-	bool inServer;
 	int errorCode;
 	std::string errorPagePath;
-	std::string filename;
-	std::map<int, std::string> mapTmp;
-	Location location;
+	int locationsNumber;
 
 public:
 	HttpServer();
 	~HttpServer();
 
-	void parseConfigFile(int ac, char **av);
-	std::string getPort();
-	std::string getClientMaxBodySize();
+	void setPorts(int port);
+	std::vector<int> getPorts();
+
+	void setHost(std::string);
+	std::string getHost();
+
+	void setClientMaxBodySize(size_t);
+	size_t getClientMaxBodySize();
+
+	void setErrorsPages(int, std::string);
+	std::map<int, std::string> &getErrorsPages();
+
+	void setRoot(std::string);
 	std::string getRoot();
-	std::map<int, std::string> getErrorsPages();
-	std::string trimContent(std::string);
-	int getServersNumber();
-	void printContentData();
-	void semiColonChecker(std::string &buffer);
-	void checkFile(int ac, char **av);
-	void checkUnit(std::string);
-	void split(std::string line, char splitter);
-	void checkMissingAttrs();
-	void checkHost(std::string);
+
+	void setServerName(std::string);
+	std::vector<std::string> getServerName();
+
+	void setErrorCode(int);
+	int getErrorCode();
+
+	void setErrorPagePath(std::string);
+	std::string getErrorPagePath();
+
 };
 
 #endif
