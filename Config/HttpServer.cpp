@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/13 11:39:58 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/13 17:37:43 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/14 15:51:37 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ HttpServer::HttpServer() : host(""),
 
 HttpServer::~HttpServer()
 {
+	clearAll();
 }
 
 void HttpServer::setPorts(int port)
@@ -31,18 +32,17 @@ void HttpServer::setPorts(int port)
 	this->ports.push_back(port);
 }
 
-std::vector<int> HttpServer::getPorts()
+std::vector<int> &HttpServer::getPorts()
 {
 	return this->ports;
 }
 
 void HttpServer::setHost(std::string _host)
 {
-	_host.pop_back();
 	this->host = _host;
 }
 
-std::string HttpServer::getHost()
+std::string &HttpServer::getHost()
 {
 	return this->host;
 }
@@ -52,7 +52,7 @@ void HttpServer::setClientMaxBodySize(size_t cmbs)
 	this->clientMaxBodySize = cmbs;
 }
 
-size_t HttpServer::getClientMaxBodySize()
+size_t &HttpServer::getClientMaxBodySize()
 {
 	return this->clientMaxBodySize;
 }
@@ -73,7 +73,7 @@ void HttpServer::setRoot(std::string _root)
 	this->root = _root;
 }
 
-std::string HttpServer::getRoot()
+std::string &HttpServer::getRoot()
 {
 	return this->root;
 }
@@ -83,7 +83,7 @@ void HttpServer::setServerName(std::string _serverName)
 	this->serverName.push_back(_serverName);
 }
 
-std::vector<std::string> HttpServer::getServerName()
+std::vector<std::string> &HttpServer::getServerName()
 {
 	return this->serverName;
 }
@@ -93,7 +93,7 @@ void HttpServer::setErrorCode(int code)
 	this->errorCode = code;
 }
 
-int HttpServer::getErrorCode()
+int &HttpServer::getErrorCode()
 {
 	return this->errorCode;
 }
@@ -103,7 +103,30 @@ void HttpServer::setErrorPagePath(std::string path)
 	this->errorPagePath = path;
 }
 
-std::string HttpServer::getErrorPagePath()
+std::string &HttpServer::getErrorPagePath()
 {
 	return this->errorPagePath;
+}
+
+void HttpServer::setLocation(Location const &_location)
+{
+	this->locations.push_back(_location);
+}
+
+std::vector<Location> &HttpServer::getLoactions()
+{
+	return this->locations;
+}
+
+void HttpServer::clearAll()
+{
+	this->ports.clear();
+	this->host.clear();
+	this->clientMaxBodySize = 0;
+	this->errorsPages.clear();
+	this->root.clear();
+	this->serverName.clear();
+	this->errorCode = 0;
+	this->errorPagePath.clear();
+	this->locations.clear();
 }

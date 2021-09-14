@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/13 16:31:45 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/14 15:25:44 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,6 @@ private:
 	std::string filename;
 	std::vector<HttpServer> servers;
 	HttpServer server;
-	std::vector<Location> locations;
 	Location location;
 	std::map<int, std::string> mapTmp;
 
@@ -45,7 +44,7 @@ public:
 	void parseConfigFile(int ac, char **av);
 	std::string trimContent(std::string);
 	void printContentData();
-	void semiColonChecker(std::string &buffer);
+	void syntaxChecker(std::string &buffer, int);
 	void checkFile(int ac, char **av);
 	void checkUnit(std::string);
 	void split(std::string line, char splitter);

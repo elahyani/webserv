@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/12 15:23:32 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/13 17:36:51 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/14 12:08:30 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ void Location::setAutoIndex(std::string index)
 		this->autoindex = true;
 }
 
-bool Location::getAutoIndex()
+bool &Location::getAutoIndex()
 {
 	return this->autoindex;
 }
@@ -44,58 +44,60 @@ void Location::setLocationName(std::string locName)
 {
 	this->locationName = locName;
 }
-std::string Location::getLocationName()
+std::string &Location::getLocationName()
 {
 	return this->locationName;
 }
 
 void Location::setRoot(std::string _root)
 {
+	_root.pop_back();
 	this->root = _root;
 }
 
-std::string Location::getRoot()
+std::string &Location::getRoot()
 {
 	return this->root;
 }
 
 void Location::setIndex(std::string _index)
 {
+	_index.pop_back();
 	this->index = _index;
 }
 
-std::string Location::getIndex()
+std::string &Location::getIndex()
 {
 	return this->index;
 }
 
 void Location::setAllowedMethods(std::string _allowedMethods)
 {
-	this->allowedMethods = _allowedMethods;
+	this->allowedMethods.push_back(_allowedMethods);
 }
 
-std::string Location::getAllowedMethods()
+std::vector<std::string> &Location::getAllowedMethods()
 {
 	return this->allowedMethods;
 }
 
 void Location::setReturn(int code, std::string _ret)
 {
-	(void)code;
-	this->ret = _ret;
+	this->ret.insert(std::pair<int, std::string>(code, _ret));
 }
 
-std::string Location::getReturn()
+std::map<int, std::string> &Location::getReturn()
 {
 	return this->ret;
 }
 
 void Location::setFastCgiPass(std::string _cgiPass)
 {
+	_cgiPass.pop_back();
 	this->fastCgiPass = _cgiPass;
 }
 
-std::string Location::getFastCgiPass()
+std::string &Location::getFastCgiPass()
 {
 	return this->fastCgiPass;
 }
@@ -109,17 +111,18 @@ void Location::setUploadEnable(std::string _uploadEnable)
 		this->uploadEnable = true;
 }
 
-bool Location::getUploadEnable()
+bool &Location::getUploadEnable()
 {
 	return this->uploadEnable;
 }
 
 void Location::setUploadStore(std::string _uploadStore)
 {
+	_uploadStore.pop_back();
 	this->uploadStore = _uploadStore;
 }
 
-std::string Location::getUploadStore()
+std::string &Location::getUploadStore()
 {
 	return this->uploadStore;
 }
