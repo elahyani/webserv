@@ -25,3 +25,5 @@ http://www.w3big.com/cplusplus/cpp-web-programming.html
 
 http://nginx.org/en/docs/beginners_guide.html
 http://www.csce.uark.edu/~sgauch/cgicode/
+
+http://www.wijata.com/cgi/cgispec.html#[3]
