@@ -12,28 +12,51 @@
 # include <iostream>
 # include <fstream>
 # include <unistd.h>
+# include <fcntl.h>
 # include <sys/stat.h>
+# include <algorithm>
+# include <vector>
+# include <map>
+// # include "ConfigFileParser.hpp"
 # include "Request.hpp"
 class Request;
 
 class Server
 {
 private:
-    int                 _sockFd;
-	short				_port;
-    struct sockaddr_in  _myAddr;
-    struct sockaddr_in  _cliAddr;
-    socklen_t           _addrLen;
-    int                 _newSockFd;
-    fd_set              _fds;
+	int							_masterSockFD;
+	std::vector<int>			_masterSockFDs;
+	short						_port;
+	std::vector<short>			_ports;
+	struct sockaddr_in 			_myAddr;
+	struct sockaddr_in 			_clientAddr;
+	socklen_t					_addrLen;
+	fd_set						_masterFDs;
+	fd_set						_readFDs;
+	fd_set						_writeFDs;
+	int							_maxSockFD;
+	char*						_fileName;
+	std::map<int, std::string>	_clients;
 
 public:
-    Server(short port, char *fileName);
-    Server(Server const & ths);
+	Server();
+    Server(std::vector<short> &, char *);
+    // Server(std::vector<HttpsServer> &, char *);
+    Server(Server const &);
     ~Server();
-    Server & operator=(const Server & ths);
+    Server & operator=(const Server &);
 	
-	void createBindSocket();
+	void createSocket();
+	void bindSocket();
+	void listenToClient();
+
+	void newConnectHandling(int &);
+	void existConnectHandling(int &);
+
+	void exampleOfResponse(char *, int &);
+	void createMasterSockets();
 };
 
 #endif
+
+

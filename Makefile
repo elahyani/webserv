@@ -1,5 +1,3 @@
-# Creating a Binary file
-
 NAME = webserv
 
 FLAGS = -Wall -Wextra -Werror -std=c++98
@@ -7,10 +5,12 @@ FLAGS = -Wall -Wextra -Werror -std=c++98
 SRCS_PATH = Srcs
 
 SRCS_NAME = main.cpp \
-		Server.cpp
+		Server.cpp \
+		Request.cpp
 
 HDRS_PATH = Headers
-HDRS_NAME = Server.hpp
+HDRS_NAME = Server.hpp \
+			Request.hpp
 
 
 OBJS_PATH = Objs
