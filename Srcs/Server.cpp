@@ -2,7 +2,7 @@
 
 Server::Server() {}
 
-Server::Server(std::vector<short> & ports, char *fileName) : _ports(ports), _maxSockFD(0), _fileName(fileName)
+Server::Server(std::vector<HttpServer> & servers, char *fileName) : _servers(servers), _maxSockFD(0), _fileName(fileName)
 {
 	this->createMasterSockets();
 
@@ -83,7 +83,10 @@ void Server::bindSocket()
     _addrLen = sizeof(_myAddr);
     _myAddr.sin_family = AF_INET;
     _myAddr.sin_port = htons(_port);
-    _myAddr.sin_addr.s_addr = htonl(INADDR_ANY); //Check for IP
+	if (_host == "ANY")
+    	_myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	else
+    	_myAddr.sin_addr.s_addr = inet_addr(_host.c_str());
     if (bind(_masterSockFD, (struct sockaddr *)&_myAddr, sizeof(_myAddr)) == -1)
         throw std::runtime_error("Unable to bind the socket");
 }
@@ -179,13 +182,15 @@ void Server::existConnectHandling(int &existSockFD)
 			}
 		}
 	}
-	else {
+	else if (valRead == 0) {
 
-		std::cout << "Removed socket: " << std::to_string(existSockFD) << " valRead == " << valRead << std::endl;
+		std::cout << "Disconnect socket: " << std::to_string(existSockFD) << " valRead == " << valRead << std::endl;
 		close(existSockFD);
 		FD_CLR(existSockFD, &_masterFDs);
 		FD_CLR(existSockFD, &_writeFDs);
 	}
+	else
+		return ; // Socket is connected but doesn't send request.
 }
 
 
@@ -194,18 +199,32 @@ void Server::createMasterSockets()
 	FD_ZERO(&_masterFDs);
 	// foreach server
 	// {
-	for(std::vector<short>::iterator i = _ports.begin(); i != _ports.end(); ++i) {
-		_port = *i;
-		std::cout << _port << std::endl;
-		// Socket creating
-		this->createSocket();	
-		// Bind socket
-		this->bindSocket();
-		FD_SET(_masterSockFD, &_masterFDs);
-		_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
-		// Listen to client in socket 
-		this->listenToClient();
-		_masterSockFDs.push_back(_masterSockFD);
+	for(std::vector<HttpServer>::iterator itServer = _servers.begin(); itServer != _servers.end(); itServer++)
+	{
+		_ports = itServer->getPorts();
+		_host = itServer->getHost();
+		for(std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort) {
+			_port = *itPort;
+			std::cout <<_host <<':'<< _port << std::endl;
+			// Socket creating
+			try
+			{
+				this->createSocket();	
+			// Bind socket
+				this->bindSocket();
+				FD_SET(_masterSockFD, &_masterFDs);
+				_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
+				// Listen to client in socket 
+				this->listenToClient();
+				_masterSockFDs.push_back(_masterSockFD);
+			}
+			catch(const std::exception& e)
+			{
+				close(_masterSockFD);
+				std::cerr << e.what() << '\n';
+			}
+			
+		}
 	}
 	FD_ZERO(&_writeFDs);
 	_writeFDs = _masterFDs;
