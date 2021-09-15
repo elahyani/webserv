@@ -17,17 +17,20 @@
 # include <algorithm>
 # include <vector>
 # include <map>
-// # include "ConfigFileParser.hpp"
+# include "ConfigFileParser.hpp"
+# include "HttpServer.hpp"
 # include "Request.hpp"
 class Request;
 
 class Server
 {
 private:
+	std::vector<HttpServer>		_servers;
 	int							_masterSockFD;
 	std::vector<int>			_masterSockFDs;
 	short						_port;
 	std::vector<short>			_ports;
+	std::string					_host;
 	struct sockaddr_in 			_myAddr;
 	struct sockaddr_in 			_clientAddr;
 	socklen_t					_addrLen;
@@ -40,8 +43,8 @@ private:
 
 public:
 	Server();
-    Server(std::vector<short> &, char *);
-    // Server(std::vector<HttpsServer> &, char *);
+    // Server(std::vector<short> &, char *);
+    Server(std::vector<HttpServer> &, char *);
     Server(Server const &);
     ~Server();
     Server & operator=(const Server &);

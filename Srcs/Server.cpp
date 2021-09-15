@@ -2,7 +2,7 @@
 
 Server::Server() {}
 
-Server::Server(std::vector<short> & ports, char *fileName) : _ports(ports), _maxSockFD(0), _fileName(fileName)
+Server::Server(std::vector<HttpServer> & servers, char *fileName) : _servers(servers), _maxSockFD(0), _fileName(fileName)
 {
 	this->createMasterSockets();
 
@@ -83,7 +83,10 @@ void Server::bindSocket()
     _addrLen = sizeof(_myAddr);
     _myAddr.sin_family = AF_INET;
     _myAddr.sin_port = htons(_port);
-    _myAddr.sin_addr.s_addr = htonl(INADDR_ANY); //Check for IP
+	if (_host == "ANY")
+    	_myAddr.sin_addr.s_addr = htonl(INADDR_ANY); //Check for IP
+	else
+    	_myAddr.sin_addr.s_addr = htonl(static_cast<uint32_t>(std::stoul(_host))); //Check for IP
     if (bind(_masterSockFD, (struct sockaddr *)&_myAddr, sizeof(_myAddr)) == -1)
         throw std::runtime_error("Unable to bind the socket");
 }
@@ -194,18 +197,23 @@ void Server::createMasterSockets()
 	FD_ZERO(&_masterFDs);
 	// foreach server
 	// {
-	for(std::vector<short>::iterator i = _ports.begin(); i != _ports.end(); ++i) {
-		_port = *i;
-		std::cout << _port << std::endl;
-		// Socket creating
-		this->createSocket();	
-		// Bind socket
-		this->bindSocket();
-		FD_SET(_masterSockFD, &_masterFDs);
-		_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
-		// Listen to client in socket 
-		this->listenToClient();
-		_masterSockFDs.push_back(_masterSockFD);
+	for(std::vector<HttpServer>::iterator itServer = _servers.begin(); itServer != _servers.end(); itServer++)
+	{
+		_ports = itServer->getPorts();
+		_host = itServer->getHost();
+		for(std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort) {
+			_port = *itPort;
+			std::cout << _port << std::endl;
+			// Socket creating
+			this->createSocket();	
+			// Bind socket
+			this->bindSocket();
+			FD_SET(_masterSockFD, &_masterFDs);
+			_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
+			// Listen to client in socket 
+			this->listenToClient();
+			_masterSockFDs.push_back(_masterSockFD);
+		}
 	}
 	FD_ZERO(&_writeFDs);
 	_writeFDs = _masterFDs;
