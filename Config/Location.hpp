@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 16:02:14 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/14 10:57:00 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/15 13:13:02 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ private:
 	bool autoindex;
 	std::string locationName;
 	std::string root;
-	std::string index;
+	std::vector<std::string> indexes;
 	std::vector<std::string> allowedMethods;
 	std::map<int, std::string> ret;
 	std::string fastCgiPass;
@@ -35,6 +35,8 @@ private:
 public:
 	Location();
 	~Location();
+	Location(Location const &src);
+	Location &operator=(Location const &src);
 
 	void clearAll();
 
@@ -48,7 +50,7 @@ public:
 	std::string &getRoot();
 
 	void setIndex(std::string);
-	std::string &getIndex();
+	std::vector<std::string> &getIndexes();
 
 	void setAllowedMethods(std::string);
 	std::vector<std::string> &getAllowedMethods();

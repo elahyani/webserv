@@ -12,12 +12,36 @@
 
 #include "ConfigFileParser.hpp"
 
-ConfigFileParser::ConfigFileParser() : data(""), locationsNumber(0), inLocation(false)
+ConfigFileParser::ConfigFileParser() : data(""),
+									   locationsNumber(0),
+									   inLocation(false),
+									   countauto(0),
+									   isEnabled(0)
 {
 }
 
 ConfigFileParser::~ConfigFileParser()
 {
+	//////////////////////////
+	this->servers.clear();
+	this->mapTmp.clear();
+	this->location.clearAll();
+	this->server.clearAll();
+	//////////////////////////
+}
+
+ConfigFileParser::ConfigFileParser(ConfigFileParser const &src)
+{
+	*this = src;
+}
+
+ConfigFileParser &ConfigFileParser::operator=(ConfigFileParser const &src)
+{
+	//! use assign
+	if (this != &src)
+	{
+	}
+	return *this;
 }
 
 std::string ConfigFileParser::trimContent(std::string str)
@@ -142,6 +166,8 @@ void ConfigFileParser::parseLocation(std::string _data)
 	std::string buffer;
 	std::istringstream str(_data.substr(_data.find("location: ")));
 
+	this->countauto = 0;
+	this->isEnabled = 0;
 	while (std::getline(str, buffer))
 	{
 		if (buffer.find("#") != std::string::npos)
@@ -163,70 +189,133 @@ void ConfigFileParser::parseLocation(std::string _data)
 		{
 			if (buffer.find("autoindex") != std::string::npos)
 			{
+				this->countauto++;
 				syntaxChecker(buffer, 1);
-				this->location.setAutoIndex(trimContent(buffer.substr(buffer.find("=") + 1)));
+				buffer.pop_back();
+				std::string tmp = trimContent(buffer.substr(buffer.find("=") + 1));
+				if (this->countauto > 1)
+					throw std::invalid_argument("Exception:\tDuplicated autoindex");
+				if (!tmp.size())
+					throw std::invalid_argument("Exception:\tAutoindex value not found");
+				this->location.setAutoIndex(tmp);
 			}
 			else if (buffer.find("root") != std::string::npos)
 			{
-				syntaxChecker(buffer, 1);
-				this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
-				if (mapTmp.size() != 1)
-					throw std::invalid_argument("Exception:\tWrong number of arguments");
-				this->location.setRoot(trimContent(buffer.substr(buffer.find("=") + 1)));
-				this->server.setRoot(this->location.getRoot());
+				if (!this->location.getRoot().size())
+				{
+					syntaxChecker(buffer, 1);
+					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
+					if (mapTmp.size() != 1)
+						throw std::invalid_argument("Exception:\tWrong number of arguments");
+					this->location.setRoot(trimContent(buffer.substr(buffer.find("=") + 1)));
+					this->server.setRoot(this->location.getRoot());
+					if (!this->location.getRoot().size())
+						throw std::invalid_argument("Exception:\tRoot path not found");
+				}
+				else
+					throw std::invalid_argument("Exception:\tDuplicated root");
 			}
 			else if (buffer.find("index") != std::string::npos)
 			{
-				syntaxChecker(buffer, 1);
-				this->location.setIndex(trimContent(buffer.substr(buffer.find("=") + 1)));
+				if (this->location.getIndexes().empty())
+				{
+					syntaxChecker(buffer, 1);
+					std::string indexes = trimContent(buffer.substr(buffer.find("=") + 1));
+					indexes.pop_back();
+					if (!indexes.size())
+						throw std::invalid_argument("Exception:\tindex not found");
+					this->split(indexes, ' ');
+					for (size_t i = 0; i < mapTmp.size(); i++)
+						this->location.setIndex(trimContent(mapTmp[i]));
+				}
+				else
+					throw std::invalid_argument("Exception:\tDuplicated index");
 			}
 			else if (buffer.find("allow_methods") != std::string::npos)
 			{
-				syntaxChecker(buffer, 1);
-				buffer.pop_back();
-				if (!buffer.substr(buffer.find("=") + 1).size())
-					throw std::invalid_argument("Exception:\tAllow methods not found");
-				std::string allow_methods = buffer.substr(buffer.find("[") + 1, buffer.find("]"));
-				allow_methods.pop_back();
-				this->split(allow_methods, ',');
-				if (this->mapTmp.size() > 3)
-					throw std::invalid_argument("Exception:\tExceeded max methods length");
-				for (size_t i = 0; i < mapTmp.size(); i++)
+				if (this->location.getAllowedMethods().empty())
 				{
-					if (trimContent(mapTmp[i]).compare("GET") != 0 && trimContent(mapTmp[i]).compare("POST") != 0 && trimContent(mapTmp[i]).compare("DELETE") != 0)
-						throw std::invalid_argument("Exception:\tMethod is not allowed");
-					this->location.setAllowedMethods(trimContent(mapTmp[i]));
+					syntaxChecker(buffer, 1);
+					std::string allow_mtd = trimContent(buffer.substr(buffer.find("=") + 1));
+					allow_mtd.pop_back();
+					if (!allow_mtd.size())
+						throw std::invalid_argument("Exception:\tAllow methods not found");
+					buffer.pop_back();
+					std::string allow_methods = buffer.substr(buffer.find("[") + 1, buffer.find("]"));
+					allow_methods.pop_back();
+					this->split(allow_methods, ',');
+					if (this->mapTmp.size() > 3)
+						throw std::invalid_argument("Exception:\tExceeded max methods length");
+					for (size_t i = 0; i < mapTmp.size(); i++)
+					{
+						if (trimContent(mapTmp[i]).compare("GET") != 0 && trimContent(mapTmp[i]).compare("POST") != 0 && trimContent(mapTmp[i]).compare("DELETE") != 0)
+							throw std::invalid_argument("Exception:\tMethod is not allowed");
+						this->location.setAllowedMethods(trimContent(mapTmp[i]));
+					}
 				}
+				else
+					throw std::invalid_argument("Exception:\tDuplicated Allow_methods attr");
 			}
 			else if (buffer.find("return") != std::string::npos)
 			{
-				syntaxChecker(buffer, 1);
-				buffer.pop_back();
-				this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
-				if (mapTmp.size() != 2)
-					throw std::invalid_argument("Exception:\tWrong number of arguments");
-				this->location.setReturn(std::stoi(mapTmp[0]), trimContent(mapTmp[1]));
+				if (this->location.getReturn().empty())
+				{
+					syntaxChecker(buffer, 1);
+					buffer.pop_back();
+					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
+					if (mapTmp.size() != 2)
+						throw std::invalid_argument("Exception:\tWrong number of arguments");
+					this->location.setReturn(std::stoi(mapTmp[0]), trimContent(mapTmp[1]));
+				}
+				else
+					throw std::invalid_argument("Exception:\tDuplicated return");
 			}
 			else if (buffer.find("fastcgi_pass") != std::string::npos)
 			{
-				syntaxChecker(buffer, 1);
-				this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
-				if (mapTmp.size() != 1)
-					throw std::invalid_argument("Exception:\tWrong number of arguments");
-				this->location.setFastCgiPass(trimContent(buffer.substr(buffer.find("=") + 1)));
+				if (!this->location.getFastCgiPass().size())
+				{
+					syntaxChecker(buffer, 1);
+					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
+					if (mapTmp.size() != 1)
+						throw std::invalid_argument("Exception:\tWrong number of arguments");
+					this->location.setFastCgiPass(trimContent(buffer.substr(buffer.find("=") + 1)));
+					if (!this->location.getFastCgiPass().size())
+						throw std::invalid_argument("Exception:\tfastcgi_pass path not found");
+				}
+				else
+					throw std::invalid_argument("Exception:\tDuplicated fastcgi_pass");
 			}
 			else if (buffer.find("upload_enable") != std::string::npos)
 			{
+				this->isEnabled++;
 				syntaxChecker(buffer, 1);
-				this->location.setUploadEnable(trimContent(buffer.substr(buffer.find("=") + 1)));
+				buffer.pop_back();
+				std::string tmp = trimContent(buffer.substr(buffer.find("=") + 1));
+				if (isEnabled > 1)
+				{
+					std::cout << isEnabled << std::endl;
+					throw std::invalid_argument("Exception:\tDuplicated upload_enable");
+				}
+				if (!tmp.size())
+					throw std::invalid_argument("Exception:\tUpload_enable value not found");
+				this->location.setUploadEnable(tmp);
 			}
 			else if (buffer.find("upload_store") != std::string::npos)
 			{
-				syntaxChecker(buffer, 1);
-				this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
-				if (mapTmp.size() != 1)
-					throw std::invalid_argument("Exception:\tWrong number of arguments");
-				this->location.setUploadStore(trimContent(buffer.substr(buffer.find("=") + 1)));
+				if (!this->location.getUploadStore().size())
+				{
+					syntaxChecker(buffer, 1);
+					std::string upstore = trimContent(buffer.substr(buffer.find("=") + 1));
+					upstore.pop_back();
+					if (!upstore.size())
+						throw std::invalid_argument("Execption:\tupload_store path not found");
+					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
+					if (mapTmp.size() != 1)
+						throw std::invalid_argument("Exception:\tWrong number of arguments");
+					this->location.setUploadStore(trimContent(buffer.substr(buffer.find("=") + 1)));
+				}
+				else
+					throw std::invalid_argument("Exception:\tDuplicated upload_store");
 			}
 		}
 	}
@@ -432,7 +521,8 @@ void ConfigFileParser::printContentData()
 			std::cout << "LocationName         .... |" << it->getLoactions()[i].getLocationName() << "|" << std::endl;
 			std::cout << "autoindex            .... |" << it->getLoactions()[i].getAutoIndex() << "|" << std::endl;
 			std::cout << "root                 .... |" << it->getLoactions()[i].getRoot() << "|" << std::endl;
-			std::cout << "index                .... |" << it->getLoactions()[i].getIndex() << "|" << std::endl;
+			for (int j = 0; j < it->getLoactions()[i].getIndexes().size(); j++)
+				std::cout << "index                .... |" << it->getLoactions()[i].getIndexes()[j] << "|" << std::endl;
 			for (int j = 0; j < it->getLoactions()[i].getAllowedMethods().size(); j++)
 				std::cout << "allow_methods        .... |" << it->getLoactions()[i].getAllowedMethods()[j] << "|" << std::endl;
 			for (std::map<int, std::string>::iterator ret = it->getLoactions()[i].getReturn().begin(); ret != it->getLoactions()[i].getReturn().end(); ++ret)

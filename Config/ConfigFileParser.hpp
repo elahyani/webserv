@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/14 15:25:44 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/15 13:13:08 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,10 +36,14 @@ private:
 	HttpServer server;
 	Location location;
 	std::map<int, std::string> mapTmp;
+	size_t countauto;
+	size_t isEnabled;
 
 public:
 	ConfigFileParser();
 	~ConfigFileParser();
+	ConfigFileParser(ConfigFileParser const &src);
+	ConfigFileParser &operator=(ConfigFileParser const &src);
 
 	void parseConfigFile(int ac, char **av);
 	std::string trimContent(std::string);

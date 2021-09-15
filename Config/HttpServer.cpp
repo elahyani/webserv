@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/13 11:39:58 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/14 15:51:37 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/15 13:13:42 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,31 @@ HttpServer::HttpServer() : host(""),
 
 HttpServer::~HttpServer()
 {
-	clearAll();
+	this->clearAll();
+}
+
+HttpServer::HttpServer(HttpServer const &src)
+{
+	*this = src;
+}
+
+HttpServer &HttpServer::operator=(HttpServer const &src)
+{
+	//! use assign
+	if (this != &src)
+	{
+		this->ports = src.ports;
+		this->host = src.host;
+		this->clientMaxBodySize = src.clientMaxBodySize;
+		this->errorsPages = src.errorsPages;
+		this->root = src.root;
+		this->serverName = src.serverName;
+		this->errorCode = src.errorCode;
+		this->errorPagePath = src.errorPagePath;
+		this->locationsNumber = src.locationsNumber;
+		this->locations = src.locations;
+	}
+	return *this;
 }
 
 void HttpServer::setPorts(int port)

@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/12 15:23:32 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/14 12:08:30 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/15 13:13:50 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 Location::Location() : autoindex(false),
 					   locationName(),
 					   root(),
-					   index(),
 					   fastCgiPass(),
 					   uploadEnable(false),
 					   uploadStore()
@@ -24,6 +23,30 @@ Location::Location() : autoindex(false),
 
 Location::~Location()
 {
+	this->clearAll();
+}
+
+Location::Location(Location const &src)
+{
+	*this = src;
+}
+
+Location &Location::operator=(Location const &src)
+{
+	//! use assign 
+	if (this != &src)
+	{
+		this->autoindex = src.autoindex;
+		this->locationName = src.locationName;
+		this->root = src.root;
+		this->indexes.assign(src.indexes.begin(), src.indexes.end());
+		this->allowedMethods = src.allowedMethods;
+		this->ret = src.ret;
+		this->fastCgiPass = src.fastCgiPass;
+		this->uploadEnable = src.uploadEnable;
+		this->uploadStore = src.uploadStore;
+	}
+	return *this;
 }
 
 void Location::setAutoIndex(std::string index)
@@ -62,13 +85,12 @@ std::string &Location::getRoot()
 
 void Location::setIndex(std::string _index)
 {
-	_index.pop_back();
-	this->index = _index;
+	this->indexes.push_back(_index);
 }
 
-std::string &Location::getIndex()
+std::vector<std::string> &Location::getIndexes()
 {
-	return this->index;
+	return this->indexes;
 }
 
 void Location::setAllowedMethods(std::string _allowedMethods)
@@ -134,7 +156,7 @@ void Location::clearAll()
 	this->allowedMethods.clear();
 	this->locationName.clear();
 	this->root.clear();
-	this->index.clear();
+	this->indexes.clear();
 	this->fastCgiPass.clear();
 	this->uploadEnable = false;
 	this->uploadStore.clear();

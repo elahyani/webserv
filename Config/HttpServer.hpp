@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/13 11:22:44 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/14 13:05:14 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/15 13:13:14 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,8 @@ private:
 public:
 	HttpServer();
 	~HttpServer();
+	HttpServer(HttpServer const &src);
+	HttpServer &operator=(HttpServer const &src);
 
 	void setPorts(int port);
 	std::vector<int> &getPorts();
