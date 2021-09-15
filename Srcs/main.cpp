@@ -8,7 +8,7 @@ int main(int ac, char **av)
 			throw std::runtime_error("Wrong number of arguments.");
 		std::vector<short> ports;
 		ports.push_back(5000);
-		// ports.push_back(7000);
+		ports.push_back(7000);
 		// ports.push_back(9000);
         Server server(ports, av[1]);
     }
