@@ -12,39 +12,54 @@
 # include <iostream>
 # include <fstream>
 # include <unistd.h>
+# include <fcntl.h>
 # include <sys/stat.h>
 # include <algorithm>
-# include <list>
+# include <vector>
+# include <map>
+# include "ConfigFileParser.hpp"
+# include "HttpServer.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
 
 class Server
 {
 private:
-    int                 _masterSockFd;
-	short				_port;
-    struct sockaddr_in  _myAddr;
-    struct sockaddr_in  _clientAddr;
-    socklen_t           _addrLen;
-    int                 _newSockFd;
-    fd_set              _readFds;
-    // fd_set              _masterFds;
-    // fd_set              _writeFds;
-    // fd_set              _expFds;
-    int                 _maxSockFd;
-    int                 _sockFd;
-	std::list<int>		_listSocketFds;
+	std::vector<HttpServer>		_servers;
+	int							_masterSockFD;
+	std::vector<int>			_masterSockFDs;
+	short						_port;
+	std::vector<short>			_ports;
+	std::string					_host;
+	struct sockaddr_in 			_myAddr;
+	struct sockaddr_in 			_clientAddr;
+	socklen_t					_addrLen;
+	fd_set						_masterFDs;
+	fd_set						_readFDs;
+	fd_set						_writeFDs;
+	int							_maxSockFD;
+	char*						_fileName;
+	std::map<int, std::string>	_clients;
 
 public:
-    Server(short port, char *fileName);
-    Server(Server const & ths);
+	Server();
+    // Server(std::vector<short> &, char *);
+    Server(std::vector<HttpServer> &, char *);
+    Server(Server const &);
     ~Server();
-    Server & operator=(const Server & ths);
+    Server & operator=(const Server &);
 	
 	void createSocket();
 	void bindSocket();
 	void listenToClient();
-	void exampleOfResponse(char *);
+
+	void newConnectHandling(int &);
+	void existConnectHandling(int &);
+
+	void exampleOfResponse(char *, int &);
+	void createMasterSockets();
 };
 
 #endif
+
+

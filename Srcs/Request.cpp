@@ -6,14 +6,15 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/08 18:54:51 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/15 15:37:24 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
-Request::Request(int sockFd) : content(""), method(""), urlPath(""), urlQuery(""), protocol(""), _newSockFd(sockFd), bLen(0), statusCode(200)
+Request::Request(const std::string &buffer) : content(""), method(""), urlPath(""), urlQuery(""), protocol(""), _newSockFd(0), bLen(0), statusCode(200)
 {
+	this->content.append(buffer);
 	this->methods.push_back("GET");
 	this->methods.push_back("POST");
 	this->methods.push_back("DELETE");
@@ -32,47 +33,47 @@ Request &Request::operator=(const Request &rhs)
 
 Request::~Request() {}
 
-bool Request::checkRequest(std::string &req)
-{
-	std::string data;
-	size_t i;
+// bool Request::checkRequest(std::string &req)
+// {
+// 	std::string data;
+// 	size_t i;
 
-	i = req.find("\r\n\r\n");
-	if (i == std::string::npos)
-	{
-		return false;
-	}
-	if (req.find("Content-Length") != std::string::npos)
-	{
-		data = req.substr(i + 4);
-		data = data.substr(0, data.length() - 4);
-		if (data.find("\r\n\r\n") == std::string::npos)
-		{
-			return false;
-		}
-	}
-	return true;
-}
+// 	i = req.find("\r\n\r\n");
+// 	if (i == std::string::npos)
+// 	{
+// 		return false;
+// 	}
+// 	if (req.find("Content-Length") != std::string::npos)
+// 	{
+// 		data = req.substr(i + 4);
+// 		data = data.substr(0, data.length() - 4);
+// 		if (data.find("\r\n\r\n") == std::string::npos)
+// 		{
+// 			return false;
+// 		}
+// 	}
+// 	return true;
+// }
 
-void Request::readRequest()
-{
-	int valRead;
-	char _buffReq[16384] = {0};
+// void Request::readRequest()
+// {
+// 	int valRead;
+// 	char _buffReq[16384] = {0};
 
-	while (true)
-	{
-		std::memset(_buffReq, 0, sizeof(_buffReq));
-		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq) - 1, 0);
-		if (valRead == -1)
-			throw std::runtime_error("Unable to receive the request from client.");
-		_buffReq[valRead] = '\0';
-		content.append(_buffReq);
-		std::cout << ".........." << _buffReq << ".........." << std::endl;
-		if (checkRequest(content))
-			break;
-	}
-	// std::cout << content << std::endl;
-}
+// 	while (true)
+// 	{
+// 		std::memset(_buffReq, 0, sizeof(_buffReq));
+// 		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq) - 1, 0);
+// 		if (valRead == -1)
+// 			throw std::runtime_error("Unable to receive the request from client.");
+// 		_buffReq[valRead] = '\0';
+// 		content.append(_buffReq);
+// 		std::cout << ".........." << _buffReq << ".........." << std::endl;
+// 		if (checkRequest(content))
+// 			break;
+// 	}
+// 	// std::cout << content << std::endl;
+// }
 
 void Request::parseRequest()
 {

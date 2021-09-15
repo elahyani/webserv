@@ -6,7 +6,7 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 13:44:07 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/07 16:59:44 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/15 15:38:11 by elahyani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@ private:
 
 public:
     Request();
-    Request(int);
+    Request(const std::string &);
     Request(const Request &src);
     Request &operator=(const Request &rhs);
     ~Request();

@@ -3,5 +3,5 @@
 main.c
 fileSend
 .editorconfig
-webserv
-Objs
+a.out
+output

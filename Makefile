@@ -5,16 +5,20 @@ FLAGS = -Wall -Wextra -Werror -std=c++98
 SRCS_PATH = Srcs
 
 SRCS_NAME = main.cpp \
+		ConfigFileParser.cpp \
+		HttpServer.cpp \
+		Location.cpp \
 		Server.cpp \
 		Request.cpp \
-		Response.cpp 
+		Response.cpp
 
 HDRS_PATH = Headers
 HDRS_NAME = Server.hpp \
 			Request.hpp \
-			Response.hpp 
-
-
+			ConfigFileParser.hpp \
+			HttpServer.hpp \
+			Location.hpp \
+			Response.hpp
 
 OBJS_PATH = Objs
 OBJS_NAME = $(SRCS_NAME:.cpp=.o)
