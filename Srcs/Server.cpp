@@ -176,6 +176,11 @@ void Server::existConnectHandling(int &existSockFD)
 			Request req(it->second);
 			req.parseRequest();
 			req.printRequest();
+			// if (it->second.find("Content-Length"))
+			// {
+			// 	std::cout << "@@@@#####@@@@###@@@@" << it->second.substr(it->second.find("Content-Length")) << std::endl;
+			// 	return ;
+			// }
 			if (FD_ISSET(existSockFD, &_writeFDs)) {
 				//RESPONSE
 				this->exampleOfResponse(_fileName, existSockFD);

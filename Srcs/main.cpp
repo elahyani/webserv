@@ -8,6 +8,7 @@ int main(int ac, char **av)
     {
 		parser.parseConfigFile(ac, av);
 		// parser.printContentData();
+		
 		Server server(parser.getServers(), av[2]);
 
     }
