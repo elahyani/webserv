@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 13:44:07 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/15 11:14:29 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/17 12:04:14 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,9 +63,9 @@ public:
     int checkReqErrors();
 
     std::vector<Bodies> getBody();
-    std::string getHeaderVal(std::string const &key);
-    std::string getStartLineVal(std::string const &key);
-    int getStatusCode();
+    std::string &getHeaderVal(std::string const &key);
+    std::string &getStartLineVal(std::string const &key);
+    int &getStatusCode();
 };
 
 #endif

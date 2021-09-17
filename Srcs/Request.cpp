@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/15 11:14:16 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/17 12:04:27 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,7 +145,7 @@ void Request::parseRequest()
 	this->startLine["protocol"] = protocol;
 }
 
-int Request::getBodiesLen(std::string buffer)
+int  Request::getBodiesLen(std::string buffer)
 {
 	std::string tmp;
 	std::istringstream bLines(buffer);
@@ -218,7 +218,7 @@ int Request::checkReqErrors()
 	return this->statusCode;
 }
 
-int Request::getStatusCode()
+int & Request::getStatusCode()
 {
 	return this->statusCode;
 }
@@ -260,12 +260,12 @@ void Request::split(std::string line, std::string splitter)
 	this->mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
 }
 
-std::string Request::getHeaderVal(std::string const &key)
+std::string & Request::getHeaderVal(std::string const &key)
 {
 	return this->headers[key];
 }
 
-std::string Request::getStartLineVal(std::string const &key)
+std::string & Request::getStartLineVal(std::string const &key)
 {
 	return this->startLine[key];
 }

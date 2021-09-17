@@ -19,6 +19,7 @@
 # include <map>
 # include "ConfigFileParser.hpp"
 # include "HttpServer.hpp"
+# include "Cgi.hpp"
 # include "Request.hpp"
 class Request;
 

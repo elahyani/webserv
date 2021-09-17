@@ -10,7 +10,8 @@ SRCS_NAME = main.cpp \
 		Location.cpp \
 		Server.cpp \
 		Request.cpp \
-		Response.cpp
+		Response.cpp \
+		Cgi.cpp
 
 HDRS_PATH = Headers
 HDRS_NAME = Server.hpp \
@@ -18,7 +19,8 @@ HDRS_NAME = Server.hpp \
 			ConfigFileParser.hpp \
 			HttpServer.hpp \
 			Location.hpp \
-			Response.hpp
+			Response.hpp \
+			Cgi.hpp
 
 OBJS_PATH = Objs
 OBJS_NAME = $(SRCS_NAME:.cpp=.o)

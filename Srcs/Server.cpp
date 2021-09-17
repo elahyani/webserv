@@ -176,6 +176,7 @@ void Server::existConnectHandling(int &existSockFD)
 			Request req(it->second);
 			req.parseRequest();
 			req.printRequest();
+			Cgi cgi(req);
 			// if (it->second.find("Content-Length"))
 			// {
 			// 	std::cout << "@@@@#####@@@@###@@@@" << it->second.substr(it->second.find("Content-Length")) << std::endl;
