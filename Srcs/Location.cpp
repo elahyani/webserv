@@ -12,12 +12,12 @@
 
 #include "Location.hpp"
 
-Location::Location() : autoindex(false),
-					   locationName(),
-					   root(),
-					   fastCgiPass(),
-					   uploadEnable(false),
-					   uploadStore()
+Location::Location() : _autoindex(false),
+					   _locationName(),
+					   _root(),
+					   _fastCgiPass(),
+					   _uploadEnable(false),
+					   _uploadStore()
 {
 }
 
@@ -36,15 +36,15 @@ Location &Location::operator=(Location const &src)
 	//! use assign 
 	if (this != &src)
 	{
-		this->autoindex = src.autoindex;
-		this->locationName = src.locationName;
-		this->root = src.root;
-		this->indexes.assign(src.indexes.begin(), src.indexes.end());
-		this->allowedMethods = src.allowedMethods;
-		this->ret = src.ret;
-		this->fastCgiPass = src.fastCgiPass;
-		this->uploadEnable = src.uploadEnable;
-		this->uploadStore = src.uploadStore;
+		this->_autoindex = src._autoindex;
+		this->_locationName = src._locationName;
+		this->_root = src._root;
+		this->_indexes.assign(src._indexes.begin(), src._indexes.end());
+		this->_allowedMethods = src._allowedMethods;
+		this->_ret = src._ret;
+		this->_fastCgiPass = src._fastCgiPass;
+		this->_uploadEnable = src._uploadEnable;
+		this->_uploadStore = src._uploadStore;
 	}
 	return *this;
 }
@@ -53,111 +53,111 @@ void Location::setAutoIndex(std::string index)
 {
 	index.pop_back();
 	if (index.compare("off") == 0)
-		this->autoindex = false;
+		this->_autoindex = false;
 	else if (index.compare("on") == 0)
-		this->autoindex = true;
+		this->_autoindex = true;
 }
 
 bool &Location::getAutoIndex()
 {
-	return this->autoindex;
+	return this->_autoindex;
 }
 
 void Location::setLocationName(std::string locName)
 {
-	this->locationName = locName;
+	this->_locationName = locName;
 }
 std::string &Location::getLocationName()
 {
-	return this->locationName;
+	return this->_locationName;
 }
 
 void Location::setRoot(std::string _root)
 {
 	_root.pop_back();
-	this->root = _root;
+	this->_root = _root;
 }
 
 std::string &Location::getRoot()
 {
-	return this->root;
+	return this->_root;
 }
 
 void Location::setIndex(std::string _index)
 {
-	this->indexes.push_back(_index);
+	this->_indexes.push_back(_index);
 }
 
 std::vector<std::string> &Location::getIndexes()
 {
-	return this->indexes;
+	return this->_indexes;
 }
 
 void Location::setAllowedMethods(std::string _allowedMethods)
 {
-	this->allowedMethods.push_back(_allowedMethods);
+	this->_allowedMethods.push_back(_allowedMethods);
 }
 
 std::vector<std::string> &Location::getAllowedMethods()
 {
-	return this->allowedMethods;
+	return this->_allowedMethods;
 }
 
 void Location::setReturn(int code, std::string _ret)
 {
-	this->ret.insert(std::pair<int, std::string>(code, _ret));
+	this->_ret.insert(std::pair<int, std::string>(code, _ret));
 }
 
 std::map<int, std::string> &Location::getReturn()
 {
-	return this->ret;
+	return this->_ret;
 }
 
 void Location::setFastCgiPass(std::string _cgiPass)
 {
 	_cgiPass.pop_back();
-	this->fastCgiPass = _cgiPass;
+	this->_fastCgiPass = _cgiPass;
 }
 
 std::string &Location::getFastCgiPass()
 {
-	return this->fastCgiPass;
+	return this->_fastCgiPass;
 }
 
 void Location::setUploadEnable(std::string _uploadEnable)
 {
 	_uploadEnable.pop_back();
 	if (_uploadEnable.compare("off") == 0)
-		this->uploadEnable = false;
+		this->_uploadEnable = false;
 	else if (_uploadEnable.compare("on") == 0)
-		this->uploadEnable = true;
+		this->_uploadEnable = true;
 }
 
 bool &Location::getUploadEnable()
 {
-	return this->uploadEnable;
+	return this->_uploadEnable;
 }
 
 void Location::setUploadStore(std::string _uploadStore)
 {
 	_uploadStore.pop_back();
-	this->uploadStore = _uploadStore;
+	this->_uploadStore = _uploadStore;
 }
 
 std::string &Location::getUploadStore()
 {
-	return this->uploadStore;
+	return this->_uploadStore;
 }
 
 void Location::clearAll()
 {
-	this->autoindex = false;
-	this->ret.clear();
-	this->allowedMethods.clear();
-	this->locationName.clear();
-	this->root.clear();
-	this->indexes.clear();
-	this->fastCgiPass.clear();
-	this->uploadEnable = false;
-	this->uploadStore.clear();
+	this->_autoindex = false;
+	this->_ret.clear();
+	this->_allowedMethods.clear();
+	this->_locationName.clear();
+	this->_root.clear();
+	this->_indexes.clear();
+	this->_fastCgiPass.clear();
+	this->_uploadEnable = false;
+	this->_uploadStore.clear();
 }

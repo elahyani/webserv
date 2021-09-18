@@ -18,16 +18,16 @@
 class HttpServer
 {
 private:
-	std::vector<short> ports;
-	std::string host;
-	size_t clientMaxBodySize;
-	std::map<int, std::string> errorsPages;
-	std::string root;
-	std::vector<std::string> serverName;
-	int errorCode;
-	std::string errorPagePath;
-	int locationsNumber;
-	std::vector<Location> locations;
+	std::vector<short> _ports;
+	std::string _host;
+	size_t _clientMaxBodySize;
+	std::map<int, std::string> _errorsPages;
+	std::string _root;
+	std::vector<std::string> _serverName;
+	int _errorCode;
+	std::string _errorPagePath;
+	int _locationsNumber;
+	std::vector<Location> _locations;
 
 public:
 	HttpServer();

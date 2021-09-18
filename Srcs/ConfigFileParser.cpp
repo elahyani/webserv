@@ -12,21 +12,21 @@
 
 #include "ConfigFileParser.hpp"
 
-ConfigFileParser::ConfigFileParser() : data(""),
-									   locationsNumber(0),
-									   inLocation(false),
-									   countauto(0),
-									   isEnabled(0)
+ConfigFileParser::ConfigFileParser() : _data(""),
+									   _locationsNumber(0),
+									   _inLocation(false),
+									   _countauto(0),
+									   _isEnabled(0)
 {
 }
 
 ConfigFileParser::~ConfigFileParser()
 {
 	//////////////////////////
-	this->servers.clear();
-	this->mapTmp.clear();
-	this->location.clearAll();
-	this->server.clearAll();
+	this->_servers.clear();
+	this->_mapTmp.clear();
+	this->_location.clearAll();
+	this->_server.clearAll();
 	//////////////////////////
 }
 
@@ -81,11 +81,11 @@ void ConfigFileParser::split(std::string line, char splitter)
 	int start = 0;
 	int end = line.find(splitter);
 
-	this->mapTmp.clear();
+	this->_mapTmp.clear();
 	while (end != -1)
 	{
 		k = end;
-		this->mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
+		this->_mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
 		while (line[k] == splitter)
 		{
 			end++;
@@ -97,7 +97,7 @@ void ConfigFileParser::split(std::string line, char splitter)
 		end = line.find(splitter, start);
 		i++;
 	}
-	this->mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
+	this->_mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
 }
 
 void ConfigFileParser::checkFile(int ac, char **av)
@@ -105,10 +105,10 @@ void ConfigFileParser::checkFile(int ac, char **av)
 	// if (ac > 2 || ac < 1)
 	// 	throw std::invalid_argument("Invalid Arguments");
 	if (ac == 2)
-		this->filename = av[1];
+		this->_filename = av[1];
 	else
-		this->filename = "ConfigFiles/config.conf";
-	std::string ext = this->filename.substr(this->filename.find(".") + 1);
+		this->_filename = "ConfigFiles/config.conf";
+	std::string ext = this->_filename.substr(this->_filename.find(".") + 1);
 	if (ext != "conf")
 		throw std::invalid_argument("Exception:\tFile Extention is Invalid");
 }
@@ -127,21 +127,21 @@ void ConfigFileParser::checkUnit(std::string buffer)
 
 void ConfigFileParser::checkMissingAttrs()
 {
-	if (this->inServer)
+	if (this->_inServer)
 		throw std::invalid_argument("Exception:\tSyntax Error");
-	else if (!this->serversNumber)
+	else if (!this->_serversNumber)
 		throw std::invalid_argument("Exception:\tServer Not Found");
-	else if (this->server.getPorts().empty())
+	else if (this->_server.getPorts().empty())
 		throw std::invalid_argument("Exception:\tListening port not found!");
-	else if (!this->server.getHost().size())
-		this->server.setHost("ANY");
-	else if (this->server.getServerName().empty())
+	else if (!this->_server.getHost().size())
+		this->_server.setHost("ANY");
+	else if (this->_server.getServerName().empty())
 		throw std::invalid_argument("Exception:\tServer_name not found!");
-	else if (!this->server.getClientMaxBodySize())
+	else if (!this->_server.getClientMaxBodySize())
 		throw std::invalid_argument("Exception:\tClient_max_body_size not found!");
-	else if (this->server.getErrorsPages().empty())
+	else if (this->_server.getErrorsPages().empty())
 		throw std::invalid_argument("Exception:\tError page not found!");
-	else if (!this->server.getRoot().size())
+	else if (!this->_server.getRoot().size())
 		throw std::invalid_argument("Exception:\tRoot not found!");
 }
 
@@ -166,8 +166,8 @@ void ConfigFileParser::parseLocation(std::string _data)
 	std::string buffer;
 	std::istringstream str(_data.substr(_data.find("location: ")));
 
-	this->countauto = 0;
-	this->isEnabled = 0;
+	this->_countauto = 0;
+	this->_isEnabled = 0;
 	while (std::getline(str, buffer))
 	{
 		if (buffer.find("#") != std::string::npos)
@@ -176,40 +176,40 @@ void ConfigFileParser::parseLocation(std::string _data)
 			buffer = trimContent(buffer);
 		}
 		if (buffer.find("{") != std::string::npos)
-			this->inLocation = true;
+			this->_inLocation = true;
 		else if (buffer.find("}") != std::string::npos)
 		{
-			this->locationsNumber++;
-			this->inLocation = false;
-			this->server.setLocation(this->location);
-			this->location.clearAll();
+			this->_locationsNumber++;
+			this->_inLocation = false;
+			this->_server.setLocation(this->_location);
+			this->_location.clearAll();
 			return;
 		}
-		if (this->inLocation)
+		if (this->_inLocation)
 		{
 			if (buffer.find("autoindex") != std::string::npos)
 			{
-				this->countauto++;
+				this->_countauto++;
 				syntaxChecker(buffer, 1);
 				buffer.pop_back();
 				std::string tmp = trimContent(buffer.substr(buffer.find("=") + 1));
-				if (this->countauto > 1)
+				if (this->_countauto > 1)
 					throw std::invalid_argument("Exception:\tDuplicated autoindex");
 				if (!tmp.size())
 					throw std::invalid_argument("Exception:\tAutoindex value not found");
-				this->location.setAutoIndex(tmp);
+				this->_location.setAutoIndex(tmp);
 			}
 			else if (buffer.find("root") != std::string::npos)
 			{
-				if (!this->location.getRoot().size())
+				if (!this->_location.getRoot().size())
 				{
 					syntaxChecker(buffer, 1);
 					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
-					if (mapTmp.size() != 1)
+					if (_mapTmp.size() != 1)
 						throw std::invalid_argument("Exception:\tWrong number of arguments");
-					this->location.setRoot(trimContent(buffer.substr(buffer.find("=") + 1)));
-					this->server.setRoot(this->location.getRoot());
-					if (!this->location.getRoot().size())
+					this->_location.setRoot(trimContent(buffer.substr(buffer.find("=") + 1)));
+					this->_server.setRoot(this->_location.getRoot());
+					if (!this->_location.getRoot().size())
 						throw std::invalid_argument("Exception:\tRoot path not found");
 				}
 				else
@@ -217,7 +217,7 @@ void ConfigFileParser::parseLocation(std::string _data)
 			}
 			else if (buffer.find("index") != std::string::npos)
 			{
-				if (this->location.getIndexes().empty())
+				if (this->_location.getIndexes().empty())
 				{
 					syntaxChecker(buffer, 1);
 					std::string indexes = trimContent(buffer.substr(buffer.find("=") + 1));
@@ -225,15 +225,15 @@ void ConfigFileParser::parseLocation(std::string _data)
 					if (!indexes.size())
 						throw std::invalid_argument("Exception:\tindex not found");
 					this->split(indexes, ' ');
-					for (size_t i = 0; i < mapTmp.size(); i++)
-						this->location.setIndex(trimContent(mapTmp[i]));
+					for (size_t i = 0; i < _mapTmp.size(); i++)
+						this->_location.setIndex(trimContent(_mapTmp[i]));
 				}
 				else
 					throw std::invalid_argument("Exception:\tDuplicated index");
 			}
 			else if (buffer.find("allow_methods") != std::string::npos)
 			{
-				if (this->location.getAllowedMethods().empty())
+				if (this->_location.getAllowedMethods().empty())
 				{
 					syntaxChecker(buffer, 1);
 					std::string allow_mtd = trimContent(buffer.substr(buffer.find("=") + 1));
@@ -244,13 +244,13 @@ void ConfigFileParser::parseLocation(std::string _data)
 					std::string allow_methods = buffer.substr(buffer.find("[") + 1, buffer.find("]"));
 					allow_methods.pop_back();
 					this->split(allow_methods, ',');
-					if (this->mapTmp.size() > 3)
+					if (this->_mapTmp.size() > 3)
 						throw std::invalid_argument("Exception:\tExceeded max methods length");
-					for (size_t i = 0; i < mapTmp.size(); i++)
+					for (size_t i = 0; i < _mapTmp.size(); i++)
 					{
-						if (trimContent(mapTmp[i]).compare("GET") != 0 && trimContent(mapTmp[i]).compare("POST") != 0 && trimContent(mapTmp[i]).compare("DELETE") != 0)
+						if (trimContent(_mapTmp[i]).compare("GET") != 0 && trimContent(_mapTmp[i]).compare("POST") != 0 && trimContent(_mapTmp[i]).compare("DELETE") != 0)
 							throw std::invalid_argument("Exception:\tMethod is not allowed");
-						this->location.setAllowedMethods(trimContent(mapTmp[i]));
+						this->_location.setAllowedMethods(trimContent(_mapTmp[i]));
 					}
 				}
 				else
@@ -258,28 +258,28 @@ void ConfigFileParser::parseLocation(std::string _data)
 			}
 			else if (buffer.find("return") != std::string::npos)
 			{
-				if (this->location.getReturn().empty())
+				if (this->_location.getReturn().empty())
 				{
 					syntaxChecker(buffer, 1);
 					buffer.pop_back();
 					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
-					if (mapTmp.size() != 2)
+					if (_mapTmp.size() != 2)
 						throw std::invalid_argument("Exception:\tWrong number of arguments");
-					this->location.setReturn(std::stoi(mapTmp[0]), trimContent(mapTmp[1]));
+					this->_location.setReturn(std::stoi(_mapTmp[0]), trimContent(_mapTmp[1]));
 				}
 				else
 					throw std::invalid_argument("Exception:\tDuplicated return");
 			}
 			else if (buffer.find("fastcgi_pass") != std::string::npos)
 			{
-				if (!this->location.getFastCgiPass().size())
+				if (!this->_location.getFastCgiPass().size())
 				{
 					syntaxChecker(buffer, 1);
 					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
-					if (mapTmp.size() != 1)
+					if (_mapTmp.size() != 1)
 						throw std::invalid_argument("Exception:\tWrong number of arguments");
-					this->location.setFastCgiPass(trimContent(buffer.substr(buffer.find("=") + 1)));
-					if (!this->location.getFastCgiPass().size())
+					this->_location.setFastCgiPass(trimContent(buffer.substr(buffer.find("=") + 1)));
+					if (!this->_location.getFastCgiPass().size())
 						throw std::invalid_argument("Exception:\tfastcgi_pass path not found");
 				}
 				else
@@ -287,22 +287,22 @@ void ConfigFileParser::parseLocation(std::string _data)
 			}
 			else if (buffer.find("upload_enable") != std::string::npos)
 			{
-				this->isEnabled++;
+				this->_isEnabled++;
 				syntaxChecker(buffer, 1);
 				buffer.pop_back();
 				std::string tmp = trimContent(buffer.substr(buffer.find("=") + 1));
-				if (isEnabled > 1)
+				if (_isEnabled > 1)
 				{
-					std::cout << isEnabled << std::endl;
+					std::cout << _isEnabled << std::endl;
 					throw std::invalid_argument("Exception:\tDuplicated upload_enable");
 				}
 				if (!tmp.size())
 					throw std::invalid_argument("Exception:\tUpload_enable value not found");
-				this->location.setUploadEnable(tmp);
+				this->_location.setUploadEnable(tmp);
 			}
 			else if (buffer.find("upload_store") != std::string::npos)
 			{
-				if (!this->location.getUploadStore().size())
+				if (!this->_location.getUploadStore().size())
 				{
 					syntaxChecker(buffer, 1);
 					std::string upstore = trimContent(buffer.substr(buffer.find("=") + 1));
@@ -310,9 +310,9 @@ void ConfigFileParser::parseLocation(std::string _data)
 					if (!upstore.size())
 						throw std::invalid_argument("Execption:\tupload_store path not found");
 					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
-					if (mapTmp.size() != 1)
+					if (_mapTmp.size() != 1)
 						throw std::invalid_argument("Exception:\tWrong number of arguments");
-					this->location.setUploadStore(trimContent(buffer.substr(buffer.find("=") + 1)));
+					this->_location.setUploadStore(trimContent(buffer.substr(buffer.find("=") + 1)));
 				}
 				else
 					throw std::invalid_argument("Exception:\tDuplicated upload_store");
@@ -324,7 +324,7 @@ void ConfigFileParser::parseLocation(std::string _data)
 void ConfigFileParser::parseConfigFile(int ac, char **av)
 {
 	checkFile(ac, av);
-	std::ifstream file(this->filename);
+	std::ifstream file(this->_filename);
 
 	if (!file.is_open())
 		throw std::invalid_argument("Exception:\tFile Not Found!");
@@ -332,11 +332,11 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 
 	while (std::getline(file, buffer))
 	{
-		this->data.append(trimContent(buffer));
-		this->data.append("\n");
+		this->_data.append(trimContent(buffer));
+		this->_data.append("\n");
 	}
 
-	std::istringstream str(this->data);
+	std::istringstream str(this->_data);
 	while (std::getline(str, buffer))
 	{
 		// trim buffer
@@ -350,17 +350,17 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 		// buffer.erase(std::remove_if(buffer.begin(), buffer.end(), ::isspace), buffer.end());
 		// std::cout << ">>>>>>>>>>>> " << buffer << std::endl;
 		if (buffer.compare("[") == 0)
-			this->inServer = !this->inServer;
+			this->_inServer = !this->_inServer;
 		else if (buffer.compare("]") == 0)
 		{
-			this->serversNumber++;
-			this->inServer = !this->inServer;
+			this->_serversNumber++;
+			this->_inServer = !this->_inServer;
 			this->checkMissingAttrs();
-			this->servers.push_back(this->server);
-			this->server.clearAll();
-			this->data = this->data.substr(data.find("]\n"));
+			this->_servers.push_back(this->_server);
+			this->_server.clearAll();
+			this->_data = this->_data.substr(_data.find("]\n"));
 		}
-		if (this->inServer)
+		if (this->_inServer)
 		{
 			// std::cout << "IN SERVER" << std::endl;
 			if (buffer.find("listen") != std::string::npos)
@@ -377,41 +377,41 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 
 				int port = std::stoi(buffer.substr(buffer.find(":") + 1));
 
-				if (this->server.getPorts().size())
+				if (this->_server.getPorts().size())
 				{
-					for (size_t i = 0; i < this->server.getPorts().size(); i++)
+					for (size_t i = 0; i < this->_server.getPorts().size(); i++)
 					{
-						if (this->server.getPorts()[i] == port)
+						if (this->_server.getPorts()[i] == port)
 							throw std::invalid_argument("Exception:\tDuplicated port!");
 					}
 				}
-				this->server.setPorts(port);
+				this->_server.setPorts(port);
 			}
 			else if (buffer.find("host") != std::string::npos)
 			{
-				if (!this->server.getHost().size())
+				if (!this->_server.getHost().size())
 				{
 					syntaxChecker(buffer, 0);
 					buffer.pop_back();
 					std::string host = buffer.substr(buffer.find(":") + 1);
-					this->server.setHost(trimContent(host));
-					checkHost(this->server.getHost());
-					if (!this->server.getHost().size())
-						this->server.setHost("ANY");
+					this->_server.setHost(trimContent(host));
+					checkHost(this->_server.getHost());
+					if (!this->_server.getHost().size())
+						this->_server.setHost("ANY");
 				}
 				else
 					throw std::invalid_argument("Exception:\tDuplicated " + trimContent(buffer.substr(0, buffer.find(":"))));
 			}
 			else if (buffer.find("server_name") != std::string::npos)
 			{
-				if (!this->server.getServerName().size())
+				if (!this->_server.getServerName().size())
 				{
 					syntaxChecker(buffer, 0);
 					buffer.pop_back();
 					this->split(trimContent(buffer.substr(buffer.find(":") + 1)), ' ');
-					for (size_t i = 0; i < mapTmp.size(); i++)
-						this->server.setServerName(mapTmp[i]);
-					if (!this->server.getServerName().size())
+					for (size_t i = 0; i < _mapTmp.size(); i++)
+						this->_server.setServerName(_mapTmp[i]);
+					if (!this->_server.getServerName().size())
 						throw std::invalid_argument("Exception:\tServer name not found");
 				}
 				else
@@ -419,12 +419,12 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 			}
 			else if (buffer.find("client_max_body_size") != std::string::npos)
 			{
-				if (!this->server.getClientMaxBodySize())
+				if (!this->_server.getClientMaxBodySize())
 				{
 					syntaxChecker(buffer, 0);
 					buffer.pop_back();
 					this->checkUnit(this->trimContent(buffer.substr(buffer.find(":") + 1)));
-					this->server.setClientMaxBodySize(std::stoi(buffer.substr(buffer.find(":") + 1)));
+					this->_server.setClientMaxBodySize(std::stoi(buffer.substr(buffer.find(":") + 1)));
 				}
 				else
 					throw std::invalid_argument("Exception:\tDuplicated " + trimContent(buffer.substr(0, buffer.find(":"))));
@@ -434,15 +434,15 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				if (buffer.find("root:") != std::string::npos)
 				{
 					syntaxChecker(buffer, 0);
-					if (!this->server.getRoot().size())
+					if (!this->_server.getRoot().size())
 					{
-						this->server.setRoot(trimContent(buffer.substr(buffer.find(":") + 1)));
-						std::string s = this->server.getRoot();
+						this->_server.setRoot(trimContent(buffer.substr(buffer.find(":") + 1)));
+						std::string s = this->_server.getRoot();
 						s = trimContent(s);
 						this->split(s, ' ');
-						if (mapTmp.size() != 1)
+						if (_mapTmp.size() != 1)
 							throw std::invalid_argument("Exception:\tWrong number of arguments!");
-						if (!this->server.getRoot().size())
+						if (!this->_server.getRoot().size())
 							throw std::invalid_argument("Exception:\tRoot path not found");
 					}
 					else
@@ -461,7 +461,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 
 				s = trimContent(s);
 				this->split(s, ' ');
-				if (mapTmp.size() != 2)
+				if (_mapTmp.size() != 2)
 					throw std::invalid_argument("Exception:\tWrong number of arguments!");
 				if (isdigit(s[k]))
 				{
@@ -470,29 +470,29 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				}
 				else
 					throw std::invalid_argument("Exception:\tInvalid error page!1");
-				this->server.setErrorCode(std::stoi(buffer.substr(buffer.find(":") + 1, buffer.find(" /"))));
+				this->_server.setErrorCode(std::stoi(buffer.substr(buffer.find(":") + 1, buffer.find(" /"))));
 				if (buffer.find(" /") != std::string::npos)
-					this->server.setErrorPagePath(buffer.substr(buffer.find(" /") + 1));
+					this->_server.setErrorPagePath(buffer.substr(buffer.find(" /") + 1));
 				else
 					throw std::invalid_argument("Exception:\tInvalid error page!");
-				if (this->server.getErrorPagePath().find(".html") != std::string::npos)
+				if (this->_server.getErrorPagePath().find(".html") != std::string::npos)
 				{
-					if (this->server.getErrorPagePath().substr(this->server.getErrorPagePath().find(".html")).compare(".html") != 0)
+					if (this->_server.getErrorPagePath().substr(this->_server.getErrorPagePath().find(".html")).compare(".html") != 0)
 						throw std::invalid_argument("Exception:\tInvalid extention!");
 				}
 				else
 					throw std::invalid_argument("Exception:\tInvalid extention!");
 
 				// std::cout << "error page path ---> " << errorPagePath << std::endl;
-				this->server.setErrorsPages(this->server.getErrorCode(), this->server.getErrorPagePath());
+				this->_server.setErrorsPages(this->_server.getErrorCode(), this->_server.getErrorPagePath());
 			}
 			else if (buffer.find("location") != std::string::npos)
 			{
-				this->location.setLocationName(trimContent(buffer.substr(buffer.find(":") + 1)));
-				this->split(this->location.getLocationName(), ' ');
-				if (mapTmp.size() != 1)
+				this->_location.setLocationName(trimContent(buffer.substr(buffer.find(":") + 1)));
+				this->split(this->_location.getLocationName(), ' ');
+				if (_mapTmp.size() != 1)
 					throw std::invalid_argument("Exception:\tWrong number of arguments");
-				this->parseLocation(data.substr(data.find("location: " + this->location.getLocationName())));
+				this->parseLocation(_data.substr(_data.find("location: " + this->_location.getLocationName())));
 			}
 		}
 		// std::cout << "|" << buffer << "|" << std::endl;
@@ -502,9 +502,9 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 void ConfigFileParser::printContentData()
 {
 	std::cout << "-------------------[SERVER]-------------------" << std::endl;
-	for (std::vector<HttpServer>::iterator it = this->servers.begin(); it != this->servers.end(); ++it)
+	for (std::vector<HttpServer>::iterator it = this->_servers.begin(); it != this->_servers.end(); ++it)
 	{
-		std::cout << "servers number       .... " << serversNumber << std::endl;
+		std::cout << "servers number       .... " << _serversNumber << std::endl;
 		for (size_t i = 0; i < it->getPorts().size(); i++)
 			std::cout << "listen on            .... |" << it->getPorts()[i] << "|" << std::endl;
 		std::cout << "Host                 .... |" << it->getHost() << "|" << std::endl;
@@ -538,5 +538,5 @@ void ConfigFileParser::printContentData()
 
 std::vector<HttpServer> & ConfigFileParser::getServers()
 {
-	return this->servers;
+	return this->_servers;
 }

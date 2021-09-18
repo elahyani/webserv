@@ -13,6 +13,8 @@
 #ifndef RESPONSE_HPP
 #define RESPONSE_HPP
 
+#include <ctime>
+#include <sys/stat.h>
 #include "Request.hpp"
 
 #define OK_STATUS 200
@@ -40,7 +42,7 @@ private:
     std::string _responseMsg;
     std::string _headers;
     std::string _body;
-    std::map<int, std::string> errors;
+    std::map<int, std::string> _errors;
 
 public:
     Response();
@@ -54,8 +56,9 @@ public:
     void deleteMethod();                  //
     void buildResponse();                 //
     std::string getErrorPage(int status); //
-    std::string getResponse();
+    std::string &getResponse();
     std::string getHtmlTemplate(); //
+    std::string &getHeaders();
 };
 
 #endif

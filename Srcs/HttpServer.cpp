@@ -12,13 +12,13 @@
 
 #include "HttpServer.hpp"
 
-HttpServer::HttpServer() : host(""),
-						   clientMaxBodySize(),
-						   errorsPages(),
-						   root(""),
-						   errorCode(),
-						   errorPagePath(),
-						   locationsNumber(0)
+HttpServer::HttpServer() : _host(""),
+						   _clientMaxBodySize(),
+						   _errorsPages(),
+						   _root(""),
+						   _errorCode(),
+						   _errorPagePath(),
+						   _locationsNumber(0)
 {
 }
 
@@ -37,120 +37,120 @@ HttpServer &HttpServer::operator=(HttpServer const &src)
 	//! use assign
 	if (this != &src)
 	{
-		this->ports = src.ports;
-		this->host = src.host;
-		this->clientMaxBodySize = src.clientMaxBodySize;
-		this->errorsPages = src.errorsPages;
-		this->root = src.root;
-		this->serverName = src.serverName;
-		this->errorCode = src.errorCode;
-		this->errorPagePath = src.errorPagePath;
-		this->locationsNumber = src.locationsNumber;
-		this->locations = src.locations;
+		this->_ports = src._ports;
+		this->_host = src._host;
+		this->_clientMaxBodySize = src._clientMaxBodySize;
+		this->_errorsPages = src._errorsPages;
+		this->_root = src._root;
+		this->_serverName = src._serverName;
+		this->_errorCode = src._errorCode;
+		this->_errorPagePath = src._errorPagePath;
+		this->_locationsNumber = src._locationsNumber;
+		this->_locations = src._locations;
 	}
 	return *this;
 }
 
 void HttpServer::setPorts(short port)
 {
-	this->ports.push_back(port);
+	this->_ports.push_back(port);
 }
 
 std::vector<short> &HttpServer::getPorts()
 {
-	return this->ports;
+	return this->_ports;
 }
 
 void HttpServer::setHost(std::string _host)
 {
-	this->host = _host;
+	this->_host = _host;
 }
 
 std::string &HttpServer::getHost()
 {
-	return this->host;
+	return this->_host;
 }
 
 void HttpServer::setClientMaxBodySize(size_t cmbs)
 {
-	this->clientMaxBodySize = cmbs;
+	this->_clientMaxBodySize = cmbs;
 }
 
 size_t &HttpServer::getClientMaxBodySize()
 {
-	return this->clientMaxBodySize;
+	return this->_clientMaxBodySize;
 }
 
 void HttpServer::setErrorsPages(int _code, std::string _path)
 {
-	this->errorsPages[_code] = _path;
+	this->_errorsPages[_code] = _path;
 }
 
 std::map<int, std::string> &HttpServer::getErrorsPages()
 {
-	return this->errorsPages;
+	return this->_errorsPages;
 }
 
 void HttpServer::setRoot(std::string _root)
 {
 	_root.pop_back();
-	this->root = _root;
+	this->_root = _root;
 }
 
 std::string &HttpServer::getRoot()
 {
-	return this->root;
+	return this->_root;
 }
 
 void HttpServer::setServerName(std::string _serverName)
 {
-	this->serverName.push_back(_serverName);
+	this->_serverName.push_back(_serverName);
 }
 
 std::vector<std::string> &HttpServer::getServerName()
 {
-	return this->serverName;
+	return this->_serverName;
 }
 
 void HttpServer::setErrorCode(int code)
 {
-	this->errorCode = code;
+	this->_errorCode = code;
 }
 
 int &HttpServer::getErrorCode()
 {
-	return this->errorCode;
+	return this->_errorCode;
 }
 
 void HttpServer::setErrorPagePath(std::string path)
 {
-	this->errorPagePath = path;
+	this->_errorPagePath = path;
 }
 
 std::string &HttpServer::getErrorPagePath()
 {
-	return this->errorPagePath;
+	return this->_errorPagePath;
 }
 
 void HttpServer::setLocation(Location const &_location)
 {
-	this->locations.push_back(_location);
+	this->_locations.push_back(_location);
 }
 
 std::vector<Location> &HttpServer::getLoactions()
 {
-	return this->locations;
+	return this->_locations;
 }
 
 void HttpServer::clearAll()
 {
-	this->ports.clear();
-	this->host.clear();
-	this->clientMaxBodySize = 0;
-	this->errorsPages.clear();
-	this->root.clear();
-	this->serverName.clear();
-	this->errorCode = 0;
-	this->errorPagePath.clear();
-	this->locations.clear();
+	this->_ports.clear();
+	this->_host.clear();
+	this->_clientMaxBodySize = 0;
+	this->_errorsPages.clear();
+	this->_root.clear();
+	this->_serverName.clear();
+	this->_errorCode = 0;
+	this->_errorPagePath.clear();
+	this->_locations.clear();
 }

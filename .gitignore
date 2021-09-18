@@ -1,7 +1,11 @@
 .DS_STORE
 .vscode
 main.c
-fileSend
 .editorconfig
+<<<<<<< HEAD
+=======
+webserv
+Objs
+>>>>>>> f0a9e58a0aa94e7ec39fa49e5bddcf61410dfd75
 a.out
 output
