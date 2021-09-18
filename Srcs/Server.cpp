@@ -143,31 +143,19 @@ void Server::newConnectHandling(int &sockFD)
 
 bool checkRequest(std::string &buffReq)
 {
-	// std::string data;
-	// size_t i;
-
-	// i = req.find("\r\n\r\n");
-	// if (i == std::string::npos)
-	// {
-	// 	return false;
-	// }
-	// if (req.find("Content-Length") != std::string::npos) {
-
-	// 	data = req.substr(i + 4);
-	// 	if (data.find("\r\n\r\n") == std::string::npos) {
-	// 		return false;
-	// 	}
-	// }
-
-
-	if (buffReq.find("\r\n\r\n") == std::string::npos)
-		return false;
-	else
+	if (!(buffReq.find("\r\n\r\n") == std::string::npos))
 	{
-		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n"));
-		std::cout << "header ==> " << headers << std::endl;
+		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n") + 4);
+		if (headers.find("Content-Length") != std::string::npos)
+		{
+			size_t length = std::atoi(headers.substr(headers.find("Content-Length: ")).c_str() + 16);
+			std::string body = buffReq.substr(buffReq.find("\r\n\r\n") + 4);
+			if (body.length() < length)
+				return false;
+		}
+		return true;
 	}
-	return true;
+	return false;
 }
 
 void Server::existConnectHandling(int &existSockFD)
@@ -182,9 +170,10 @@ void Server::existConnectHandling(int &existSockFD)
 			it->second += _buffRes;
 		}
 		if (checkRequest(it->second)) {
-			Request req(it->second);
-			req.parseRequest();
-			req.printRequest();
+			std::cout << "buffReq... " << it->second << std::endl;
+			// Request req(it->second);
+			// req.parseRequest();
+			// req.printRequest();
 			// Cgi cgi(req);
 			// if (it->second.find("Content-Length"))
 			// {
@@ -212,8 +201,6 @@ void Server::existConnectHandling(int &existSockFD)
 void Server::createMasterSockets()
 {
 	FD_ZERO(&_masterFDs);
-	// foreach server
-	// {
 	for(std::vector<HttpServer>::iterator itServer = _servers.begin(); itServer != _servers.end(); itServer++)
 	{
 		_ports = itServer->getPorts();
@@ -242,5 +229,4 @@ void Server::createMasterSockets()
 		}
 	}
 	FD_ZERO(&_writeFDs);
-	// _writeFDs = _masterFDs;
 }
