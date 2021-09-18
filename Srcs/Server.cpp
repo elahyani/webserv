@@ -18,14 +18,14 @@ Server::Server(std::vector<HttpServer> & servers, char *fileName) : _servers(ser
 		if (selectRet > 0)
 			for (int sockFD = 0; sockFD < _maxSockFD + 1; sockFD++) {
 				if(FD_ISSET(sockFD, &_readFDs)) {
-					int _newConnect = 0;
+					int newConnect = 0;
 					for(std::vector<int>::iterator it = _masterSockFDs.begin(); it != _masterSockFDs.end(); it++) {
 						if (sockFD == *it) {
-							_newConnect = 1;
+							newConnect = 1;
 							break;
 						}
 					}
-					(_newConnect) ? this->newConnectHandling(sockFD) : this->existConnectHandling(sockFD);
+					(newConnect) ? this->newConnectHandling(sockFD) : this->existConnectHandling(sockFD);
 				}
 			}
     }
@@ -141,22 +141,31 @@ void Server::newConnectHandling(int &sockFD)
 	_clients.insert(std::pair<int, std::string>(newSockFD, ""));
 }
 
-bool checkRequest(std::string &req)
+bool checkRequest(std::string &buffReq)
 {
-	std::string data;
-	size_t i;
+	// std::string data;
+	// size_t i;
 
-	i = req.find("\r\n\r\n");
-	if (i == std::string::npos)
-	{
+	// i = req.find("\r\n\r\n");
+	// if (i == std::string::npos)
+	// {
+	// 	return false;
+	// }
+	// if (req.find("Content-Length") != std::string::npos) {
+
+	// 	data = req.substr(i + 4);
+	// 	if (data.find("\r\n\r\n") == std::string::npos) {
+	// 		return false;
+	// 	}
+	// }
+
+
+	if (buffReq.find("\r\n\r\n") == std::string::npos)
 		return false;
-	}
-	if (req.find("Content-Length") != std::string::npos) {
-
-		data = req.substr(i + 4);
-		if (data.find("\r\n\r\n") == std::string::npos) {
-			return false;
-		}
+	else
+	{
+		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n"));
+		std::cout << "header ==> " << headers << std::endl;
 	}
 	return true;
 }
@@ -176,7 +185,7 @@ void Server::existConnectHandling(int &existSockFD)
 			Request req(it->second);
 			req.parseRequest();
 			req.printRequest();
-			Cgi cgi(req);
+			// Cgi cgi(req);
 			// if (it->second.find("Content-Length"))
 			// {
 			// 	std::cout << "@@@@#####@@@@###@@@@" << it->second.substr(it->second.find("Content-Length")) << std::endl;
@@ -233,5 +242,5 @@ void Server::createMasterSockets()
 		}
 	}
 	FD_ZERO(&_writeFDs);
-	_writeFDs = _masterFDs;
+	// _writeFDs = _masterFDs;
 }
