@@ -62,7 +62,7 @@ Server &Server::operator=(Server const &ths)
 	{
 		this->_masterSockFD = ths._masterSockFD;
 		this->_port = ths._port;
-		this->_myAddr = ths._myAddr;
+		this->_serverAddr = ths._serverAddr;
 		this->_addrLen = ths._addrLen;
 		this->_readFDs = ths._readFDs;
 		this->_maxSockFD = ths._maxSockFD;
@@ -86,15 +86,15 @@ void Server::createSocket()
 // Socket binding
 void Server::bindSocket()
 {
-	std::memset(&_myAddr, 0, sizeof(_myAddr));
-	_addrLen = sizeof(_myAddr);
-	_myAddr.sin_family = AF_INET;
-	_myAddr.sin_port = htons(_port);
+	std::memset(&_serverAddr, 0, sizeof(_serverAddr));
+	_addrLen = sizeof(_serverAddr);
+	_serverAddr.sin_family = AF_INET;
+	_serverAddr.sin_port = htons(_port);
 	if (_host == "ANY")
-		_myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+		_serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	else
-		_myAddr.sin_addr.s_addr = inet_addr(_host.c_str());
-	if (bind(_masterSockFD, (struct sockaddr *)&_myAddr, sizeof(_myAddr)) == -1)
+		_serverAddr.sin_addr.s_addr = inet_addr(_host.c_str());
+	if (bind(_masterSockFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) == -1)
 		throw std::runtime_error("Unable to bind the socket");
 }
 
@@ -105,11 +105,40 @@ void Server::listenToClient()
 		throw std::runtime_error("Unable to listen for connections.");
 }
 
-void Server::exampleOfResponse(char *fileName, int &existSockFD)
+HttpServer Server::findTheTargetServer(int & accptSockFD)
+{
+	// Find the target server
+	HttpServer targetServer;
+	std::map<int, int>::iterator it = _serverAddrS.find(accptSockFD);
+	struct sockaddr_in serverAddr;
+	std::memset(&serverAddr, 0, _addrLen);
+	if (getsockname(it->second, (struct sockaddr *)&serverAddr, &_addrLen) < 0)
+		throw std::runtime_error("Unable to get server informations from socket " + std::to_string(it->second));
+	std::cout << "Master socket fd is " << std::to_string(it->second) << " , ip is : " << inet_ntoa(serverAddr.sin_addr) << " , port : " << std::to_string(ntohs(serverAddr.sin_port)) << std::endl;
+	for(std::vector<HttpServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
+	{
+		if (it->getHost() == inet_ntoa(serverAddr.sin_addr))
+		{
+			_ports = it->getPorts();
+			for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); itPort++)
+			{
+				if (*itPort == ntohs(serverAddr.sin_port))
+				{
+					targetServer = *it;
+					break ;
+				}
+			}
+		}
+	}
+	return targetServer;
+}
+
+void Server::exampleOfResponse(char *fileName, int &accptSockFD)
 {
 	(void)fileName;
 
-	Response response(this->_request, this->_servers[0]);
+	HttpServer server = findTheTargetServer(accptSockFD);
+	Response response(this->_request, server);
 
 	std::string msgRes(""); // Will hold the data that we will send
 	// //Header
@@ -122,9 +151,9 @@ void Server::exampleOfResponse(char *fileName, int &existSockFD)
 	msgRes.append(response.getHeaders());
 	// msgRes += _buffRes;
 	// delete[] _buffRes;
-	if (FD_ISSET(existSockFD, &_writeFDs))
+	if (FD_ISSET(accptSockFD, &_writeFDs))
 	{
-		if (send(existSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
+		if (send(accptSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
 		{
 			throw std::runtime_error("Unable to send the response from client.");
 		}
@@ -133,7 +162,7 @@ void Server::exampleOfResponse(char *fileName, int &existSockFD)
 
 void Server::newConnectHandling(int &sockFD)
 {
-	std::cout << "Master socket is " << std::to_string(_masterSockFD) << std::endl;
+	std::cout << "Master socket is " << std::to_string(sockFD) << std::endl;
 	int newSockFD = accept(sockFD, (struct sockaddr *)&_clientAddr, &_addrLen);
 	if (newSockFD < -1)
 		throw std::runtime_error("Unable to accept the connection.");
@@ -145,6 +174,7 @@ void Server::newConnectHandling(int &sockFD)
 	if (newSockFD > _maxSockFD)
 		_maxSockFD = newSockFD;
 	_clients.insert(std::pair<int, std::string>(newSockFD, ""));
+	_serverAddrS.insert(std::pair<int, int>(newSockFD, sockFD));
 }
 
 bool checkRequest(std::string &buffReq)
@@ -164,15 +194,15 @@ bool checkRequest(std::string &buffReq)
 	return false;
 }
 
-void Server::existConnectHandling(int &existSockFD)
+void Server::existConnectHandling(int &accptSockFD)
 {
 	char _buffRes[1024] = {0};
-	int valRead = recv(existSockFD, _buffRes, sizeof(_buffRes), 0);
-	std::cout << "Exist connection , socket fd is " << std::to_string(existSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
+	int valRead = recv(accptSockFD, _buffRes, sizeof(_buffRes), 0);
+	std::cout << "Exist connection , socket fd is " << std::to_string(accptSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
 	if (valRead > 0)
 	{
 		_buffRes[valRead] = '\0';
-		std::map<int, std::string>::iterator it = _clients.find(existSockFD);
+		std::map<int, std::string>::iterator it = _clients.find(accptSockFD);
 		if (it != _clients.end())
 		{
 			it->second += _buffRes;
@@ -190,20 +220,20 @@ void Server::existConnectHandling(int &existSockFD)
 			// 	std::cout << "@@@@#####@@@@###@@@@" << it->second.substr(it->second.find("Content-Length")) << std::endl;
 			// 	return ;
 			// }
-			if (FD_ISSET(existSockFD, &_writeFDs))
+			if (FD_ISSET(accptSockFD, &_writeFDs))
 			{
 				//RESPONSE
-				this->exampleOfResponse(_fileName, existSockFD);
+				this->exampleOfResponse(_fileName, accptSockFD);
 			}
 		}
 	}
 	else if (valRead == 0)
 	{
 
-		std::cout << "Disconnect socket: " << std::to_string(existSockFD) << " valRead == " << valRead << std::endl;
-		close(existSockFD);
-		FD_CLR(existSockFD, &_masterFDs);
-		FD_CLR(existSockFD, &_writeFDs);
+		std::cout << "Disconnect socket: " << std::to_string(accptSockFD) << " valRead == " << valRead << std::endl;
+		close(accptSockFD);
+		FD_CLR(accptSockFD, &_masterFDs);
+		FD_CLR(accptSockFD, &_writeFDs);
 	}
 	else
 		return; // Socket is connected but doesn't send request.
@@ -212,6 +242,7 @@ void Server::existConnectHandling(int &existSockFD)
 void Server::createMasterSockets()
 {
 	FD_ZERO(&_masterFDs);
+	FD_ZERO(&_writeFDs);
 	for (std::vector<HttpServer>::iterator itServer = _servers.begin(); itServer != _servers.end(); itServer++)
 	{
 		_ports = itServer->getPorts();
@@ -239,5 +270,4 @@ void Server::createMasterSockets()
 			}
 		}
 	}
-	FD_ZERO(&_writeFDs);
 }

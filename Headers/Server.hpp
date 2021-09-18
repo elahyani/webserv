@@ -34,7 +34,7 @@ private:
 	short _port;
 	std::vector<short> _ports;
 	std::string _host;
-	struct sockaddr_in _myAddr;
+	struct sockaddr_in _serverAddr;
 	struct sockaddr_in _clientAddr;
 	socklen_t _addrLen;
 	fd_set _masterFDs;
@@ -43,6 +43,7 @@ private:
 	int _maxSockFD;
 	char *_fileName;
 	std::map<int, std::string> _clients;
+	std::map<int, int> _serverAddrS;
 	Request _request;
 
 public:
@@ -61,6 +62,8 @@ public:
 
 	void exampleOfResponse(char *, int &);
 	void createMasterSockets();
+
+	HttpServer findTheTargetServer(int &);
 };
 
 #endif
