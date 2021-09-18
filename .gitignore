@@ -1,7 +1,8 @@
 .DS_STORE
 .vscode
 main.c
-fileSend
 .editorconfig
+webserv
+Objs
 a.out
 output

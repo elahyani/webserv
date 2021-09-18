@@ -90,9 +90,9 @@ void Server::bindSocket()
 	_myAddr.sin_family = AF_INET;
 	_myAddr.sin_port = htons(_port);
 	if (_host == "ANY")
-		_myAddr.sin_addr.s_addr = htonl(INADDR_ANY); //Check for IP
+		_myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	else
-		_myAddr.sin_addr.s_addr = htonl(static_cast<uint32_t>(std::stoul(_host))); //Check for IP
+		_myAddr.sin_addr.s_addr = inet_addr(_host.c_str());
 	if (bind(_masterSockFD, (struct sockaddr *)&_myAddr, sizeof(_myAddr)) == -1)
 		throw std::runtime_error("Unable to bind the socket");
 }
@@ -107,17 +107,10 @@ void Server::listenToClient()
 void Server::exampleOfResponse(char *fileName, int &existSockFD)
 {
 	(void)fileName;
-	Response response(this->_request);
-	// struct stat st;
-	// stat(fileName, &st);
-	// std::fstream fdRes;
-	// fdRes.open(fileName, std::ios::in);
-	// if (!fdRes)
-	// 	throw std::runtime_error("Unable to open response file.");
-	// char *_buffRes = new char[st.st_size + 1];
-	// fdRes.read(_buffRes, st.st_size);
-	// fdRes.close();
+	
 
+	Response response(this->_request);
+	
 	std::string msgRes(""); // Will hold the data that we will send
 	// //Header
 	// msgRes += "HTTP/1.1 200 OK\n"; // HTTP-version code msg
@@ -161,17 +154,13 @@ bool checkRequest(std::string &req)
 
 	i = req.find("\r\n\r\n");
 	if (i == std::string::npos)
-	{
 		return false;
-	}
 	if (req.find("Content-Length") != std::string::npos)
 	{
 
 		data = req.substr(i + 4);
 		if (data.find("\r\n\r\n") == std::string::npos)
-		{
 			return false;
-		}
 	}
 	return true;
 }
@@ -191,10 +180,17 @@ void Server::existConnectHandling(int &existSockFD)
 		}
 		if (checkRequest(it->second))
 		{
-			std::cout << "Request =====>>" << std::endl;
+			std::cout << "Request ====> "<< it->second << std::endl;
 			_request.setRequestData(it->second);
 			_request.parseRequest();
 			_request.printRequest();
+			// (void)_fileName;
+			// Cgi cgi(req);
+			// if (it->second.find("Content-Length"))
+			// {
+			// 	std::cout << "@@@@#####@@@@###@@@@" << it->second.substr(it->second.find("Content-Length")) << std::endl;
+			// 	return ;
+			// }
 			if (FD_ISSET(existSockFD, &_writeFDs))
 			{
 				//RESPONSE
@@ -202,14 +198,16 @@ void Server::existConnectHandling(int &existSockFD)
 			}
 		}
 	}
-	else
+	else if (valRead == 0)
 	{
 
-		std::cout << "Removed socket: " << std::to_string(existSockFD) << " valRead == " << valRead << std::endl;
+		std::cout << "Disconnect socket: " << std::to_string(existSockFD) << " valRead == " << valRead << std::endl;
 		close(existSockFD);
 		FD_CLR(existSockFD, &_masterFDs);
 		FD_CLR(existSockFD, &_writeFDs);
 	}
+	else
+		return; // Socket is connected but doesn't send request.
 }
 
 void Server::createMasterSockets()
@@ -224,16 +222,24 @@ void Server::createMasterSockets()
 		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort)
 		{
 			_port = *itPort;
-			std::cout << _port << std::endl;
+			std::cout << _host << ':' << _port << std::endl;
 			// Socket creating
-			this->createSocket();
-			// Bind socket
-			this->bindSocket();
-			FD_SET(_masterSockFD, &_masterFDs);
-			_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
-			// Listen to client in socket
-			this->listenToClient();
-			_masterSockFDs.push_back(_masterSockFD);
+			try
+			{
+				this->createSocket();
+				// Bind socket
+				this->bindSocket();
+				FD_SET(_masterSockFD, &_masterFDs);
+				_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
+				// Listen to client in socket
+				this->listenToClient();
+				_masterSockFDs.push_back(_masterSockFD);
+			}
+			catch (const std::exception &e)
+			{
+				close(_masterSockFD);
+				std::cerr << e.what() << '\n';
+			}
 		}
 	}
 	FD_ZERO(&_writeFDs);

@@ -52,6 +52,18 @@ void Response::buildHeaders()
     time(&rawTime);
     std::string tm = ctime(&rawTime);
 
+    // struct stat st;
+    // stat(fileName, &st);
+    // std::fstream fdRes;
+    // fdRes.open(fileName, std::ios::in);
+    // if (!fdRes)
+    //     throw std::runtime_error("Unable to open response file.");
+    // char *_buffRes = new char[st.st_size + 1];
+    // fdRes.read(_buffRes, st.st_size);
+    // fdRes.close();
+
+    // applyMethod();
+
     tm.pop_back();
     std::cout << "Protocol >>>> " << this->_request.getStartLineVal("protocol") << std::endl;
     std::cout << "Content-Type >>>> " << this->_request.getHeaderVal("Content-Type") << std::endl;
@@ -63,19 +75,22 @@ void Response::buildHeaders()
     this->_headers.append(" ");
     this->_headers.append(this->_errors[_status]);
     this->_headers.append("\r\n");
-    this->_headers.append("Server: nginx\r\n");
+    this->_headers.append("Server: webServ\r\n");
     this->_headers.append("Date: " + tm.append(" GMT"));
     this->_headers.append("\r\n");
     this->_headers.append("Connection: " + this->_request.getHeaderVal("Connection"));
     this->_headers.append("\r\n");
-    this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
+    this->_headers.append("Content-Type: text/html; charset=UTF-8");
     this->_headers.append("\r\n");
-    this->_headers.append("Content-Length: " + this->_request.getHeaderVal("Content-Length"));
+    std::string body = getHtmlTemplate();
+    this->_headers.append("Content-Length: " + std::to_string(body.length()));
+
     // this->_headers.append("\r\n");
     // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
     // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
     // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
     this->_headers.append("\r\n\r\n");
+    this->_headers.append(body);
 
     std::cout << "------------------[RESPONSE]------------------" << std::endl;
     // std::cout << _headers << std::endl;
@@ -88,6 +103,10 @@ std::string &Response::getHeaders()
 
 void Response::getMethod()
 {
+    // if index exist
+    // body = readFile(apth_to_file);
+    // else
+    // body = getTwmplateHtml()
     std::cout << "GET METHOD" << std::endl;
 }
 
@@ -111,6 +130,7 @@ void Response::buildResponse()
         postMethod();
     else if (_request.getStartLineVal("method").compare("DELETE") == 0)
         deleteMethod();
+    // buildHeaders();
 }
 
 std::string Response::getErrorPage(int status)

@@ -13,7 +13,8 @@
 #ifndef RESPONSE_HPP
 #define RESPONSE_HPP
 
-// #include <ctime>
+#include <ctime>
+#include <sys/stat.h>
 #include "Request.hpp"
 
 #define OK_STATUS 200
