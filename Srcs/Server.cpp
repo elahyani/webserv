@@ -2,8 +2,9 @@
 
 Server::Server() {}
 
-Server::Server(std::vector<HttpServer> &servers, char *fileName) : _servers(servers), _maxSockFD(0), _fileName(fileName)
+Server::Server(ConfigFileParser &parser, char *fileName) : _parser(parser), _maxSockFD(0), _fileName(fileName)
 {
+	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->createMasterSockets();
 
 	std::cout << "\t<Server running... waiting for connections./>" << std::endl;
@@ -21,16 +22,16 @@ Server::Server(std::vector<HttpServer> &servers, char *fileName) : _servers(serv
 			{
 				if (FD_ISSET(sockFD, &_readFDs))
 				{
-					int _newConnect = 0;
+					int newConnect = 0;
 					for (std::vector<int>::iterator it = _masterSockFDs.begin(); it != _masterSockFDs.end(); it++)
 					{
 						if (sockFD == *it)
 						{
-							_newConnect = 1;
+							newConnect = 1;
 							break;
 						}
 					}
-					(_newConnect) ? this->newConnectHandling(sockFD) : this->existConnectHandling(sockFD);
+					(newConnect) ? this->newConnectHandling(sockFD) : this->existConnectHandling(sockFD);
 				}
 			}
 	}
@@ -107,10 +108,9 @@ void Server::listenToClient()
 void Server::exampleOfResponse(char *fileName, int &existSockFD)
 {
 	(void)fileName;
-	
 
-	Response response(this->_request);
-	
+	Response response(this->_request, this->_servers[0]);
+
 	std::string msgRes(""); // Will hold the data that we will send
 	// //Header
 	// msgRes += "HTTP/1.1 200 OK\n"; // HTTP-version code msg
@@ -147,22 +147,21 @@ void Server::newConnectHandling(int &sockFD)
 	_clients.insert(std::pair<int, std::string>(newSockFD, ""));
 }
 
-bool checkRequest(std::string &req)
+bool checkRequest(std::string &buffReq)
 {
-	std::string data;
-	size_t i;
-
-	i = req.find("\r\n\r\n");
-	if (i == std::string::npos)
-		return false;
-	if (req.find("Content-Length") != std::string::npos)
+	if (!(buffReq.find("\r\n\r\n") == std::string::npos))
 	{
-
-		data = req.substr(i + 4);
-		if (data.find("\r\n\r\n") == std::string::npos)
-			return false;
+		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n") + 4);
+		if (headers.find("Content-Length") != std::string::npos)
+		{
+			size_t length = std::atoi(headers.substr(headers.find("Content-Length: ")).c_str() + 16);
+			std::string body = buffReq.substr(buffReq.find("\r\n\r\n") + 4);
+			if (body.length() < length)
+				return false;
+		}
+		return true;
 	}
-	return true;
+	return false;
 }
 
 void Server::existConnectHandling(int &existSockFD)
@@ -180,11 +179,11 @@ void Server::existConnectHandling(int &existSockFD)
 		}
 		if (checkRequest(it->second))
 		{
-			std::cout << "Request ====> "<< it->second << std::endl;
+			// std::cout << "buffReq... " << it->second << std::endl;
+
 			_request.setRequestData(it->second);
 			_request.parseRequest();
 			_request.printRequest();
-			// (void)_fileName;
 			// Cgi cgi(req);
 			// if (it->second.find("Content-Length"))
 			// {
@@ -213,8 +212,6 @@ void Server::existConnectHandling(int &existSockFD)
 void Server::createMasterSockets()
 {
 	FD_ZERO(&_masterFDs);
-	// foreach server
-	// {
 	for (std::vector<HttpServer>::iterator itServer = _servers.begin(); itServer != _servers.end(); itServer++)
 	{
 		_ports = itServer->getPorts();
@@ -243,5 +240,4 @@ void Server::createMasterSockets()
 		}
 	}
 	FD_ZERO(&_writeFDs);
-	_writeFDs = _masterFDs;
 }

@@ -9,7 +9,7 @@ int main(int ac, char **av)
 		parser.parseConfigFile(ac, av);
 		// parser.printContentData();
 		
-		Server server(parser.getServers(), av[2]);
+		Server server(parser, av[2]);
 
     }
     catch(const std::exception& exp)

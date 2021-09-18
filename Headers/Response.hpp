@@ -16,6 +16,7 @@
 #include <ctime>
 #include <sys/stat.h>
 #include "Request.hpp"
+#include "HttpServer.hpp"
 
 #define OK_STATUS 200
 #define MOVED_PERMANENTLY_STATUS 301
@@ -39,6 +40,7 @@ class Response
 private:
     int _status;
     Request &_request;
+    HttpServer &_server;
     std::string _responseMsg;
     std::string _headers;
     std::string _body;
@@ -46,7 +48,7 @@ private:
 
 public:
     Response();
-    Response(Request &req);
+    Response(Request &req, HttpServer &server);
     ~Response();
 
     void buildHeaders();

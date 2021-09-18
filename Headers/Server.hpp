@@ -27,6 +27,7 @@ class Request;
 class Server
 {
 private:
+	ConfigFileParser _parser;
 	std::vector<HttpServer> _servers;
 	int _masterSockFD;
 	std::vector<int> _masterSockFDs;
@@ -46,7 +47,7 @@ private:
 
 public:
 	Server();
-	Server(std::vector<HttpServer> &, char *);
+	Server(ConfigFileParser &, char *);
 	Server(Server const &);
 	~Server();
 	Server &operator=(const Server &);

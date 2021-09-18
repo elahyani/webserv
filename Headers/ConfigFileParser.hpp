@@ -55,7 +55,7 @@ public:
 	void checkMissingAttrs();
 	void checkHost(std::string);
 	void parseLocation(std::string);
-	std::vector<HttpServer> & getServers();
+	std::vector<HttpServer> &getServers();
 };
 
 #endif

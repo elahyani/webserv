@@ -12,7 +12,7 @@
 
 #include "Response.hpp"
 
-Response::Response(Request &req) : _status(-1), _request(req), _responseMsg(""), _headers(""), _body("")
+Response::Response(Request &req, HttpServer &server) : _status(-1), _request(req), _server(server), _responseMsg(""), _headers(""), _body("")
 {
     this->_errors[200] = "OK";
     this->_errors[301] = "Moved Permanently";
@@ -52,23 +52,12 @@ void Response::buildHeaders()
     time(&rawTime);
     std::string tm = ctime(&rawTime);
 
-    // struct stat st;
-    // stat(fileName, &st);
-    // std::fstream fdRes;
-    // fdRes.open(fileName, std::ios::in);
-    // if (!fdRes)
-    //     throw std::runtime_error("Unable to open response file.");
-    // char *_buffRes = new char[st.st_size + 1];
-    // fdRes.read(_buffRes, st.st_size);
-    // fdRes.close();
-
-    // applyMethod();
 
     tm.pop_back();
-    std::cout << "Protocol >>>> " << this->_request.getStartLineVal("protocol") << std::endl;
-    std::cout << "Content-Type >>>> " << this->_request.getHeaderVal("Content-Type") << std::endl;
-    std::cout << "Content-Length >>>> " << this->_request.getHeaderVal("Content-Length") << std::endl;
-    std::cout << "Connection >>>> " << this->_request.getHeaderVal("Connection") << std::endl;
+    // std::cout << "Protocol >>>> " << this->_request.getStartLineVal("protocol") << std::endl;
+    // std::cout << "Content-Type >>>> " << this->_request.getHeaderVal("Content-Type") << std::endl;
+    // std::cout << "Content-Length >>>> " << this->_request.getHeaderVal("Content-Length") << std::endl;
+    // std::cout << "Connection >>>> " << this->_request.getHeaderVal("Connection") << std::endl;
     this->_headers.append(this->_request.getStartLineVal("protocol"));
     this->_headers.append(" ");
     this->_headers.append(std::to_string(_status));
@@ -103,7 +92,8 @@ std::string &Response::getHeaders()
 
 void Response::getMethod()
 {
-    // if index exist
+    // std::string path = _server.getLoactions()[0].getRoot();
+    // if (_server.getLoactions()[0].getIndexes()[0].size())
     // body = readFile(apth_to_file);
     // else
     // body = getTwmplateHtml()
