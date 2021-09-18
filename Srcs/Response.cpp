@@ -14,22 +14,22 @@
 
 Response::Response(Request &req) : _status(-1), _request(req), _responseMsg(""), _headers(""), _body("")
 {
-    this->errors[200] = "OK";
-    this->errors[301] = "Moved Permanently";
-    this->errors[307] = "Temporary Redirect";
-    this->errors[400] = "Bad Request";
-    this->errors[403] = "Forbidden";
-    this->errors[404] = "Not Found";
-    this->errors[405] = "Not Allowed";
-    this->errors[411] = "Length Required";
-    this->errors[413] = "Payload Too Large";
-    this->errors[414] = "Uri Too Long";
-    this->errors[415] = "Unsupported Media Type";
-    this->errors[500] = "Internal Server Error";
-    this->errors[501] = "Not Implemented";
-    this->errors[502] = "Bad Gateway";
-    this->errors[504] = "Gateway Timeout";
-    this->errors[505] = "Http Version Not Supported";
+    this->_errors[200] = "OK";
+    this->_errors[301] = "Moved Permanently";
+    this->_errors[307] = "Temporary Redirect";
+    this->_errors[400] = "Bad Request";
+    this->_errors[403] = "Forbidden";
+    this->_errors[404] = "Not Found";
+    this->_errors[405] = "Not Allowed";
+    this->_errors[411] = "Length Required";
+    this->_errors[413] = "Payload Too Large";
+    this->_errors[414] = "Uri Too Long";
+    this->_errors[415] = "Unsupported Media Type";
+    this->_errors[500] = "Internal Server Error";
+    this->_errors[501] = "Not Implemented";
+    this->_errors[502] = "Bad Gateway";
+    this->_errors[504] = "Gateway Timeout";
+    this->_errors[505] = "Http Version Not Supported";
     this->_status = this->_request.getStatusCode();
 
     std::cout << "status >>>>> " << this->_status << std::endl;
@@ -47,6 +47,12 @@ bool Response::checkErrors(int status)
 
 void Response::buildHeaders()
 {
+    time_t rawTime;
+
+    time(&rawTime);
+    std::string tm = ctime(&rawTime);
+
+    tm.pop_back();
     std::cout << "Protocol >>>> " << this->_request.getStartLineVal("protocol") << std::endl;
     std::cout << "Content-Type >>>> " << this->_request.getHeaderVal("Content-Type") << std::endl;
     std::cout << "Content-Length >>>> " << this->_request.getHeaderVal("Content-Length") << std::endl;
@@ -55,9 +61,29 @@ void Response::buildHeaders()
     this->_headers.append(" ");
     this->_headers.append(std::to_string(_status));
     this->_headers.append(" ");
-    this->_headers.append(this->errors[_status]);
+    this->_headers.append(this->_errors[_status]);
     this->_headers.append("\r\n");
-    this->_headers.append("");
+    this->_headers.append("Server: nginx\r\n");
+    this->_headers.append("Date: " + tm.append(" GMT"));
+    this->_headers.append("\r\n");
+    this->_headers.append("Connection: " + this->_request.getHeaderVal("Connection"));
+    this->_headers.append("\r\n");
+    this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
+    this->_headers.append("\r\n");
+    this->_headers.append("Content-Length: " + this->_request.getHeaderVal("Content-Length"));
+    // this->_headers.append("\r\n");
+    // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
+    // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
+    // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
+    this->_headers.append("\r\n\r\n");
+
+    std::cout << "------------------[RESPONSE]------------------" << std::endl;
+    // std::cout << _headers << std::endl;
+}
+
+std::string &Response::getHeaders()
+{
+    return this->_headers;
 }
 
 void Response::getMethod()
@@ -111,11 +137,11 @@ std::string Response::getErrorPage(int status)
     </html>";
 
     errorPage.replace(errorPage.find("$1"), 2, std::to_string(status));
-    errorPage.replace(errorPage.find("$2"), 2, errors[status]);
+    errorPage.replace(errorPage.find("$2"), 2, _errors[status]);
     return errorPage;
 }
 
-std::string Response::getResponse()
+std::string &Response::getResponse()
 {
     return this->_responseMsg;
 }

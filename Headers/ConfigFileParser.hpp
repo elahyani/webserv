@@ -26,18 +26,18 @@
 class ConfigFileParser
 {
 private:
-	std::string data;
-	int serversNumber;
-	int locationsNumber;
-	bool inServer;
-	bool inLocation;
-	std::string filename;
-	std::vector<HttpServer> servers;
-	HttpServer server;
-	Location location;
-	std::map<int, std::string> mapTmp;
-	size_t countauto;
-	size_t isEnabled;
+	std::string _data;
+	int _serversNumber;
+	int _locationsNumber;
+	bool _inServer;
+	bool _inLocation;
+	std::string _filename;
+	std::vector<HttpServer> _servers;
+	HttpServer _server;
+	Location _location;
+	std::map<int, std::string> _mapTmp;
+	size_t _countauto;
+	size_t _isEnabled;
 
 public:
 	ConfigFileParser();

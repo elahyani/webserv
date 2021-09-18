@@ -22,15 +22,15 @@
 class Location
 {
 private:
-	bool autoindex;
-	std::string locationName;
-	std::string root;
-	std::vector<std::string> indexes;
-	std::vector<std::string> allowedMethods;
-	std::map<int, std::string> ret;
-	std::string fastCgiPass;
-	bool uploadEnable;
-	std::string uploadStore;
+	bool _autoindex;
+	std::string _locationName;
+	std::string _root;
+	std::vector<std::string> _indexes;
+	std::vector<std::string> _allowedMethods;
+	std::map<int, std::string> _ret;
+	std::string _fastCgiPass;
+	bool _uploadEnable;
+	std::string _uploadStore;
 
 public:
 	Location();

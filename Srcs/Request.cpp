@@ -12,12 +12,12 @@
 
 #include "Request.hpp"
 
-Request::Request(const std::string &buffer) : content(""), method(""), urlPath(""), urlQuery(""), protocol(""), _newSockFd(0), bLen(0), statusCode(200)
+Request::Request() : _content(""), _method(""), _urlPath(""), _urlQuery(""), _protocol(""), _newSockFd(0), _bLen(0), _statusCode(200)
 {
-	this->content.append(buffer);
-	this->methods.push_back("GET");
-	this->methods.push_back("POST");
-	this->methods.push_back("DELETE");
+
+	this->_methods.push_back("GET");
+	this->_methods.push_back("POST");
+	this->_methods.push_back("DELETE");
 }
 
 Request::Request(const Request &src)
@@ -32,6 +32,11 @@ Request &Request::operator=(const Request &rhs)
 }
 
 Request::~Request() {}
+
+void Request::setRequestData(const std::string &buffer)
+{
+	this->_content.append(buffer);
+}
 
 // bool Request::checkRequest(std::string &req)
 // {
@@ -78,59 +83,79 @@ Request::~Request() {}
 void Request::parseRequest()
 {
 	std::string tmp;
-	std::istringstream s(content);
+	std::istringstream s(_content);
 	try
 	{
 		while (std::getline(s, tmp))
 		{
 			// std::cout << ">>>>>>>>>>>>>>>>>>>>>>> " << tmp << std::endl;
-			if (!this->method.size() && !this->protocol.size())
+			if (!this->_method.size() && !this->_protocol.size())
 			{
 
 				this->split(tmp, " ");
-				if (this->mapTmp.size() == 3)
+				if (this->_mapTmp.size() == 3)
 				{
-					if (mapTmp[0] != methods[0] && mapTmp[0] != methods[1] && mapTmp[0] != methods[2])
+					if (_mapTmp[0] != _methods[0] && _mapTmp[0] != _methods[1] && _mapTmp[0] != _methods[2])
 						throw std::invalid_argument("Bad Request: Method Not Allowed");
-					if (mapTmp[1].at(0) != '/')
+					if (_mapTmp[1].at(0) != '/')
 						throw std::invalid_argument("Bad Request: Absolute path required!");
-					if (mapTmp[2].find("HTTP/1.1") != std::string::npos)
+					if (_mapTmp[2].find("HTTP/1.1") != std::string::npos)
 					{
-						this->mapTmp[2].pop_back();
-						if (mapTmp[2] != "HTTP/1.1")
+						this->_mapTmp[2].pop_back();
+						if (_mapTmp[2] != "HTTP/1.1")
 							throw std::invalid_argument("Bad Request: Wrrong HTTP version!");
 					}
-					this->method = this->mapTmp[0];
-					this->urlPath = this->mapTmp[1];
-					this->protocol = this->mapTmp[2];
-					if (this->urlPath.find("?") != std::string::npos)
+					this->_method = this->_mapTmp[0];
+					this->_urlPath = this->_mapTmp[1];
+					this->_protocol = this->_mapTmp[2];
+					if (this->_urlPath.find("?") != std::string::npos)
 					{
-						this->urlQuery = this->urlPath.substr(this->urlPath.find("?") + 1);
-						this->urlPath = this->urlPath.substr(0, this->urlPath.find("?"));
+						this->_urlQuery = this->_urlPath.substr(this->_urlPath.find("?") + 1);
+						this->_urlPath = this->_urlPath.substr(0, this->_urlPath.find("?"));
 					}
+					this->_startLine["method"] = _method;
+					this->_startLine["url"] = _urlPath;
+					this->_startLine["query"] = _urlQuery;
+					this->_startLine["protocol"] = _protocol;
 				}
 				else
 					throw std::invalid_argument("Bad Request: Too much or too few arguments!");
 			}
-			else if (!headers["Host"].size() && tmp.find("Host") != std::string::npos)
-				headers["Host"] = tmp.substr(tmp.find(": ") + 2);
-			else if (!headers["Connection"].size() && tmp.find("Connection") != std::string::npos)
-				headers["Connection"] = tmp.substr(tmp.find(": ") + 2);
-			else if (!headers["Content-Type"].size() && tmp.find("Content-Type") != std::string::npos)
+			else if (!_headers["Host"].size() && tmp.find("Host") != std::string::npos)
 			{
-				headers["Content-Type"] = tmp.substr(tmp.find(": ") + 2);
-				if (!headers["Boundary"].size() && tmp.find("boundary") != std::string::npos)
-					headers["Boundary"] = tmp.substr(tmp.find("boundary=") + 9);
+				_headers["Host"] = tmp.substr(tmp.find(": ") + 2);
+				_headers["Host"].pop_back();
 			}
-			else if (!headers["Content-Length"].size() && tmp.find("Content-Length") != std::string::npos)
-				headers["Content-Length"] = tmp.substr(tmp.find(": ") + 2);
-			else if (!headers["Transfer-Encoding"].size() && tmp.find("Transfer-Encoding") != std::string::npos)
-				headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
+			else if (!_headers["Connection"].size() && tmp.find("Connection") != std::string::npos)
+			{
+				_headers["Connection"] = tmp.substr(tmp.find(": ") + 2);
+				_headers["Connection"].pop_back();
+			}
+			else if (!_headers["Content-Type"].size() && tmp.find("Content-Type") != std::string::npos)
+			{
+				_headers["Content-Type"] = tmp.substr(tmp.find(": ") + 2);
+				_headers["Content-Type"].pop_back();
+				if (!_headers["Boundary"].size() && tmp.find("boundary") != std::string::npos)
+				{
+					_headers["Boundary"] = tmp.substr(tmp.find("boundary=") + 9);
+					_headers["Boundary"].pop_back();
+				}
+			}
+			else if (!_headers["Content-Length"].size() && tmp.find("Content-Length") != std::string::npos)
+			{
+				_headers["Content-Length"] = tmp.substr(tmp.find(": ") + 2);
+				_headers["Content-Length"].pop_back();
+			}
+			else if (!_headers["Transfer-Encoding"].size() && tmp.find("Transfer-Encoding") != std::string::npos)
+			{
+				_headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
+				_headers["Transfer-Encoding"].pop_back();
+			}
 			// std::cout << "len:" << tmp.find("Content-Length") << std::endl;
-			else if (this->headers["Boundary"].size() && tmp.find(this->headers["Boundary"]) != std::string::npos)
+			else if (this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos)
 				break;
 		}
-		if (this->headers["Boundary"].size() && tmp.find(this->headers["Boundary"]) != std::string::npos)
+		if (this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos)
 			parseBody();
 		checkReqErrors();
 		// exit(1);
@@ -139,10 +164,6 @@ void Request::parseRequest()
 	{
 		std::cerr << e.what() << '\n';
 	}
-	this->startLine["method"] = method;
-	this->startLine["url"] = urlPath;
-	this->startLine["query"] = urlQuery;
-	this->startLine["protocol"] = protocol;
 }
 
 int Request::getBodiesLen(std::string buffer)
@@ -153,7 +174,7 @@ int Request::getBodiesLen(std::string buffer)
 
 	while (std::getline(bLines, tmp))
 	{
-		if (tmp.find(this->headers["Boundary"]) != std::string::npos)
+		if (tmp.find(this->_headers["Boundary"]) != std::string::npos)
 		{
 			// std::cout << "" << std::endl;
 			len++;
@@ -165,9 +186,9 @@ int Request::getBodiesLen(std::string buffer)
 void Request::parseBody()
 {
 	std::string tmp;
-	std::istringstream s(content.substr(content.find("\r\n\r\n") + 4));
-	this->bLen = getBodiesLen(content.substr(content.find("\r\n\r\n") + 4));
-	Bodies bodies[this->bLen];
+	std::istringstream s(_content.substr(_content.find("\r\n\r\n") + 4));
+	this->_bLen = getBodiesLen(_content.substr(_content.find("\r\n\r\n") + 4));
+	Bodies bodies[this->_bLen];
 
 	int i = -1;
 
@@ -176,72 +197,90 @@ void Request::parseBody()
 	while (std::getline(s, tmp))
 	{
 		// std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " << tmp << std::endl;
-		if (tmp.find(this->headers["Boundary"]) != std::string::npos)
+		if (tmp.find(this->_headers["Boundary"]) != std::string::npos)
 		{
 			// std::cout << "›››››››››››››››››››››››››››››" << std::endl;
 			i++;
 			bodies[i].contentDesp = "";
 			bodies[i].contentType = "";
 			bodies[i].body = "";
-			this->bodiesList.push_back(bodies[i]);
+			this->_bodiesList.push_back(bodies[i]);
 		}
-		else if (!bodiesList[i].contentDesp.size() && tmp.find("Content-Disposition") != std::string::npos)
-			this->bodiesList[i].contentDesp = tmp.substr(tmp.find(": ") + 2);
-		else if (!bodiesList[i].contentType.size() && tmp.find("Content-Type") != std::string::npos)
-			this->bodiesList[i].contentType = tmp.substr(tmp.find(": ") + 2);
-		else if (bodiesList[i].contentType.size() && tmp.find(this->headers["Boundary"]) == std::string::npos)
-			this->bodiesList[i].body.append(tmp).append("\n");
-		else if (tmp.compare(this->headers["Boundary"].append("--")) == 0)
+		else if (!_bodiesList[i].contentDesp.size() && tmp.find("Content-Disposition") != std::string::npos)
+		{
+			this->_bodiesList[i].contentDesp = tmp.substr(tmp.find(": ") + 2);
+			this->_bodiesList[i].contentDesp.pop_back();
+		}
+		else if (!_bodiesList[i].contentType.size() && tmp.find("Content-Type") != std::string::npos)
+		{
+			this->_bodiesList[i].contentType = tmp.substr(tmp.find(": ") + 2);
+			this->_bodiesList[i].contentType.pop_back();
+		}
+		else if (_bodiesList[i].contentType.size() && tmp.find(this->_headers["Boundary"]) == std::string::npos)
+			this->_bodiesList[i].body.append(tmp).append("\n");
+		else if (tmp.compare(this->_headers["Boundary"].append("--")) == 0)
 			break;
 	}
 }
 
 int Request::checkReqErrors()
 {
-	std::string pVersion = this->protocol.substr(this->protocol.find("/") + 1);
+	std::string pVersion = this->_protocol.substr(this->_protocol.find("/") + 1);
 
 	if (pVersion.compare("1.1") != 0)
-		this->statusCode = 505;
-	if (this->protocol.compare("HTTP/1.1") != 0)
+		this->_statusCode = 505;
+	if (this->_protocol.compare("HTTP/1.1") != 0)
 	{
-		this->statusCode = 400;
+		std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here1" << std::endl;
+		this->_statusCode = 400;
+		exit(1);
 	}
-	if (this->startLine["method"].compare("GET") != 0 && this->startLine["method"].compare("POST") != 0 && this->startLine["method"].compare("DELETE") != 0)
-		this->statusCode = 400;
-	if (this->method.compare("POST") == 0)
+	if (this->_startLine["method"].compare("GET") != 0 && this->_startLine["method"].compare("POST") != 0 && this->_startLine["method"].compare("DELETE") != 0)
 	{
-		if (!this->headers["Content-Length"].size())
-			this->statusCode = 400;
+		std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here2 |" << this->_startLine["method"] << "|" << std::endl;
+		this->_statusCode = 400;
+		exit(1);
 	}
-	if (!startLine["url"].size() || (startLine["url"].size() && startLine["url"][0] != '/'))
-		this->statusCode = 400;
-	return this->statusCode;
+	if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size())
+	{
+		std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here3 |" << this->_headers["Content-Length"] << "|" << std::endl;
+		this->_statusCode = 400;
+		exit(1);
+	}
+	if (!_startLine["url"].size() || (_startLine["url"].size() && _startLine["url"][0] != '/'))
+	{
+		std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here4" << std::endl;
+		this->_statusCode = 400;
+		exit(1);
+	}
+	return this->_statusCode;
 }
 
 int Request::getStatusCode()
 {
-	return this->statusCode;
+	return this->_statusCode;
 }
 
 void Request::printRequest()
 {
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
-	std::cout << "Method            -> |" << this->startLine["method"] << "|" << std::endl;
-	std::cout << "Url               -> |" << this->startLine["url"] << "|" << std::endl;
-	std::cout << "Protocol Version  -> |" << this->startLine["protocol"] << "|" << std::endl;
-	std::cout << "Host              -> |" << this->headers["Host"] << "|" << std::endl;
-	std::cout << "Connection        -> |" << this->headers["Connection"] << "|" << std::endl;
-	std::cout << "Content Type      -> |" << this->headers["Content-Type"] << "|" << std::endl;
-	std::cout << "Content Length    -> |" << this->headers["Content-Length"] << "|" << std::endl;
-	std::cout << "Transfer Encoding -> |" << this->headers["Transfer-Encoding"] << "|" << std::endl;
-	std::cout << "Boundary          -> |" << this->headers["Boundary"] << "|" << std::endl;
-	if (this->bodiesList.size())
+	std::cout << "Method            -> |" << this->_startLine["method"] << "|" << std::endl;
+	std::cout << "Url               -> |" << this->_startLine["url"] << "|" << std::endl;
+	std::cout << "Protocol Version  -> |" << this->_startLine["protocol"] << "|" << std::endl;
+	std::cout << "Host              -> |" << this->_headers["Host"] << "|" << std::endl;
+	std::cout << "Connection        -> |" << this->_headers["Connection"] << "|" << std::endl;
+	std::cout << "Content Type      -> |" << this->_headers["Content-Type"] << "|" << std::endl;
+	std::cout << "Content Length    -> |" << this->_headers["Content-Length"] << "|" << std::endl;
+	std::cout << "Transfer Encoding -> |" << this->_headers["Transfer-Encoding"] << "|" << std::endl;
+	std::cout << "Boundary          -> |" << this->_headers["Boundary"] << "|" << std::endl;
+	if (this->_bodiesList.size())
 	{
-		std::cout << "Content-Dispos... -> |" << this->bodiesList[0].contentDesp << "|" << std::endl;
-		std::cout << "Content-Type      -> |" << this->bodiesList[0].contentType << "|" << std::endl;
-		std::cout << "Body              -> |" << this->bodiesList[0].body << "|" << std::endl;
+		std::cout << "Content-Dispos... -> |" << this->_bodiesList[0].contentDesp << "|" << std::endl;
+		std::cout << "Content-Type      -> |" << this->_bodiesList[0].contentType << "|" << std::endl;
+		std::cout << "Body              -> |" << this->_bodiesList[0].body << "|" << std::endl;
 	}
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
+	// exit(1);
 }
 
 void Request::split(std::string line, std::string splitter)
@@ -252,25 +291,25 @@ void Request::split(std::string line, std::string splitter)
 
 	while (end != -1)
 	{
-		this->mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
+		this->_mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
 		start = end + splitter.size();
 		end = line.find(splitter, start);
 		i++;
 	}
-	this->mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
+	this->_mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
 }
 
 std::string Request::getHeaderVal(std::string const &key)
 {
-	return this->headers[key];
+	return this->_headers[key];
 }
 
 std::string Request::getStartLineVal(std::string const &key)
 {
-	return this->startLine[key];
+	return this->_startLine[key];
 }
 
 std::vector<Bodies> Request::getBody()
 {
-	return this->bodiesList;
+	return this->_bodiesList;
 }

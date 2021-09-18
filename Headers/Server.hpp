@@ -21,6 +21,8 @@
 # include "HttpServer.hpp"
 # include "Request.hpp"
 class Request;
+# include "Response.hpp"
+
 
 class Server
 {
@@ -40,6 +42,7 @@ private:
 	int							_maxSockFD;
 	char*						_fileName;
 	std::map<int, std::string>	_clients;
+	Request						_request;
 
 public:
 	Server();
