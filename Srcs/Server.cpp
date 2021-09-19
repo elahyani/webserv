@@ -12,8 +12,7 @@ Server::Server(ConfigFileParser &parser, char *fileName) : _parser(parser), _max
 	{
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
-		int timeout = 1;
-		struct timeval _tv = {timeout, 0};
+		struct timeval _tv = {1, 0};
 		int selectRet = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
 		if (selectRet < 0)
 			throw std::runtime_error("Unable to select work socket.");
@@ -105,7 +104,7 @@ void Server::listenToClient()
 		throw std::runtime_error("Unable to listen for connections.");
 }
 
-HttpServer Server::findTheTargetServer(int & accptSockFD)
+HttpServer Server::findTheTargetServer(int &accptSockFD)
 {
 	// Find the target server
 	HttpServer targetServer;
@@ -115,7 +114,7 @@ HttpServer Server::findTheTargetServer(int & accptSockFD)
 	if (getsockname(it->second, (struct sockaddr *)&serverAddr, &_addrLen) < 0)
 		throw std::runtime_error("Unable to get server informations from socket " + std::to_string(it->second));
 	std::cout << "Master socket fd is " << std::to_string(it->second) << " , ip is : " << inet_ntoa(serverAddr.sin_addr) << " , port : " << std::to_string(ntohs(serverAddr.sin_port)) << std::endl;
-	for(std::vector<HttpServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
+	for (std::vector<HttpServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
 	{
 		if (it->getHost() == inet_ntoa(serverAddr.sin_addr))
 		{
@@ -125,7 +124,7 @@ HttpServer Server::findTheTargetServer(int & accptSockFD)
 				if (*itPort == ntohs(serverAddr.sin_port))
 				{
 					targetServer = *it;
-					break ;
+					break;
 				}
 			}
 		}
@@ -147,7 +146,7 @@ void Server::exampleOfResponse(char *fileName, int &accptSockFD)
 	// msgRes += "Content-Length: " + std::to_string(st.st_size);
 	// msgRes += "\r\n\r\n"; //blank-line
 	// //Body
-	response.buildHeaders();
+	response.buildResponse();
 	msgRes.append(response.getHeaders());
 	// msgRes += _buffRes;
 	// delete[] _buffRes;

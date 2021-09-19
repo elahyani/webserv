@@ -38,48 +38,6 @@ void Request::setRequestData(const std::string &buffer)
 	this->_content.append(buffer);
 }
 
-// bool Request::checkRequest(std::string &req)
-// {
-// 	std::string data;
-// 	size_t i;
-
-// 	i = req.find("\r\n\r\n");
-// 	if (i == std::string::npos)
-// 	{
-// 		return false;
-// 	}
-// 	if (req.find("Content-Length") != std::string::npos)
-// 	{
-// 		data = req.substr(i + 4);
-// 		data = data.substr(0, data.length() - 4);
-// 		if (data.find("\r\n\r\n") == std::string::npos)
-// 		{
-// 			return false;
-// 		}
-// 	}
-// 	return true;
-// }
-
-// void Request::readRequest()
-// {
-// 	int valRead;
-// 	char _buffReq[16384] = {0};
-
-// 	while (true)
-// 	{
-// 		std::memset(_buffReq, 0, sizeof(_buffReq));
-// 		valRead = recv(_newSockFd, _buffReq, sizeof(_buffReq) - 1, 0);
-// 		if (valRead == -1)
-// 			throw std::runtime_error("Unable to receive the request from client.");
-// 		_buffReq[valRead] = '\0';
-// 		content.append(_buffReq);
-// 		std::cout << ".........." << _buffReq << ".........." << std::endl;
-// 		if (checkRequest(content))
-// 			break;
-// 	}
-// 	// std::cout << content << std::endl;
-// }
-
 void Request::parseRequest()
 {
 	std::string tmp;
@@ -166,7 +124,7 @@ void Request::parseRequest()
 	}
 }
 
-int  Request::getBodiesLen(std::string buffer)
+int Request::getBodiesLen(std::string buffer)
 {
 	std::string tmp;
 	std::istringstream bLines(buffer);
@@ -256,7 +214,7 @@ int Request::checkReqErrors()
 	return this->_statusCode;
 }
 
-int & Request::getStatusCode()
+int &Request::getStatusCode()
 {
 	return this->_statusCode;
 }
@@ -299,12 +257,12 @@ void Request::split(std::string line, std::string splitter)
 	this->_mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
 }
 
-std::string & Request::getHeaderVal(std::string const &key)
+std::string &Request::getHeaderVal(std::string const &key)
 {
 	return this->_headers[key];
 }
 
-std::string & Request::getStartLineVal(std::string const &key)
+std::string &Request::getStartLineVal(std::string const &key)
 {
 	return this->_startLine[key];
 }

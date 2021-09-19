@@ -12,7 +12,14 @@
 
 #include "Response.hpp"
 
-Response::Response(Request &req, HttpServer &server) : _status(-1), _request(req), _server(server), _responseMsg(""), _headers(""), _body("")
+Response::Response(Request &req, HttpServer &server) : _status(-1),
+                                                       _request(req),
+                                                       _server(server),
+                                                       _responseMsg(""),
+                                                       _headers(""),
+                                                       _body(""),
+                                                       _indexPath("")
+
 {
     this->_errors[200] = "OK";
     this->_errors[301] = "Moved Permanently";
@@ -39,25 +46,65 @@ Response::~Response()
 {
 }
 
-bool Response::checkErrors(int status)
+void Response::checkErrors()
+{
+    // config errors
+}
+
+bool Response::getErrorMsg(int status)
 {
     (void)status;
     return true;
 }
 
+void Response::indexingFiles()
+{
+    // auto index
+    // listing links to files
+}
+
+bool Response::indexIsExist()
+{
+    // check which location we are in
+    // check if index and root exist
+    // handle location content
+
+    for (std::vector<Location>::iterator it = _server.getLoactions().begin(); it != _server.getLoactions().end(); ++it)
+    {
+        if (it->getLocationName().compare("/") == 0)
+        {
+            if ((_index = std::find(it->getIndexes().begin(), it->getIndexes().end(), "index.html")) != it->getIndexes().end())
+            {
+                _indexPath.append(_server.getRoot());
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Response::autoIndex()
+{
+    for (std::vector<Location>::iterator it = _server.getLoactions().begin(); it != _server.getLoactions().end(); ++it)
+    {
+        if (it->getLocationName().compare("/") == 0)
+        {
+            if (it->getAutoIndex())
+                return true;
+        }
+    }
+    return false;
+}
+
 void Response::buildHeaders()
 {
     time_t rawTime;
+    std::string tm;
+    std::cout << "--------------------------------------------------------------> HERE" << std::endl;
 
     time(&rawTime);
-    std::string tm = ctime(&rawTime);
-
-
+    tm = ctime(&rawTime);
     tm.pop_back();
-    // std::cout << "Protocol >>>> " << this->_request.getStartLineVal("protocol") << std::endl;
-    // std::cout << "Content-Type >>>> " << this->_request.getHeaderVal("Content-Type") << std::endl;
-    // std::cout << "Content-Length >>>> " << this->_request.getHeaderVal("Content-Length") << std::endl;
-    // std::cout << "Connection >>>> " << this->_request.getHeaderVal("Connection") << std::endl;
     this->_headers.append(this->_request.getStartLineVal("protocol"));
     this->_headers.append(" ");
     this->_headers.append(std::to_string(_status));
@@ -71,15 +118,14 @@ void Response::buildHeaders()
     this->_headers.append("\r\n");
     this->_headers.append("Content-Type: text/html; charset=UTF-8");
     this->_headers.append("\r\n");
-    std::string body = getHtmlTemplate();
-    this->_headers.append("Content-Length: " + std::to_string(body.length()));
+    this->_headers.append("Content-Length: " + std::to_string(_body.length()));
 
     // this->_headers.append("\r\n");
     // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
     // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
     // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
     this->_headers.append("\r\n\r\n");
-    this->_headers.append(body);
+    this->_headers.append(_body);
 
     std::cout << "------------------[RESPONSE]------------------" << std::endl;
     // std::cout << _headers << std::endl;
@@ -92,12 +138,21 @@ std::string &Response::getHeaders()
 
 void Response::getMethod()
 {
-    // std::string path = _server.getLoactions()[0].getRoot();
-    // if (_server.getLoactions()[0].getIndexes()[0].size())
-    // body = readFile(apth_to_file);
-    // else
-    // body = getTwmplateHtml()
     std::cout << "GET METHOD" << std::endl;
+    indexingFiles();
+    if (indexIsExist())
+    {
+        std::ifstream indexFile(_indexPath.append("/" + *_index));
+        std::cout << "indexPath -> |" << _indexPath << "|" << std::endl;
+        if (indexFile)
+        {
+            std::ostringstream ss;
+            ss << indexFile.rdbuf();
+            _body = ss.str();
+        }
+        else
+            _body = getHtmlTemplate();
+    }
 }
 
 void Response::postMethod()
@@ -120,7 +175,7 @@ void Response::buildResponse()
         postMethod();
     else if (_request.getStartLineVal("method").compare("DELETE") == 0)
         deleteMethod();
-    // buildHeaders();
+    buildHeaders();
 }
 
 std::string Response::getErrorPage(int status)
@@ -162,10 +217,10 @@ std::string Response::getHtmlTemplate()
     <html>\n\
         <head>\n\
         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\
-        <title>Bad Request</title>\n\
+        <title>WEBSERV</title>\n\
         <style>\n\
             .container{margin:0;top:0;}\n\
-            .error{font-size: 2.5rem;text-align: center;margin-top: 40%;color:dodgerblue;}\n\
+            .error{font-size: 2.5rem;text-align: center;margin-top: 10%;color:dodgerblue;}\n\
         </style>\n\
         </head>\n\
         <body>\n\

@@ -15,6 +15,10 @@
 
 #include <ctime>
 #include <sys/stat.h>
+#include <algorithm>
+#include <sstream>
+#include <fstream>
+#include <string>
 #include "Request.hpp"
 #include "HttpServer.hpp"
 
@@ -45,6 +49,8 @@ private:
     std::string _headers;
     std::string _body;
     std::map<int, std::string> _errors;
+    std::string _indexPath;
+    std::vector<std::string>::iterator _index;
 
 public:
     Response();
@@ -52,7 +58,8 @@ public:
     ~Response();
 
     void buildHeaders();
-    bool checkErrors(int status);
+    bool getErrorMsg(int status);
+    void checkErrors();
     void getMethod();                     //
     void postMethod();                    //
     void deleteMethod();                  //
@@ -61,6 +68,10 @@ public:
     std::string &getResponse();
     std::string getHtmlTemplate(); //
     std::string &getHeaders();
+    bool indexIsExist();
+    bool autoIndex();
+    void indexingFiles();
+    // std::string readFile
 };
 
 #endif
