@@ -6,7 +6,6 @@ Server::Server(ConfigFileParser &parser, char *fileName) : _parser(parser), _max
 {
 	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->createMasterSockets();
-
 	std::cout << "\t<Server running... waiting for connections./>" << std::endl;
 	for (;;)
 	{
@@ -76,11 +75,11 @@ void Server::createSocket()
 	if ((_masterSockFD = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw std::runtime_error("Unable to create a socket.");
 	if (fcntl(_masterSockFD, F_SETFL, O_NONBLOCK) < 0)
-		throw std::runtime_error("Unable to set socket ID: " + std::to_string(_masterSockFD) + " to non-blocking.");
+		throw std::runtime_error("Unable to set the socket " + std::to_string(_masterSockFD) + " to non-blocking.");
 	// set socket option
 	int opt = 1;
 	if (setsockopt(_masterSockFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1)
-		throw std::runtime_error("Unable to set socket option.");
+		throw std::runtime_error("Unable to set socket option to the socket " + std::to_string(_masterSockFD));
 }
 
 // Socket binding
@@ -95,20 +94,18 @@ void Server::bindSocket()
 	else
 		_serverAddr.sin_addr.s_addr = inet_addr(_host.c_str());
 	if (bind(_masterSockFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) == -1)
-		throw std::runtime_error("Unable to bind the socket");
+		throw std::runtime_error("Unable to set name to the socket " + std::to_string(_masterSockFD));
 }
 
-// Listen for incoming connections from client
+// Listen for incoming connections from clients
 void Server::listenToClient()
 {
 	if (listen(_masterSockFD, 2048) == -1)
-		throw std::runtime_error("Unable to listen for connections.");
+		throw std::runtime_error("Unable to listen for connections in the socket " + std::to_string(_masterSockFD));
 }
 
-HttpServer Server::findTheTargetServer(int & accptSockFD)
+void Server::findTheTargetServer(int & accptSockFD, HttpServer *srv)
 {
-	// Find the target server
-	HttpServer targetServer;
 	std::map<int, int>::iterator it = _serverAddrS.find(accptSockFD);
 	struct sockaddr_in serverAddr;
 	std::memset(&serverAddr, 0, _addrLen);
@@ -123,21 +120,20 @@ HttpServer Server::findTheTargetServer(int & accptSockFD)
 			for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); itPort++)
 			{
 				if (*itPort == ntohs(serverAddr.sin_port))
-				{
-					targetServer = *it;
-					break ;
-				}
+					*srv = *it;
 			}
 		}
 	}
-	return targetServer;
+	return ;
 }
 
 void Server::exampleOfResponse(char *fileName, int &accptSockFD)
 {
 	(void)fileName;
 
-	HttpServer server = findTheTargetServer(accptSockFD);
+	HttpServer server;
+	findTheTargetServer(accptSockFD, &server);
+	std::cout << server.getHost() << std::endl;
 	Response response(this->_request, server);
 
 	std::string msgRes(""); // Will hold the data that we will send
@@ -155,7 +151,7 @@ void Server::exampleOfResponse(char *fileName, int &accptSockFD)
 	{
 		if (send(accptSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
 		{
-			throw std::runtime_error("Unable to send the response from client.");
+			throw std::runtime_error("Unable to send the response to client in socket " + std::to_string(accptSockFD));
 		}
 	}
 }
@@ -165,10 +161,10 @@ void Server::newConnectHandling(int &sockFD)
 	std::cout << "Master socket is " << std::to_string(sockFD) << std::endl;
 	int newSockFD = accept(sockFD, (struct sockaddr *)&_clientAddr, &_addrLen);
 	if (newSockFD < -1)
-		throw std::runtime_error("Unable to accept the connection.");
+		throw std::runtime_error("Unable to accept the connection from client by the socket " + std::to_string(newSockFD));
 	std::cout << "New connection , socket fd is " << std::to_string(newSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
-	if (fcntl(_masterSockFD, F_SETFL, O_NONBLOCK) < 0)
-		throw std::runtime_error("Unable to set socket ID: " + std::to_string(newSockFD) + " to non-blocking.");
+	if (fcntl(newSockFD, F_SETFL, O_NONBLOCK) < 0)
+		throw std::runtime_error("Unable to set the socket " + std::to_string(newSockFD) + " to non-blocking.");
 	FD_SET(newSockFD, &_masterFDs);
 	FD_SET(newSockFD, &_writeFDs);
 	if (newSockFD > _maxSockFD)
@@ -209,12 +205,11 @@ void Server::existConnectHandling(int &accptSockFD)
 		}
 		if (checkRequest(it->second))
 		{
-			// std::cout << "buffReq... " << it->second << std::endl;
 
 			_request.setRequestData(it->second);
 			_request.parseRequest();
 			_request.printRequest();
-			// Cgi cgi(req);
+			Cgi cgi(_request);
 			// if (it->second.find("Content-Length"))
 			// {
 			// 	std::cout << "@@@@#####@@@@###@@@@" << it->second.substr(it->second.find("Content-Length")) << std::endl;

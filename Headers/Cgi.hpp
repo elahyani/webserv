@@ -25,7 +25,7 @@ struct MetaVariables
 class Cgi
 {
 private:
-	struct MetaVariables _envCgi;
+	struct	MetaVariables _envVarsCgi;
 
 public:
 	Cgi();

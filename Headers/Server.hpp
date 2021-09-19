@@ -63,7 +63,7 @@ public:
 	void exampleOfResponse(char *, int &);
 	void createMasterSockets();
 
-	HttpServer findTheTargetServer(int &);
+	void findTheTargetServer(int &, HttpServer *);
 };
 
 #endif
