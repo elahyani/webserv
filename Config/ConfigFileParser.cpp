@@ -16,7 +16,8 @@ ConfigFileParser::ConfigFileParser() : data(""),
 									   locationsNumber(0),
 									   inLocation(false),
 									   countauto(0),
-									   isEnabled(0)
+									   isEnabled(0),
+									   _isCGI(false)
 {
 }
 
@@ -61,7 +62,6 @@ std::string ConfigFileParser::trimContent(std::string str)
 
 void ConfigFileParser::syntaxChecker(std::string &buffer, int inLoc)
 {
-	//check semicolumn in every line that should have one
 	size_t semiColon = std::count(buffer.begin(), buffer.end(), ';');
 	size_t fWColon = std::count(buffer.begin(), buffer.end(), ':');
 	size_t equal = std::count(buffer.begin(), buffer.end(), '=');
@@ -117,10 +117,14 @@ void ConfigFileParser::checkUnit(std::string buffer)
 {
 	int i = 0;
 
+	if (!isdigit(buffer[i]) || buffer[i] == '0')
+		throw std::invalid_argument("Exception: Client max body size must be a non-zeropositive number\t");
 	while (buffer[i])
 	{
 		if (buffer.find("m") == std::string::npos || (!std::isdigit(buffer[i]) && buffer[i] != 'm'))
+		{
 			throw std::invalid_argument("Exception:\tUnrecognized or Missing unit!");
+		}
 		i++;
 	}
 }
@@ -128,7 +132,7 @@ void ConfigFileParser::checkUnit(std::string buffer)
 void ConfigFileParser::checkMissingAttrs()
 {
 	if (this->inServer)
-		throw std::invalid_argument("Exception:\tSyntax Error");
+		throw std::invalid_argument("Exception:\tSyntax Error1");
 	else if (!this->serversNumber)
 		throw std::invalid_argument("Exception:\tServer Not Found");
 	else if (this->server.getPorts().empty())
@@ -170,20 +174,46 @@ void ConfigFileParser::parseLocation(std::string _data)
 	this->isEnabled = 0;
 	while (std::getline(str, buffer))
 	{
+		std::cout << "..." << buffer << std::endl;
 		if (buffer.find("#") != std::string::npos)
 		{
 			buffer = buffer.substr(0, buffer.find_first_of('#'));
 			buffer = trimContent(buffer);
 		}
 		if (buffer.find("{") != std::string::npos)
-			this->inLocation = true;
+		{
+			if (buffer.compare("{") == 0)
+			{
+				// this->inLocation = !this->inLocation;
+				this->inLocation = true;
+			}
+			else
+				throw std::invalid_argument("Exception:\tOnly a { is allowed in this line");
+		}
 		else if (buffer.find("}") != std::string::npos)
 		{
-			this->locationsNumber++;
-			this->inLocation = false;
-			this->server.setLocation(this->location);
-			this->location.clearAll();
-			return;
+
+			if (buffer.compare("}") == 0)
+			{
+
+				// std::cout << ">>>>>>>>>emptyyyyyyyyyyyyy |" << this->location.getFastCgiPass() << ">>>>>>>>>>>>" << this->location.get_isCGI() << "|\n\n";
+				// if (this->location.get_isCGI() && this->location.getFastCgiPass().empty())
+				if (_isCGI && this->location.getFastCgiPass().empty())
+				{
+					std::cout << "---> " << _isCGI << std::endl;
+					std::cout << "---> " << this->location.getLocationName() << std::endl;
+					throw std::invalid_argument("Exception:\tFastCGI Not Found in : " + this->location.getLocationName());
+				}
+				_isCGI = false;
+				this->locationsNumber++;
+				this->inLocation = !this->inLocation;
+				// this->inLocation = false;
+				this->server.setLocation(this->location);
+				this->location.clearAll();
+				return;
+			}
+			else
+				throw std::invalid_argument("Exception:\tOnly a } is allowed in this line");
 		}
 		if (this->inLocation)
 		{
@@ -319,10 +349,42 @@ void ConfigFileParser::parseLocation(std::string _data)
 			}
 		}
 	}
+	if (inLocation)
+		throw std::invalid_argument("Exception:\tSyntax Error 5");
+}
+
+void ConfigFileParser::checkLocationName(std::string &buffer)
+{
+	this->split(this->location.getLocationName(), ' ');
+	if (mapTmp.size() != 1)
+		throw std::invalid_argument("Exception:\tWrong number of arguments");
+	if (buffer.find("/") != std::string::npos)
+	{
+		this->split(buffer, '/');
+		if (mapTmp[1].compare("\0") != 0)
+		{
+			int i = 0;
+			while (mapTmp[1][i])
+			{
+				if (!isalpha(mapTmp[1][i]))
+					throw std::invalid_argument("Exception\tLocation name is invalid");
+				i++;
+			}
+		}
+	}
+	if (buffer.find(".") != std::string::npos)
+	{
+		this->split(buffer, '.');
+		if (mapTmp.size() != 2 || std::count(buffer.begin(), buffer.end(), '.') > 1)
+			throw std::invalid_argument("Exception:\tLocation name is invalid");
+		if (mapTmp[1] != "py" && mapTmp[1] != "php")
+			throw std::invalid_argument("Exception:\t CGI extention is not supported");
+	}
 }
 
 void ConfigFileParser::parseConfigFile(int ac, char **av)
 {
+	int isDef = -1;
 	checkFile(ac, av);
 	std::ifstream file(this->filename);
 
@@ -349,16 +411,38 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 		}
 		// buffer.erase(std::remove_if(buffer.begin(), buffer.end(), ::isspace), buffer.end());
 		// std::cout << ">>>>>>>>>>>> " << buffer << std::endl;
-		if (buffer.compare("[") == 0)
-			this->inServer = !this->inServer;
-		else if (buffer.compare("]") == 0)
+		if (buffer.find("[") != std::string::npos)
 		{
-			this->serversNumber++;
-			this->inServer = !this->inServer;
-			this->checkMissingAttrs();
-			this->servers.push_back(this->server);
-			this->server.clearAll();
-			this->data = this->data.substr(data.find("]\n"));
+			this->split(trimContent(buffer), '=');
+			// std::cout << ">>>>>>>>>>>>>|" << mapTmp[0] << "|\n";
+			// std::cout << ">>>>>>>>>>>>>|" << mapTmp[1] << "|\n";
+
+			if (buffer.compare("[") == 0)
+			{
+				if (this->inServer)
+					throw std::invalid_argument("Exception:\tCannot define server inside server");
+
+				this->inServer = !this->inServer;
+				isDef = -1;
+			}
+			else if (mapTmp[0] != "allow_methods")
+				throw std::invalid_argument("Exception:\tOnly a [ is allowed in this line");
+		}
+		else if (buffer.find("]") != std::string::npos)
+		{
+			if (buffer.compare("]") == 0)
+			{
+				this->serversNumber++;
+				this->inServer = !this->inServer;
+				this->checkMissingAttrs();
+				this->servers.push_back(this->server);
+				this->server.clearAll();
+				this->data = this->data.substr(data.find("]\n"));
+				if (isDef == -1)
+					throw std::invalid_argument("Exception:\tmakainx");
+			}
+			else
+				throw std::invalid_argument("Exception:\tOnly a ] is allowed in this line");
 		}
 		if (this->inServer)
 		{
@@ -433,6 +517,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 			{
 				if (buffer.find("root:") != std::string::npos)
 				{
+					isDef = 1;
 					syntaxChecker(buffer, 0);
 					if (!this->server.getRoot().size())
 					{
@@ -458,7 +543,6 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 
 				std::string s = buffer.substr(buffer.find(":") + 1);
 				size_t k = 0;
-
 				s = trimContent(s);
 				this->split(s, ' ');
 				if (mapTmp.size() != 2)
@@ -488,15 +572,44 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 			}
 			else if (buffer.find("location") != std::string::npos)
 			{
+				if (buffer.back() == ';')
+					throw std::invalid_argument("Exception:\tLocation name must not end with ';'");
+				if (buffer.find(".php") != std::string::npos || buffer.find(".py") != std::string::npos)
+				{
+					_isCGI = true;
+				}
 				this->location.setLocationName(trimContent(buffer.substr(buffer.find(":") + 1)));
-				this->split(this->location.getLocationName(), ' ');
-				if (mapTmp.size() != 1)
-					throw std::invalid_argument("Exception:\tWrong number of arguments");
+				checkLocationName(buffer);
+				// this->split(this->location.getLocationName(), ' ');
+				// if (mapTmp.size() != 1)
+				// 	throw std::invalid_argument("Exception:\tWrong number of arguments");
 				this->parseLocation(data.substr(data.find("location: " + this->location.getLocationName())));
 			}
+			// if ((buffer.find("{") != std::string::npos || buffer.find("}") != std::string::npos )&& !this->inLocation)
+			// {
+			// 	throw std::invalid_argument("Exception:\ttkhrbi9aaaaa");
+			// }
+			else if (buffer.find("{") == std::string::npos && buffer.find("}") == std::string::npos &&
+					 buffer.find("[") == std::string::npos && buffer.find("]") == std::string::npos &&
+					 buffer.find("autoindex") == std::string::npos && buffer.find("index") == std::string::npos &&
+					 buffer.find("return") == std::string::npos && buffer.find("allow_methods") == std::string::npos &&
+					 buffer.find("fastcgi_pass") == std::string::npos && buffer.find("upload_enable") == std::string::npos &&
+					 buffer.find("upload_store") == std::string::npos &&
+					 buffer != "\n" && buffer != "\0")
+			{
+				std::cout << ">>>>>>>>>>>>>>|" << buffer << "|\n";
+				throw std::invalid_argument("Exception:\tAttribute not recognized");
+			}
 		}
+		// else if (!serversNumber && buffer.find("server") == std::string::npos)
+		// 	throw std::invalid_argument("Exception:\tEmpty Configuration File");
+		// std::cout << ">>>>>>>>>>>>>>SERVER NUM|" << serversNumber << " " << buffer<< "|" << std::endl;
+
 		std::cout << "|" << buffer << "|" << std::endl;
 	}
+	if (inServer)
+		throw std::invalid_argument("Exception:\tSyntax Error 5");
+	std::cout << ">>>>>>>>>>>>>>|" << isDef << "|\n";
 }
 
 void ConfigFileParser::printContentData()

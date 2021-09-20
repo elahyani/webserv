@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/15 13:13:08 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/20 18:20:55 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ private:
 	std::map<int, std::string> mapTmp;
 	size_t countauto;
 	size_t isEnabled;
+	bool _isCGI;
 
 public:
 	ConfigFileParser();
@@ -55,6 +56,7 @@ public:
 	void checkMissingAttrs();
 	void checkHost(std::string);
 	void parseLocation(std::string);
+	void checkLocationName(std::string &buffer);
 };
 
 #endif

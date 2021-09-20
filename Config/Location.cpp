@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/12 15:23:32 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/15 13:13:50 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/20 18:26:05 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,6 +105,8 @@ std::vector<std::string> &Location::getAllowedMethods()
 
 void Location::setReturn(int code, std::string _ret)
 {
+	if (code <= 0)
+		throw std::invalid_argument("Exception\tReturn code must be a non-zero positive number");
 	this->ret.insert(std::pair<int, std::string>(code, _ret));
 }
 

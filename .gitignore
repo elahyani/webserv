@@ -2,3 +2,10 @@
 a.out
 .vscode
 output
+out
+pp.c
+ppp
+TCPClient.c
+TCPClient.o
+TCPServer.c
+TCPServer.o
