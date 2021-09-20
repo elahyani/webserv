@@ -27,7 +27,7 @@ Server::Server(ConfigFileParser &parser, char *fileName) : _parser(parser), _max
 						if (sockFD == *it)
 						{
 							newConnect = 1;
-							break;
+							break ;
 						}
 					}
 					(newConnect) ? this->newConnectHandling(sockFD) : this->existConnectHandling(sockFD);
@@ -104,9 +104,9 @@ void Server::listenToClient()
 		throw std::runtime_error("Unable to listen for connections in the socket " + std::to_string(_masterSockFD));
 }
 
-void Server::findTheTargetServer(int & accptSockFD, HttpServer *srv)
+void Server::findTheTargetServer(int & accptSockFD, struct CGIInfos *cgiInfos)
 {
-	std::map<int, int>::iterator it = _serverAddrS.find(accptSockFD);
+	std::map<int, int>::iterator it = _accptMaster.find(accptSockFD);
 	struct sockaddr_in serverAddr;
 	std::memset(&serverAddr, 0, _addrLen);
 	if (getsockname(it->second, (struct sockaddr *)&serverAddr, &_addrLen) < 0)
@@ -120,7 +120,11 @@ void Server::findTheTargetServer(int & accptSockFD, HttpServer *srv)
 			for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); itPort++)
 			{
 				if (*itPort == ntohs(serverAddr.sin_port))
-					*srv = *it;
+				{
+					cgiInfos->server = *it;
+					cgiInfos->port = *itPort;
+					break ;
+				}
 			}
 		}
 	}
@@ -131,22 +135,16 @@ void Server::exampleOfResponse(char *fileName, int &accptSockFD)
 {
 	(void)fileName;
 
-	HttpServer server;
-	findTheTargetServer(accptSockFD, &server);
-	std::cout << server.getHost() << std::endl;
-	Response response(this->_request, server);
+	// HttpServer server;
+	struct CGIInfos cgiInfos;
+	findTheTargetServer(accptSockFD, &cgiInfos);
+	cgiInfos.request = _request;
+	Cgi excutionCgi(cgiInfos);
+	Response response(this->_request, cgiInfos.server);
 
 	std::string msgRes(""); // Will hold the data that we will send
-	// //Header
-	// msgRes += "HTTP/1.1 200 OK\n"; // HTTP-version code msg
-	// msgRes += "Content-Type: text/html\n";
-	// msgRes += "Content-Length: " + std::to_string(st.st_size);
-	// msgRes += "\r\n\r\n"; //blank-line
-	// //Body
 	response.buildHeaders();
 	msgRes.append(response.getHeaders());
-	// msgRes += _buffRes;
-	// delete[] _buffRes;
 	if (FD_ISSET(accptSockFD, &_writeFDs))
 	{
 		if (send(accptSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
@@ -170,7 +168,9 @@ void Server::newConnectHandling(int &sockFD)
 	if (newSockFD > _maxSockFD)
 		_maxSockFD = newSockFD;
 	_clients.insert(std::pair<int, std::string>(newSockFD, ""));
-	_serverAddrS.insert(std::pair<int, int>(newSockFD, sockFD));
+	std::map<int, int>::iterator it = _accptMaster.find(newSockFD);
+	if (it != _accptMaster.end()) it->second = sockFD; else _accptMaster.insert(std::pair<int, int>(newSockFD, sockFD));
+
 }
 
 bool checkRequest(std::string &buffReq)
@@ -200,26 +200,17 @@ void Server::existConnectHandling(int &accptSockFD)
 		_buffRes[valRead] = '\0';
 		std::map<int, std::string>::iterator it = _clients.find(accptSockFD);
 		if (it != _clients.end())
-		{
 			it->second += _buffRes;
-		}
 		if (checkRequest(it->second))
 		{
-
 			_request.setRequestData(it->second);
 			_request.parseRequest();
 			_request.printRequest();
-			Cgi cgi(_request);
-			// if (it->second.find("Content-Length"))
-			// {
-			// 	std::cout << "@@@@#####@@@@###@@@@" << it->second.substr(it->second.find("Content-Length")) << std::endl;
-			// 	return ;
-			// }
 			if (FD_ISSET(accptSockFD, &_writeFDs))
 			{
-				//RESPONSE
 				this->exampleOfResponse(_fileName, accptSockFD);
 			}
+			it->second = "";
 		}
 	}
 	else if (valRead == 0)
@@ -229,6 +220,7 @@ void Server::existConnectHandling(int &accptSockFD)
 		close(accptSockFD);
 		FD_CLR(accptSockFD, &_masterFDs);
 		FD_CLR(accptSockFD, &_writeFDs);
+		_clients.erase(accptSockFD);
 	}
 	else
 		return; // Socket is connected but doesn't send request.

@@ -24,6 +24,13 @@
 class Request;
 #include "Response.hpp"
 
+struct CGIInfos
+{
+	Request 			request;
+	HttpServer			server;
+	short				port;
+};
+
 class Server
 {
 private:
@@ -43,7 +50,7 @@ private:
 	int _maxSockFD;
 	char *_fileName;
 	std::map<int, std::string> _clients;
-	std::map<int, int> _serverAddrS;
+	std::map<int, int> _accptMaster;
 	Request _request;
 
 public:
@@ -63,7 +70,7 @@ public:
 	void exampleOfResponse(char *, int &);
 	void createMasterSockets();
 
-	void findTheTargetServer(int &, HttpServer *);
+	void findTheTargetServer(int &, struct CGIInfos *);
 };
 
 #endif
