@@ -19,6 +19,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <dirent.h>
 #include "Request.hpp"
 #include "HttpServer.hpp"
 
@@ -45,12 +46,19 @@ private:
     int _status;
     Request &_request;
     HttpServer &_server;
+    Location _location;
     std::string _responseMsg;
     std::string _headers;
     std::string _body;
-    std::map<int, std::string> _errors;
     std::string _indexPath;
+    std::string _autoIndexPage;
+    std::string _dirPath;
+    std::string _dr;
+    bool _autoIndex;
+    bool _notFound;
+    std::map<int, std::string> _errors;
     std::vector<std::string>::iterator _index;
+    std::vector<std::string> _dirContent;
 
 public:
     Response();
@@ -68,9 +76,12 @@ public:
     std::string &getResponse();
     std::string getHtmlTemplate(); //
     std::string &getHeaders();
+    std::string notFoundPage();
     bool indexIsExist();
     bool autoIndex();
     void indexingFiles();
+    bool isLocationExist();
+    bool isDirectory();
     // std::string readFile
 };
 

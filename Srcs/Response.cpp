@@ -18,8 +18,12 @@ Response::Response(Request &req, HttpServer &server) : _status(-1),
                                                        _responseMsg(""),
                                                        _headers(""),
                                                        _body(""),
-                                                       _indexPath("")
-
+                                                       _indexPath(""),
+                                                       _autoIndexPage(""),
+                                                       _dirPath(""),
+                                                       _dr(""),
+                                                       _autoIndex(false),
+                                                       _notFound(false)
 {
     this->_errors[200] = "OK";
     this->_errors[301] = "Moved Permanently";
@@ -61,27 +65,132 @@ void Response::indexingFiles()
 {
     // auto index
     // listing links to files
+    std::cout << "±±±±±±±±±±±±±±±±±±±>>> " << _dr << std::endl;
+    DIR *directory = opendir(_dr.c_str());
+    struct dirent *en;
+
+    _dirContent.clear();
+    if (directory)
+    {
+        while ((en = readdir(directory)) != nullptr)
+            _dirContent.push_back(en->d_name);
+        closedir(directory);
+    }
+    _autoIndexPage = "<!DOCTYPE html>\n<html lang=\"en\">\n\
+    \t<head>\n\
+    \t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\
+    \t\t<title>Bad Request</title>\n\
+    \t\t<style>.container {margin-left: 5%; margin-top:10%;}</style>\n\
+    \t</head>\n\
+    \t<body>\n\
+    \t\t<div class=\"container\">\n\t\t\t<hr>\n";
+
+    for (size_t i = 0; i < _dirContent.size(); i++)
+    {
+        _autoIndexPage += "\t\t\t<a href=\"/" + _dirContent[i] + "\">" + _dirContent[i] + "</a><br>\n";
+    }
+
+    _autoIndexPage += "\t\t\t<hr>\n\t\t</div>\n\t</body>\n</html>";
+    std::cout << "+++++++++++++++++++++++++++++++++++++++++---------------------" << std::endl;
+    std::cout << _autoIndexPage << std::endl;
+    _body = _autoIndexPage;
+    std::cout << "+++++++++++++++++++++++++++++++++++++++++---------------------" << std::endl;
 }
 
-bool Response::indexIsExist()
+std::string Response::notFoundPage()
 {
-    // check which location we are in
-    // check if index and root exist
-    // handle location content
+    std::string notFoundPage = "<!DOCTYPE html>\n\
+    <html lang=\"en\">\n\
+    <head>\n\
+        <meta charset=\"UTF-8\" />\n\
+        <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n\
+        <title>Document</title>\n\
+        <style>\n\
+        .container {margin: 10%;text-align: center;color: rgba(52, 151, 250, 0.705);}\n\
+        h1 {font-size: 14rem;font-family: \"Courier New\", Courier, monospace;font-weight: bold;margin:-5rem 0 0 0;}\n\
+        .parag {margin:0;font-weight: bold;font-size: 5rem;font-family: \"Courier New\", Courier, monospace;}\n\
+        </style>\n\
+    </head>\n\
+    <body>\n\
+        <div class=\"container\">\n\
+        <h1>404</h1>\n\
+        <p class=\"parag\">Page Not Found</p>\n\
+        </div>\n\
+    </body>\n\
+    </html>\n";
+
+    return notFoundPage;
+}
+
+bool Response::isLocationExist()
+{
+    std::string locPath;
 
     for (std::vector<Location>::iterator it = _server.getLoactions().begin(); it != _server.getLoactions().end(); ++it)
     {
-        if (it->getLocationName().compare("/") == 0)
+        if (it->getLocationName().compare(_request.getStartLineVal("url")) == 0)
         {
-            if ((_index = std::find(it->getIndexes().begin(), it->getIndexes().end(), "index.html")) != it->getIndexes().end())
-            {
-                _indexPath.append(_server.getRoot());
-                return true;
-            }
+            _location = *it;
+            std::cout << "1‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
+            return true;
+        }
+        else if (_request.getStartLineVal("url").find(it->getLocationName()) != std::string::npos)
+        {
+            _location = *it;
+            std::cout << "2‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
+            return false;
         }
     }
     return false;
 }
+
+bool Response::isDirectory()
+{
+    DIR *r;
+
+    size_t locLen = _location.getLocationName().size();
+
+    std::cout << "url --->>> |" << _request.getStartLineVal("url") << "|" << std::endl;
+    if (_request.getStartLineVal("url").find(_location.getLocationName()) != std::string::npos)
+    {
+        std::string locPath = _request.getStartLineVal("url").substr(0, locLen);
+        std::cout << "LocPath: |" << locPath << "| locName: |" << _location.getLocationName() << "|" << std::endl;
+        if (_request.getStartLineVal("url").size() > 1 && locPath.compare(_location.getLocationName()) == 0)
+            _dirPath.append(_server.getRoot() + "/" + _request.getStartLineVal("url").substr(locLen));
+        std::cout << "dirPath—————————————————————————————————————————————————————>>> |" << _dirPath << "|" << std::endl;
+    }
+    if ((r = opendir(_dirPath.c_str())))
+    {
+        closedir(r);
+        return true;
+    }
+    return false;
+}
+
+// bool Response::indexIsExist()
+// {
+//     // check if index and root exist [v]
+//     // handle location content [v]
+
+//     for (std::vector<Location>::iterator it = _server.getLoactions().begin(); it != _server.getLoactions().end(); ++it)
+//     {
+//         if (it->getLocationName().compare(_request.getStartLineVal("url")) == 0)
+//         {
+//             if (it->getAutoIndex())
+//             {
+//                 _autoIndex = true;
+//             }
+//             if ((_index = std::find(it->getIndexes().begin(), it->getIndexes().end(), "index.html")) != it->getIndexes().end())
+//             {
+//                 _indexPath.append(_server.getRoot());
+//                 return true;
+//             }
+//         }
+//     }
+//     _notFound = true;
+//     return false;
+// }
 
 bool Response::autoIndex()
 {
@@ -139,19 +248,46 @@ std::string &Response::getHeaders()
 void Response::getMethod()
 {
     std::cout << "GET METHOD" << std::endl;
-    indexingFiles();
-    if (indexIsExist())
+    bool isLoc = isLocationExist();
+    bool isDir = isDirectory();
+    // is LocationExist || isDir(url)
+    std::cout << "isLoc ±±±±±>> " << isLoc << " | isDir ±±±±±±>>" << isDir << std::endl;
+    if (isLoc || isDir)
     {
-        std::ifstream indexFile(_indexPath.append("/" + *_index));
-        std::cout << "indexPath -> |" << _indexPath << "|" << std::endl;
-        if (indexFile)
+        std::cout << "LOCATION >>> EXIST" << std::endl;
+        if (_location.getAutoIndex() || isDir)
         {
-            std::ostringstream ss;
-            ss << indexFile.rdbuf();
-            _body = ss.str();
+            if (isDir)
+                _dr = _dirPath;
+            else if (_location.getAutoIndex())
+                _dr = _server.getRoot();
+            std::cout << ".." << _dr << std::endl;
+            indexingFiles();
+            std::cout << ".." << _dr << std::endl;
         }
-        else
-            _body = getHtmlTemplate();
+        else if (_location.getRoot().size() && (_index = std::find(_location.getIndexes().begin(), _location.getIndexes().end(), "index.html")) != _location.getIndexes().end())
+        {
+            std::cout << "ROOT && INDEX >>> EXIST" << std::endl;
+            std::ifstream indexFile(_indexPath.append("/" + *_index));
+            if (indexFile)
+            {
+                std::cout << "INDEX PATH >>> VALID" << std::endl;
+                std::ostringstream ss;
+                ss << indexFile.rdbuf();
+                _body = ss.str();
+            }
+            else
+            {
+                std::cout << "INDEX PATH >>> INVALID" << std::endl;
+                _body = getHtmlTemplate();
+            }
+        }
+    }
+    else
+    {
+        std::cout << "LOCATION >>> DOESN'T EXIST" << std::endl;
+        _body = notFoundPage();
+        _status = 404;
     }
 }
 
@@ -176,6 +312,7 @@ void Response::buildResponse()
     else if (_request.getStartLineVal("method").compare("DELETE") == 0)
         deleteMethod();
     buildHeaders();
+    _request.clearRequest();
 }
 
 std::string Response::getErrorPage(int status)

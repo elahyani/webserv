@@ -109,6 +109,7 @@ HttpServer Server::findTheTargetServer(int &accptSockFD)
 	// Find the target server
 	HttpServer targetServer;
 	std::map<int, int>::iterator it = _serverAddrS.find(accptSockFD);
+	std::cout << "it->second === " << it->second << std::endl;
 	struct sockaddr_in serverAddr;
 	std::memset(&serverAddr, 0, _addrLen);
 	if (getsockname(it->second, (struct sockaddr *)&serverAddr, &_addrLen) < 0)
@@ -166,6 +167,9 @@ void Server::newConnectHandling(int &sockFD)
 	if (newSockFD < -1)
 		throw std::runtime_error("Unable to accept the connection.");
 	std::cout << "New connection , socket fd is " << std::to_string(newSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
+	struct sockaddr_in addr;
+	getsockname(sockFD, (struct sockaddr *)&addr, &_addrLen);
+	std::cout << "New connection , Master socket fd is " << std::to_string(sockFD) << " , ip is : " << inet_ntoa(addr.sin_addr) << " , port : " << std::to_string(ntohs(addr.sin_port)) << std::endl;
 	if (fcntl(_masterSockFD, F_SETFL, O_NONBLOCK) < 0)
 		throw std::runtime_error("Unable to set socket ID: " + std::to_string(newSockFD) + " to non-blocking.");
 	FD_SET(newSockFD, &_masterFDs);
@@ -173,7 +177,11 @@ void Server::newConnectHandling(int &sockFD)
 	if (newSockFD > _maxSockFD)
 		_maxSockFD = newSockFD;
 	_clients.insert(std::pair<int, std::string>(newSockFD, ""));
-	_serverAddrS.insert(std::pair<int, int>(newSockFD, sockFD));
+	std::map<int, int>::iterator it = _serverAddrS.find(newSockFD);
+	if (it != _serverAddrS.end())
+		it->second = sockFD;
+	else
+		_serverAddrS.insert(std::pair<int, int>(newSockFD, sockFD));
 }
 
 bool checkRequest(std::string &buffReq)
@@ -208,7 +216,9 @@ void Server::existConnectHandling(int &accptSockFD)
 		}
 		if (checkRequest(it->second))
 		{
+			// std::cout << "--------------------------" << std::endl;
 			// std::cout << "buffReq... " << it->second << std::endl;
+			// std::cout << "--------------------------" << std::endl;
 
 			_request.setRequestData(it->second);
 			_request.parseRequest();
@@ -224,6 +234,7 @@ void Server::existConnectHandling(int &accptSockFD)
 				//RESPONSE
 				this->exampleOfResponse(_fileName, accptSockFD);
 			}
+			it->second = "";
 		}
 	}
 	else if (valRead == 0)

@@ -41,7 +41,6 @@ private:
     std::string _urlPath;
     std::string _urlQuery; // .?.....
     std::string _protocol; // http/1.1
-    int _newSockFd;
     int _bLen;
     int _statusCode;
     bool _requestError;
@@ -67,8 +66,10 @@ public:
     std::string &getHeaderVal(std::string const &key);
     std::string &getStartLineVal(std::string const &key);
     int &getStatusCode();
+    void clearRequest();
 };
 
 #endif
 
 // curl -i -X POST -H "Content-Type: multipart/form-data" -F "data=@Makefile" http://localhost:5000/
+// curl --resolve example.com:5050:127.0.0.1 http://example.com:5050/

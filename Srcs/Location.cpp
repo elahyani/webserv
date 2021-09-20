@@ -33,7 +33,7 @@ Location::Location(Location const &src)
 
 Location &Location::operator=(Location const &src)
 {
-	//! use assign 
+	//! use assign
 	if (this != &src)
 	{
 		this->_autoindex = src._autoindex;
@@ -51,7 +51,6 @@ Location &Location::operator=(Location const &src)
 
 void Location::setAutoIndex(std::string index)
 {
-	index.pop_back();
 	if (index.compare("off") == 0)
 		this->_autoindex = false;
 	else if (index.compare("on") == 0)

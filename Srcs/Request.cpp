@@ -12,7 +12,7 @@
 
 #include "Request.hpp"
 
-Request::Request() : _content(""), _method(""), _urlPath(""), _urlQuery(""), _protocol(""), _newSockFd(0), _bLen(0), _statusCode(200)
+Request::Request() : _content(""), _method(""), _urlPath(""), _urlQuery(""), _protocol(""), _bLen(0), _statusCode(200)
 {
 
 	this->_methods.push_back("GET");
@@ -31,7 +31,10 @@ Request &Request::operator=(const Request &rhs)
 	return *this;
 }
 
-Request::~Request() {}
+Request::~Request()
+{
+	clearRequest();
+}
 
 void Request::setRequestData(const std::string &buffer)
 {
@@ -120,6 +123,7 @@ void Request::parseRequest()
 	}
 	catch (const std::exception &e)
 	{
+		clearRequest();
 		std::cerr << e.what() << '\n';
 	}
 }
@@ -270,4 +274,19 @@ std::string &Request::getStartLineVal(std::string const &key)
 std::vector<Bodies> Request::getBody()
 {
 	return this->_bodiesList;
+}
+
+void Request::clearRequest()
+{
+	this->_headers.clear();
+	this->_startLine.clear();
+	this->_mapTmp.clear();
+	this->_errors.clear();
+	this->_methods.clear();
+	this->_bodiesList.clear();
+	this->_method.clear();
+	this->_urlPath.clear();
+	this->_urlQuery.clear();
+	this->_protocol.clear();
+	this->_content.clear();
 }
