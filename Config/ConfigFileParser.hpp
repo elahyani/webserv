@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/20 18:20:55 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/21 11:08:45 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,8 @@ public:
 	void checkHost(std::string);
 	void parseLocation(std::string);
 	void checkLocationName(std::string &buffer);
+	void checkLocAttr(void);
+	void chekDupServerName(void);
 };
 
 #endif

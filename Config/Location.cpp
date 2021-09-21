@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/12 15:23:32 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/20 18:26:05 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/21 10:02:52 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,6 @@ Location &Location::operator=(Location const &src)
 
 void Location::setAutoIndex(std::string index)
 {
-	index.pop_back();
 	if (index.compare("off") == 0)
 		this->autoindex = false;
 	else if (index.compare("on") == 0)

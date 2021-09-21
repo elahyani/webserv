@@ -165,6 +165,76 @@ void ConfigFileParser::checkHost(std::string hostBuffer)
 		throw std::invalid_argument("Exception:\tinvalid format of Host2");
 }
 
+void ConfigFileParser::checkLocAttr(void)
+{
+	if (this->location.getLocationName().compare("/") == 0)
+	{
+		if (this->countauto == 0 && this->location.getIndexes().empty()
+			&& this->location.getAllowedMethods().empty() && this->location.getRoot().empty())
+			throw std::invalid_argument("Exception\t this location `" + this->location.getLocationName() + "` has no attribute");
+		if (this->countauto == 0)
+			throw std::invalid_argument("Exception\tMissing autoindex in this location `" + this->location.getLocationName() + "`");
+		if (this->location.getIndexes().empty())
+			throw std::invalid_argument("Exception\tMissing index in this location `" + this->location.getLocationName() + "`");
+		if (this->location.getAllowedMethods().empty())
+			throw std::invalid_argument("Exception\tMissing allow_methods in this location `" + this->location.getLocationName() + "`");
+	}
+	if (this->location.getLocationName().compare("/return") == 0)
+	{
+		if (this->location.getReturn().empty())
+			throw std::invalid_argument("Exception\tMissing redirection code and path in this location `" + this->location.getLocationName() + "`");
+	}
+	if (this->location.getLocationName().compare("*.php") == 0)
+	{
+		if (this->location.getAllowedMethods().empty())
+			throw std::invalid_argument("Exception\tMissing allow_methods in this location `" + this->location.getLocationName() + "`");
+	}
+	if (this->location.getLocationName().compare("*.py") == 0)
+	{
+		if (this->location.getAllowedMethods().empty())
+			throw std::invalid_argument("Exception\tMissing allow_methods in this location `" + this->location.getLocationName() + "`");
+	}
+	if (this->location.getLocationName().compare("/upload") == 0)
+	{
+		if (this->location.getAllowedMethods().empty() && this->location.getUploadStore().empty()
+			&& this->isEnabled == 0)
+			throw std::invalid_argument("Exception\t this location `" + this->location.getLocationName() + "` has no attribute");
+		if (this->location.getAllowedMethods().empty())
+			throw std::invalid_argument("Exception\tMissing allow_methods in this location `" + this->location.getLocationName() + "`");
+		if (this->location.getUploadStore().empty())
+			throw std::invalid_argument("Exception\tMissing upload_store in this location `" + this->location.getLocationName() + "`");
+		if (this->isEnabled == 0)
+			throw std::invalid_argument("Exception\tMissing upload_enable in this location `" + this->location.getLocationName() + "`");
+	}
+	if (_isCGI && this->location.getFastCgiPass().empty())
+	{
+		std::cout << "---> " << _isCGI << std::endl;
+		std::cout << "---> " << this->location.getLocationName() << std::endl;
+		throw std::invalid_argument("Exception:\tFastCGI Not Found in : " + this->location.getLocationName());
+	}
+
+}
+
+void ConfigFileParser::chekDupServerName(void)
+{
+	for (int i = 0; i < serversNumber; i++)
+	{
+		for (int j = 0; j < this->servers[i].getServerName().size(); j++)
+		{
+			if (i + 1 < serversNumber)
+			{
+				for (int k = 0; k < this->servers[i + 1].getServerName().size(); k++)
+				{
+						std::cout << "this |" << this->servers[i].getServerName()[j] << "| and that |";
+						std::cout << this->servers[i + 1].getServerName()[k] << "|\n";
+					if (this->servers[i].getServerName()[j].compare(this->servers[i+1].getServerName()[k]) == 0)
+						throw std::invalid_argument("Exception\tServers cannot have the same name");
+				}
+			}
+		}
+	}
+}
+
 void ConfigFileParser::parseLocation(std::string _data)
 {
 	std::string buffer;
@@ -174,7 +244,7 @@ void ConfigFileParser::parseLocation(std::string _data)
 	this->isEnabled = 0;
 	while (std::getline(str, buffer))
 	{
-		std::cout << "..." << buffer << std::endl;
+		// std::cout << "..." << buffer << std::endl;
 		if (buffer.find("#") != std::string::npos)
 		{
 			buffer = buffer.substr(0, buffer.find_first_of('#'));
@@ -195,19 +265,18 @@ void ConfigFileParser::parseLocation(std::string _data)
 
 			if (buffer.compare("}") == 0)
 			{
-
+				checkLocAttr();
 				// std::cout << ">>>>>>>>>emptyyyyyyyyyyyyy |" << this->location.getFastCgiPass() << ">>>>>>>>>>>>" << this->location.get_isCGI() << "|\n\n";
 				// if (this->location.get_isCGI() && this->location.getFastCgiPass().empty())
-				if (_isCGI && this->location.getFastCgiPass().empty())
-				{
-					std::cout << "---> " << _isCGI << std::endl;
-					std::cout << "---> " << this->location.getLocationName() << std::endl;
-					throw std::invalid_argument("Exception:\tFastCGI Not Found in : " + this->location.getLocationName());
-				}
+				// if (_isCGI && this->location.getFastCgiPass().empty())
+				// {
+				// 	std::cout << "---> " << _isCGI << std::endl;
+				// 	std::cout << "---> " << this->location.getLocationName() << std::endl;
+				// 	throw std::invalid_argument("Exception:\tFastCGI Not Found in : " + this->location.getLocationName());
+				// }
 				_isCGI = false;
 				this->locationsNumber++;
 				this->inLocation = !this->inLocation;
-				// this->inLocation = false;
 				this->server.setLocation(this->location);
 				this->location.clearAll();
 				return;
@@ -609,6 +678,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 	}
 	if (inServer)
 		throw std::invalid_argument("Exception:\tSyntax Error 5");
+	chekDupServerName();
 	std::cout << ">>>>>>>>>>>>>>|" << isDef << "|\n";
 }
 
