@@ -93,7 +93,6 @@ std::map<int, std::string> &HttpServer::getErrorsPages()
 
 void HttpServer::setRoot(std::string _root)
 {
-	_root.pop_back();
 	this->_root = _root;
 }
 
@@ -137,7 +136,7 @@ void HttpServer::setLocation(Location const &_location)
 	this->_locations.push_back(_location);
 }
 
-std::vector<Location> &HttpServer::getLoactions()
+std::vector<Location> &HttpServer::getLocations()
 {
 	return this->_locations;
 }

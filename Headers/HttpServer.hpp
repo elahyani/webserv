@@ -60,7 +60,7 @@ public:
 	std::string &getErrorPagePath();
 
 	void setLocation(Location const &);
-	std::vector<Location> &getLoactions();
+	std::vector<Location> &getLocations();
 
 	void clearAll();
 };

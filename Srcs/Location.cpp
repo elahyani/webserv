@@ -73,7 +73,6 @@ std::string &Location::getLocationName()
 
 void Location::setRoot(std::string _root)
 {
-	_root.pop_back();
 	this->_root = _root;
 }
 

@@ -163,11 +163,22 @@ void ConfigFileParser::checkHost(std::string hostBuffer)
 
 void ConfigFileParser::parseLocation(std::string _data)
 {
+	bool isRootSeted = false;
 	std::string buffer;
 	std::istringstream str(_data.substr(_data.find("location: ")));
 
 	this->_countauto = 0;
 	this->_isEnabled = 0;
+	std::string locBlock = _data.substr(0, _data.find("}") + 1);
+
+	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+	// std::cout << locBlock << std::endl;
+	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+	if (locBlock.find("root") == std::string::npos)
+	{
+		isRootSeted = true;
+		_location.setRoot(_server.getRoot());
+	}
 	while (std::getline(str, buffer))
 	{
 		if (buffer.find("#") != std::string::npos)
@@ -204,11 +215,12 @@ void ConfigFileParser::parseLocation(std::string _data)
 				if (!this->_location.getRoot().size())
 				{
 					syntaxChecker(buffer, 1);
+					buffer.pop_back();
 					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
 					if (_mapTmp.size() != 1)
 						throw std::invalid_argument("Exception:\tWrong number of arguments");
 					this->_location.setRoot(trimContent(buffer.substr(buffer.find("=") + 1)));
-					this->_server.setRoot(this->_location.getRoot());
+					// this->_server.setRoot(this->_location.getRoot());
 					if (!this->_location.getRoot().size())
 						throw std::invalid_argument("Exception:\tRoot path not found");
 				}
@@ -434,6 +446,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				if (buffer.find("root:") != std::string::npos)
 				{
 					syntaxChecker(buffer, 0);
+					buffer.pop_back();
 					if (!this->_server.getRoot().size())
 					{
 						this->_server.setRoot(trimContent(buffer.substr(buffer.find(":") + 1)));
@@ -516,27 +529,27 @@ void ConfigFileParser::printContentData()
 			std::cout << "Error Page           .... |" << err->first << "| | |" << err->second << "|" << std::endl;
 		std::cout << "••••••••••••••••••" << std::endl;
 		std::cout << "\n-------------------[LOCATIONS]-------------------" << std::endl;
-		for (size_t i = 0; i < it->getLoactions().size(); i++)
+		for (size_t i = 0; i < it->getLocations().size(); i++)
 		{
-			std::cout << "LocationName         .... |" << it->getLoactions()[i].getLocationName() << "|" << std::endl;
-			std::cout << "autoindex            .... |" << it->getLoactions()[i].getAutoIndex() << "|" << std::endl;
-			std::cout << "root                 .... |" << it->getLoactions()[i].getRoot() << "|" << std::endl;
-			for (size_t j = 0; j < it->getLoactions()[i].getIndexes().size(); j++)
-				std::cout << "index                .... |" << it->getLoactions()[i].getIndexes()[j] << "|" << std::endl;
-			for (size_t j = 0; j < it->getLoactions()[i].getAllowedMethods().size(); j++)
-				std::cout << "allow_methods        .... |" << it->getLoactions()[i].getAllowedMethods()[j] << "|" << std::endl;
-			for (std::map<int, std::string>::iterator ret = it->getLoactions()[i].getReturn().begin(); ret != it->getLoactions()[i].getReturn().end(); ++ret)
+			std::cout << "LocationName         .... |" << it->getLocations()[i].getLocationName() << "|" << std::endl;
+			std::cout << "autoindex            .... |" << it->getLocations()[i].getAutoIndex() << "|" << std::endl;
+			std::cout << "root                 .... |" << it->getLocations()[i].getRoot() << "|" << std::endl;
+			for (size_t j = 0; j < it->getLocations()[i].getIndexes().size(); j++)
+				std::cout << "index                .... |" << it->getLocations()[i].getIndexes()[j] << "|" << std::endl;
+			for (size_t j = 0; j < it->getLocations()[i].getAllowedMethods().size(); j++)
+				std::cout << "allow_methods        .... |" << it->getLocations()[i].getAllowedMethods()[j] << "|" << std::endl;
+			for (std::map<int, std::string>::iterator ret = it->getLocations()[i].getReturn().begin(); ret != it->getLocations()[i].getReturn().end(); ++ret)
 				std::cout << "return               .... |" << ret->first << "| |" << ret->second << "|" << std::endl;
-			std::cout << "fastCgiPass          .... |" << it->getLoactions()[i].getFastCgiPass() << "|" << std::endl;
-			std::cout << "uploadEnable         .... |" << it->getLoactions()[i].getUploadEnable() << "|" << std::endl;
-			std::cout << "uploadStore          .... |" << it->getLoactions()[i].getUploadStore() << "|" << std::endl;
+			std::cout << "fastCgiPass          .... |" << it->getLocations()[i].getFastCgiPass() << "|" << std::endl;
+			std::cout << "uploadEnable         .... |" << it->getLocations()[i].getUploadEnable() << "|" << std::endl;
+			std::cout << "uploadStore          .... |" << it->getLocations()[i].getUploadStore() << "|" << std::endl;
 			std::cout << "••••••••••••••••••" << std::endl;
 		}
 		std::cout << "\n››››››››››››››››››››››››››››››››››››››››››››››››" << std::endl;
 	}
 }
 
-std::vector<HttpServer> & ConfigFileParser::getServers()
+std::vector<HttpServer> &ConfigFileParser::getServers()
 {
 	return this->_servers;
 }

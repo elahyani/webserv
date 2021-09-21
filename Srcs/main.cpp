@@ -2,20 +2,20 @@
 
 int main(int ac, char **av)
 {
-	ConfigFileParser parser;
+  ConfigFileParser parser;
 
-    try
-    {
-		parser.parseConfigFile(ac, av);
-		// parser.printContentData();
-		
-		Server server(parser, av[2]);
+  try
+  {
+    parser.parseConfigFile(ac, av);
+    // parser.printContentData();
+    // exit(1);
 
-    }
-    catch(const std::exception& exp)
-    {
-        std::cerr << "Error: " << exp.what() << '\n';
-		return (1);
-    }
-    return (0);
+    Server server(parser, av[2]);
+  }
+  catch (const std::exception &exp)
+  {
+    std::cerr << "Error: " << exp.what() << '\n';
+    return (1);
+  }
+  return (0);
 }

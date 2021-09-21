@@ -109,7 +109,6 @@ HttpServer Server::findTheTargetServer(int &accptSockFD)
 	// Find the target server
 	HttpServer targetServer;
 	std::map<int, int>::iterator it = _serverAddrS.find(accptSockFD);
-	std::cout << "it->second === " << it->second << std::endl;
 	struct sockaddr_in serverAddr;
 	std::memset(&serverAddr, 0, _addrLen);
 	if (getsockname(it->second, (struct sockaddr *)&serverAddr, &_addrLen) < 0)
@@ -138,7 +137,13 @@ void Server::exampleOfResponse(char *fileName, int &accptSockFD)
 	(void)fileName;
 
 	HttpServer server = findTheTargetServer(accptSockFD);
-	Response response(this->_request, server);
+	// if (_dirPath.size())
+	// {
+	// 	std::cout << "000000000000000========>>>>>>>>>>>------->>>>>> |" << _dirPath << "|" << std::endl;
+	// 	server.getLocations()[_locPos].setRoot(_dirPath);
+	// }
+	// _dirPath.clear();
+	Response response(this->_request, server /*, this */);
 
 	std::string msgRes(""); // Will hold the data that we will send
 	// //Header
@@ -183,6 +188,12 @@ void Server::newConnectHandling(int &sockFD)
 	else
 		_serverAddrS.insert(std::pair<int, int>(newSockFD, sockFD));
 }
+
+// void Server::setCurrentDir(std::string &dirpath, size_t locPos)
+// {
+// 	_dirPath = dirpath;
+// 	_locPos = locPos;
+// }
 
 bool checkRequest(std::string &buffReq)
 {

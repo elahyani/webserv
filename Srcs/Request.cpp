@@ -12,7 +12,13 @@
 
 #include "Request.hpp"
 
-Request::Request() : _content(""), _method(""), _urlPath(""), _urlQuery(""), _protocol(""), _bLen(0), _statusCode(200)
+Request::Request() : _content(""),
+					 _method(""),
+					 _urlPath(""),
+					 _urlQuery(""),
+					 _protocol(""),
+					 _bLen(0),
+					 _statusCode(200)
 {
 
 	this->_methods.push_back("GET");

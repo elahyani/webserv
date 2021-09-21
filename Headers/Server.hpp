@@ -45,6 +45,8 @@ private:
 	std::map<int, std::string> _clients;
 	std::map<int, int> _serverAddrS;
 	Request _request;
+	// std::string _dirPath;
+	// size_t _locPos;
 
 public:
 	Server();
@@ -64,6 +66,8 @@ public:
 	void createMasterSockets();
 
 	HttpServer findTheTargetServer(int &);
+
+	// void setCurrentDir(std::string &, size_t);
 };
 
 #endif

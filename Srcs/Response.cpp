@@ -12,18 +12,19 @@
 
 #include "Response.hpp"
 
-Response::Response(Request &req, HttpServer &server) : _status(-1),
-                                                       _request(req),
-                                                       _server(server),
-                                                       _responseMsg(""),
-                                                       _headers(""),
-                                                       _body(""),
-                                                       _indexPath(""),
-                                                       _autoIndexPage(""),
-                                                       _dirPath(""),
-                                                       _dr(""),
-                                                       _autoIndex(false),
-                                                       _notFound(false)
+Response::Response(Request &req, HttpServer &server /* , Server *serv */) : _status(-1),
+                                                                            _request(req),
+                                                                            _server(server),
+                                                                            _responseMsg(""),
+                                                                            _headers(""),
+                                                                            _body(""),
+                                                                            _indexPath(""),
+                                                                            _autoIndexPage(""),
+                                                                            _dirPath(""),
+                                                                            _dr(""),
+                                                                            _autoIndex(false),
+                                                                            _notFound(false),
+                                                                            _isLocation(false)
 {
     this->_errors[200] = "OK";
     this->_errors[301] = "Moved Permanently";
@@ -43,7 +44,7 @@ Response::Response(Request &req, HttpServer &server) : _status(-1),
     this->_errors[505] = "Http Version Not Supported";
     this->_status = this->_request.getStatusCode();
 
-    std::cout << "status >>>>> " << this->_status << std::endl;
+    // std::cout << "status >>>>> " << this->_status << std::endl;
 }
 
 Response::~Response()
@@ -127,22 +128,29 @@ bool Response::isLocationExist()
 {
     std::string locPath;
 
-    for (std::vector<Location>::iterator it = _server.getLoactions().begin(); it != _server.getLoactions().end(); ++it)
+    // for (std::vector<Location>::iterator it = _server.getLocations().begin(); it != _server.getLocations().end(); ++it)
+    for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
-        if (it->getLocationName().compare(_request.getStartLineVal("url")) == 0)
+        if (_request.getStartLineVal("url").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
         {
-            _location = *it;
-            std::cout << "1‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
-            return true;
-        }
-        else if (_request.getStartLineVal("url").find(it->getLocationName()) != std::string::npos)
-        {
-            _location = *it;
-            std::cout << "2‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
-            return false;
+            std::cout << "***************>>> " << _server.getLocations()[i].getLocationName() << std::endl;
+            if (_server.getLocations()[i].getLocationName().compare(_request.getStartLineVal("url")) == 0)
+            {
+                _location = _server.getLocations()[i];
+                // _locPos = i;
+                std::cout << "1‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
+                _isLocation = true;
+            }
+            else
+            {
+                _location = _server.getLocations()[i];
+                // _locPos = i;
+                std::cout << "2‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
+                _isLocation = false;
+            }
         }
     }
-    return false;
+    return _isLocation;
 }
 
 bool Response::isDirectory()
@@ -152,55 +160,22 @@ bool Response::isDirectory()
     size_t locLen = _location.getLocationName().size();
 
     std::cout << "url --->>> |" << _request.getStartLineVal("url") << "|" << std::endl;
+    std::cout << "root --->>> |" << _location.getRoot() << "|" << std::endl;
     if (_request.getStartLineVal("url").find(_location.getLocationName()) != std::string::npos)
     {
         std::string locPath = _request.getStartLineVal("url").substr(0, locLen);
         std::cout << "LocPath: |" << locPath << "| locName: |" << _location.getLocationName() << "|" << std::endl;
         if (_request.getStartLineVal("url").size() > 1 && locPath.compare(_location.getLocationName()) == 0)
-            _dirPath.append(_server.getRoot() + "/" + _request.getStartLineVal("url").substr(locLen));
+        {
+            _dirPath.append(_location.getRoot() + "/" + _request.getStartLineVal("url").substr(locLen));
+            // _serv->setCurrentDir(_dirPath, _locPos);
+        }
         std::cout << "dirPath—————————————————————————————————————————————————————>>> |" << _dirPath << "|" << std::endl;
     }
     if ((r = opendir(_dirPath.c_str())))
     {
         closedir(r);
         return true;
-    }
-    return false;
-}
-
-// bool Response::indexIsExist()
-// {
-//     // check if index and root exist [v]
-//     // handle location content [v]
-
-//     for (std::vector<Location>::iterator it = _server.getLoactions().begin(); it != _server.getLoactions().end(); ++it)
-//     {
-//         if (it->getLocationName().compare(_request.getStartLineVal("url")) == 0)
-//         {
-//             if (it->getAutoIndex())
-//             {
-//                 _autoIndex = true;
-//             }
-//             if ((_index = std::find(it->getIndexes().begin(), it->getIndexes().end(), "index.html")) != it->getIndexes().end())
-//             {
-//                 _indexPath.append(_server.getRoot());
-//                 return true;
-//             }
-//         }
-//     }
-//     _notFound = true;
-//     return false;
-// }
-
-bool Response::autoIndex()
-{
-    for (std::vector<Location>::iterator it = _server.getLoactions().begin(); it != _server.getLoactions().end(); ++it)
-    {
-        if (it->getLocationName().compare("/") == 0)
-        {
-            if (it->getAutoIndex())
-                return true;
-        }
     }
     return false;
 }
@@ -228,11 +203,6 @@ void Response::buildHeaders()
     this->_headers.append("Content-Type: text/html; charset=UTF-8");
     this->_headers.append("\r\n");
     this->_headers.append("Content-Length: " + std::to_string(_body.length()));
-
-    // this->_headers.append("\r\n");
-    // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
-    // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
-    // this->_headers.append("Content-Type: " + this->_request.getHeaderVal("Content-Type"));
     this->_headers.append("\r\n\r\n");
     this->_headers.append(_body);
 
@@ -250,17 +220,17 @@ void Response::getMethod()
     std::cout << "GET METHOD" << std::endl;
     bool isLoc = isLocationExist();
     bool isDir = isDirectory();
-    // is LocationExist || isDir(url)
+
     std::cout << "isLoc ±±±±±>> " << isLoc << " | isDir ±±±±±±>>" << isDir << std::endl;
     if (isLoc || isDir)
     {
         std::cout << "LOCATION >>> EXIST" << std::endl;
-        if (_location.getAutoIndex() || isDir)
+        if (_location.getAutoIndex())
         {
             if (isDir)
                 _dr = _dirPath;
             else if (_location.getAutoIndex())
-                _dr = _server.getRoot();
+                _dr = _location.getRoot();
             std::cout << ".." << _dr << std::endl;
             indexingFiles();
             std::cout << ".." << _dr << std::endl;
@@ -268,7 +238,7 @@ void Response::getMethod()
         else if (_location.getRoot().size() && (_index = std::find(_location.getIndexes().begin(), _location.getIndexes().end(), "index.html")) != _location.getIndexes().end())
         {
             std::cout << "ROOT && INDEX >>> EXIST" << std::endl;
-            std::ifstream indexFile(_indexPath.append("/" + *_index));
+            std::ifstream indexFile(_location.getRoot() + "/" + *_index);
             if (indexFile)
             {
                 std::cout << "INDEX PATH >>> VALID" << std::endl;
@@ -281,6 +251,11 @@ void Response::getMethod()
                 std::cout << "INDEX PATH >>> INVALID" << std::endl;
                 _body = getHtmlTemplate();
             }
+        }
+        else
+        {
+            _body = getHtmlTemplate();
+            std::cout << "ACH HADA EMMM AHAAAA ACH HADAAAA" << std::endl;
         }
     }
     else
