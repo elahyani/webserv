@@ -69,6 +69,39 @@ Server &Server::operator=(Server const &ths)
 	return *this;
 }
 
+void Server::createMasterSockets()
+{
+	FD_ZERO(&_masterFDs);
+	FD_ZERO(&_writeFDs);
+	for (std::vector<HttpServer>::iterator itServer = _servers.begin(); itServer != _servers.end(); itServer++)
+	{
+		_ports = itServer->getPorts();
+		_host = itServer->getHost();
+		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort)
+		{
+			_port = *itPort;
+			std::cout << _host << ':' << _port << std::endl;
+			// Socket creating
+			try
+			{
+				this->createSocket();
+				// Bind socket
+				this->bindSocket();
+				FD_SET(_masterSockFD, &_masterFDs);
+				_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
+				// Listen to client in socket
+				this->listenToClient();
+				_masterSockFDs.push_back(_masterSockFD);
+			}
+			catch (const std::exception &e)
+			{
+				close(_masterSockFD);
+				std::cerr << e.what() << '\n';
+			}
+		}
+	}
+}
+
 // Socket creating
 void Server::createSocket()
 {
@@ -100,58 +133,8 @@ void Server::bindSocket()
 // Listen for incoming connections from clients
 void Server::listenToClient()
 {
-	if (listen(_masterSockFD, 2048) == -1)
+	if (listen(_masterSockFD, BACKLOG) == -1)
 		throw std::runtime_error("Unable to listen for connections in the socket " + std::to_string(_masterSockFD));
-}
-
-void Server::findTheTargetServer(int & accptSockFD, struct CGIInfos *cgiInfos)
-{
-	std::map<int, int>::iterator it = _accptMaster.find(accptSockFD);
-	struct sockaddr_in serverAddr;
-	std::memset(&serverAddr, 0, _addrLen);
-	if (getsockname(it->second, (struct sockaddr *)&serverAddr, &_addrLen) < 0)
-		throw std::runtime_error("Unable to get server informations from socket " + std::to_string(it->second));
-	std::cout << "Master socket fd is " << std::to_string(it->second) << " , ip is : " << inet_ntoa(serverAddr.sin_addr) << " , port : " << std::to_string(ntohs(serverAddr.sin_port)) << std::endl;
-	for(std::vector<HttpServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
-	{
-		if (it->getHost() == inet_ntoa(serverAddr.sin_addr))
-		{
-			_ports = it->getPorts();
-			for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); itPort++)
-			{
-				if (*itPort == ntohs(serverAddr.sin_port))
-				{
-					cgiInfos->server = *it;
-					cgiInfos->port = *itPort;
-					break ;
-				}
-			}
-		}
-	}
-	return ;
-}
-
-void Server::exampleOfResponse(char *fileName, int &accptSockFD)
-{
-	(void)fileName;
-
-	// HttpServer server;
-	struct CGIInfos cgiInfos;
-	findTheTargetServer(accptSockFD, &cgiInfos);
-	cgiInfos.request = _request;
-	Cgi excutionCgi(cgiInfos);
-	Response response(this->_request, cgiInfos.server);
-
-	std::string msgRes(""); // Will hold the data that we will send
-	response.buildHeaders();
-	msgRes.append(response.getHeaders());
-	if (FD_ISSET(accptSockFD, &_writeFDs))
-	{
-		if (send(accptSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
-		{
-			throw std::runtime_error("Unable to send the response to client in socket " + std::to_string(accptSockFD));
-		}
-	}
 }
 
 void Server::newConnectHandling(int &sockFD)
@@ -192,7 +175,7 @@ bool checkRequest(std::string &buffReq)
 
 void Server::existConnectHandling(int &accptSockFD)
 {
-	char _buffRes[1024] = {0};
+	char _buffRes[BUFFER_SIZE] = {0};
 	int valRead = recv(accptSockFD, _buffRes, sizeof(_buffRes), 0);
 	std::cout << "Exist connection , socket fd is " << std::to_string(accptSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
 	if (valRead > 0)
@@ -226,35 +209,52 @@ void Server::existConnectHandling(int &accptSockFD)
 		return; // Socket is connected but doesn't send request.
 }
 
-void Server::createMasterSockets()
+
+void Server::findTheTargetServer(int & accptSockFD, HttpServer * server, short *port)
 {
-	FD_ZERO(&_masterFDs);
-	FD_ZERO(&_writeFDs);
-	for (std::vector<HttpServer>::iterator itServer = _servers.begin(); itServer != _servers.end(); itServer++)
+	std::map<int, int>::iterator it = _accptMaster.find(accptSockFD);
+	struct sockaddr_in serverAddr;
+	std::memset(&serverAddr, 0, _addrLen);
+	if (getsockname(it->second, (struct sockaddr *)&serverAddr, &_addrLen) < 0)
+		throw std::runtime_error("Unable to get server informations from socket " + std::to_string(it->second));
+	std::cout << "Master socket fd is " << std::to_string(it->second) << " , ip is : " << inet_ntoa(serverAddr.sin_addr) << " , port : " << std::to_string(ntohs(serverAddr.sin_port)) << std::endl;
+	for(std::vector<HttpServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
 	{
-		_ports = itServer->getPorts();
-		_host = itServer->getHost();
-		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort)
+		if (it->getHost() == inet_ntoa(serverAddr.sin_addr))
 		{
-			_port = *itPort;
-			std::cout << _host << ':' << _port << std::endl;
-			// Socket creating
-			try
+			_ports = it->getPorts();
+			for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); itPort++)
 			{
-				this->createSocket();
-				// Bind socket
-				this->bindSocket();
-				FD_SET(_masterSockFD, &_masterFDs);
-				_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
-				// Listen to client in socket
-				this->listenToClient();
-				_masterSockFDs.push_back(_masterSockFD);
+				if (*itPort == ntohs(serverAddr.sin_port))
+				{
+					*server = *it;
+					*port = *itPort;
+					break ;
+				}
 			}
-			catch (const std::exception &e)
-			{
-				close(_masterSockFD);
-				std::cerr << e.what() << '\n';
-			}
+		}
+	}
+	return ;
+}
+
+void Server::exampleOfResponse(char *fileName, int &accptSockFD)
+{
+	(void)fileName;
+
+	HttpServer server;
+	short port = 0;
+	findTheTargetServer(accptSockFD, &server, &port);
+	Cgi excutionCgi(_request, server, port);
+	Response response(this->_request, server);
+
+	std::string msgRes(""); // Will hold the data that we will send
+	response.buildHeaders();
+	msgRes.append(response.getHeaders());
+	if (FD_ISSET(accptSockFD, &_writeFDs))
+	{
+		if (send(accptSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
+		{
+			throw std::runtime_error("Unable to send the response to client in socket " + std::to_string(accptSockFD));
 		}
 	}
 }

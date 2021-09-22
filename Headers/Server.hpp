@@ -24,12 +24,8 @@
 class Request;
 #include "Response.hpp"
 
-struct CGIInfos
-{
-	Request 			request;
-	HttpServer			server;
-	short				port;
-};
+#define BUFFER_SIZE 1024
+#define BACKLOG 2048
 
 class Server
 {
@@ -70,7 +66,7 @@ public:
 	void exampleOfResponse(char *, int &);
 	void createMasterSockets();
 
-	void findTheTargetServer(int &, struct CGIInfos *);
+	void findTheTargetServer(int &, HttpServer *, short *);
 };
 
 #endif
