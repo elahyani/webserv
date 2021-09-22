@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/21 11:08:45 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/22 12:27:59 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,8 @@ private:
 	size_t countauto;
 	size_t isEnabled;
 	bool _isCGI;
+	bool _isLoc;
+	bool _isServ;
 
 public:
 	ConfigFileParser();

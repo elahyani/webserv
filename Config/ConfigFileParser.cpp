@@ -17,7 +17,10 @@ ConfigFileParser::ConfigFileParser() : data(""),
 									   inLocation(false),
 									   countauto(0),
 									   isEnabled(0),
-									   _isCGI(false)
+									   _isCGI(false),
+									   _isLoc(false),
+									   _isServ(false)
+
 {
 }
 
@@ -238,7 +241,9 @@ void ConfigFileParser::chekDupServerName(void)
 void ConfigFileParser::parseLocation(std::string _data)
 {
 	std::string buffer;
-	std::istringstream str(_data.substr(_data.find("location: ")));
+	std::istringstream str(_data.substr(_data.find("location: "), _data.find("}") + 1));
+	// std::istringstream str(_data.substr(_data.find("location: ")));
+
 
 	this->countauto = 0;
 	this->isEnabled = 0;
@@ -466,13 +471,20 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 		this->data.append(trimContent(buffer));
 		this->data.append("\n");
 	}
-
+	if (data.find("server") == std::string::npos || data.find("[") == std::string::npos)
+		throw std::invalid_argument("Exception:\tNO SERVER CONFIGURATION FOUND!");
 	std::istringstream str(this->data);
 	while (std::getline(str, buffer))
 	{
 		// trim buffer
 		buffer = trimContent(buffer);
-
+		if (buffer.compare("server") == 0)
+			_isServ = true;
+		if (buffer.find("}") != std::string::npos && _isLoc)
+		{
+			_isLoc = false;
+			continue ;
+		}
 		if (buffer.find("#") != std::string::npos)
 		{
 			buffer = buffer.substr(0, buffer.find_first_of('#'));
@@ -483,14 +495,13 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 		if (buffer.find("[") != std::string::npos)
 		{
 			this->split(trimContent(buffer), '=');
-			// std::cout << ">>>>>>>>>>>>>|" << mapTmp[0] << "|\n";
-			// std::cout << ">>>>>>>>>>>>>|" << mapTmp[1] << "|\n";
-
 			if (buffer.compare("[") == 0)
 			{
+				if (!_isServ)
+					throw std::invalid_argument("Exception:\tOpening brackets without server REALLY! :/");
 				if (this->inServer)
 					throw std::invalid_argument("Exception:\tCannot define server inside server");
-
+				
 				this->inServer = !this->inServer;
 				isDef = -1;
 			}
@@ -506,6 +517,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				this->checkMissingAttrs();
 				this->servers.push_back(this->server);
 				this->server.clearAll();
+				_isServ = false;
 				this->data = this->data.substr(data.find("]\n"));
 				if (isDef == -1)
 					throw std::invalid_argument("Exception:\tmakainx");
@@ -649,15 +661,16 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				}
 				this->location.setLocationName(trimContent(buffer.substr(buffer.find(":") + 1)));
 				checkLocationName(buffer);
+				_isLoc = true;
 				// this->split(this->location.getLocationName(), ' ');
 				// if (mapTmp.size() != 1)
 				// 	throw std::invalid_argument("Exception:\tWrong number of arguments");
 				this->parseLocation(data.substr(data.find("location: " + this->location.getLocationName())));
+				// std::cout << "HANAAA >>>>>>>>>>>>>>|" << buffer << "|\n";
+				// buffer = data.substr(data.find("}") + 1);
+				// std::cout << "HANAAA >>>>>>>>>>>>>>|" << this->location.getLocationName() << "|\n";
+				// std::cout << "HANAAA >>>>>>>>>>>>>>|" << buffer << "|\n";
 			}
-			// if ((buffer.find("{") != std::string::npos || buffer.find("}") != std::string::npos )&& !this->inLocation)
-			// {
-			// 	throw std::invalid_argument("Exception:\ttkhrbi9aaaaa");
-			// }
 			else if (buffer.find("{") == std::string::npos && buffer.find("}") == std::string::npos &&
 					 buffer.find("[") == std::string::npos && buffer.find("]") == std::string::npos &&
 					 buffer.find("autoindex") == std::string::npos && buffer.find("index") == std::string::npos &&
@@ -669,6 +682,8 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				std::cout << ">>>>>>>>>>>>>>|" << buffer << "|\n";
 				throw std::invalid_argument("Exception:\tAttribute not recognized");
 			}
+			if ((buffer.find("{") != std::string::npos || buffer.find("}") != std::string::npos) && !_isLoc)
+				throw std::invalid_argument("Exception:\tMisplaced curly braces");
 		}
 		// else if (!serversNumber && buffer.find("server") == std::string::npos)
 		// 	throw std::invalid_argument("Exception:\tEmpty Configuration File");
