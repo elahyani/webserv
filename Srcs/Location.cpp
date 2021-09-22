@@ -16,6 +16,7 @@ Location::Location() : _autoindex(false),
 					   _locationName(),
 					   _root(),
 					   _fastCgiPass(),
+					   _isCGI(false),
 					   _uploadEnable(false),
 					   _uploadStore()
 {
@@ -113,8 +114,18 @@ std::map<int, std::string> &Location::getReturn()
 
 void Location::setFastCgiPass(std::string _cgiPass)
 {
-	_cgiPass.pop_back();
 	this->_fastCgiPass = _cgiPass;
+}
+
+void Location::setIsCGI(bool isTrue)
+{
+	this->_isCGI = isTrue;
+	// std::cout << "************** this is CGI : " << this->_isCGI << std::endl;
+}
+
+bool &Location::getIsCGI()
+{
+	return this->_isCGI;
 }
 
 std::string &Location::getFastCgiPass()
@@ -122,12 +133,11 @@ std::string &Location::getFastCgiPass()
 	return this->_fastCgiPass;
 }
 
-void Location::setUploadEnable(std::string _uploadEnable)
+void Location::setUploadEnable(std::string uploadEnable)
 {
-	_uploadEnable.pop_back();
-	if (_uploadEnable.compare("off") == 0)
+	if (uploadEnable.compare("off") == 0)
 		this->_uploadEnable = false;
-	else if (_uploadEnable.compare("on") == 0)
+	else if (uploadEnable.compare("on") == 0)
 		this->_uploadEnable = true;
 }
 
@@ -156,6 +166,7 @@ void Location::clearAll()
 	this->_root.clear();
 	this->_indexes.clear();
 	this->_fastCgiPass.clear();
+	this->_isCGI = false;
 	this->_uploadEnable = false;
 	this->_uploadStore.clear();
 }

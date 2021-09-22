@@ -20,6 +20,7 @@
 #include <fstream>
 #include <string>
 #include <dirent.h>
+#include <unistd.h>
 // #include "Server.hpp"
 // class Server;
 #include "Request.hpp"
@@ -67,17 +68,22 @@ private:
 
 public:
     Response();
-    Response(Request &req, HttpServer &server/* , Server *serv */);
+    Response(Request &req, HttpServer &server /* , Server *serv */);
     ~Response();
 
     void buildHeaders();
-    bool getErrorMsg(int status);
-    void checkErrors();
-    void getMethod();                     //
-    void postMethod();                    //
-    void deleteMethod();                  //
-    void buildResponse();                 //
-    std::string getErrorPage(int status); //
+    void getErrorPage(std::string);
+    void manageReqErrors();                      //TODO ****
+    void manageErrorHeaders(int _status);        // TODO 1
+    void generateResponse();                     // TODO 2
+    std::string getPath(std::string);            // TODO 3
+    std::string getUriFilePath(std::string);     // TODO 4
+    std::string getRootDirectory();              // TODO 7
+    void getMethod();                            //
+    void postMethod();                           //
+    void deleteMethod();                         //
+    void buildResponse();                        //
+    std::string getDefaultErrorPage(int status); //
     std::string &getResponse();
     std::string getHtmlTemplate(); //
     std::string &getHeaders();
@@ -86,7 +92,8 @@ public:
     bool autoIndex();
     void indexingFiles();
     bool isLocationExist();
-    bool isDirectory();
+    bool isDirectory(const std::string &); //TODO 5
+    std::string getDirectory();            // TODO 6
     // std::string readFile
 };
 

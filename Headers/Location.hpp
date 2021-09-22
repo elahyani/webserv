@@ -29,6 +29,7 @@ private:
 	std::vector<std::string> _allowedMethods;
 	std::map<int, std::string> _ret;
 	std::string _fastCgiPass;
+	bool _isCGI;
 	bool _uploadEnable;
 	std::string _uploadStore;
 
@@ -66,6 +67,9 @@ public:
 
 	void setUploadStore(std::string);
 	std::string &getUploadStore();
+
+	void setIsCGI(bool);
+	bool &getIsCGI();
 };
 
 #endif

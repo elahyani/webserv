@@ -272,6 +272,11 @@ std::string &Request::getHeaderVal(std::string const &key)
 	return this->_headers[key];
 }
 
+void Request::setStartLineVal(std::string key, std::string val)
+{
+	this->_startLine[key] = val;
+}
+
 std::string &Request::getStartLineVal(std::string const &key)
 {
 	return this->_startLine[key];

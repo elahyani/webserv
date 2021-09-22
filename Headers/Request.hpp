@@ -64,6 +64,8 @@ public:
 
     std::vector<Bodies> getBody();
     std::string &getHeaderVal(std::string const &key);
+
+    void setStartLineVal(std::string, std::string);
     std::string &getStartLineVal(std::string const &key);
     int &getStatusCode();
     void clearRequest();

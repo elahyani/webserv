@@ -51,47 +51,104 @@ Response::~Response()
 {
 }
 
-void Response::checkErrors()
+void Response::getErrorPage(std::string ErrorPagePath)
 {
-    // config errors
+    std::ifstream indexFile(ErrorPagePath);
+    if (indexFile)
+    {
+        std::cout << "ERROR PAGE PATH >>> VALID" << std::endl;
+        std::ostringstream ss;
+        ss << indexFile.rdbuf();
+        _body = ss.str();
+    }
 }
 
-bool Response::getErrorMsg(int status)
+void Response::manageErrorHeaders(int _status)
 {
-    (void)status;
-    return true;
+    time_t rawTime;
+    std::string tm;
+    std::cout << "--------------------------------------------------------------> HERE" << std::endl;
+
+    time(&rawTime);
+    tm = ctime(&rawTime);
+    tm.pop_back();
+    this->_headers.append(this->_request.getStartLineVal("protocol"));
+    this->_headers.append(" ");
+    this->_headers.append(std::to_string(_status));
+    this->_headers.append(" ");
+    this->_headers.append(this->_errors[_status]);
+    this->_headers.append("\r\n");
+    this->_headers.append("Server: webServ\r\n");
+    this->_headers.append("Date: " + tm.append(" GMT"));
+    this->_headers.append("\r\n");
+    this->_headers.append("Connection: close\r\n");
+    this->_headers.append("Content-Type: text/html; charset=UTF-8");
+    this->_headers.append("\r\n");
+    this->_headers.append("Content-Length: " + std::to_string(_body.length()));
+    this->_headers.append("\r\n\r\n");
+    this->_headers.append(_body);
 }
+
+void Response::manageReqErrors()
+{
+    if (_status == BAD_REQUEST_STATUS)
+    {
+        if (_server.getErrorsPages()[_status].length())
+            getErrorPage(_server.getErrorsPages()[_status]);
+        else
+            getDefaultErrorPage(_status);
+    }
+    else if (_status == HTTP_VERSION_NOT_SUPPORTED_STATUS)
+    {
+        if (_server.getErrorsPages()[_status].length())
+            getErrorPage(_server.getErrorsPages()[_status]);
+        else
+            getDefaultErrorPage(_status);
+    }
+    manageErrorHeaders(_status);
+}
+
+// bool Response::getErrorMsg(int status)
+// {
+//     (void)status;
+//     return true;
+// }
 
 void Response::indexingFiles()
 {
-    // auto index
-    // listing links to files
-    std::cout << "±±±±±±±±±±±±±±±±±±±>>> " << _dr << std::endl;
-    DIR *directory = opendir(_dr.c_str());
+    std::cout << "------------------------------------------------------------" << std::endl;
+    std::cout << getPath(_request.getStartLineVal("url")) << std::endl;
+    std::cout << "------------------------------------------------------------" << std::endl;
+    DIR *directory = opendir(getPath(_request.getStartLineVal("url")).c_str());
     struct dirent *en;
+    std::string fileName;
 
-    _dirContent.clear();
+    _autoIndexPage = "<!DOCTYPE html>\n<html lang=\"en\">\n\
+    <head>\n\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\
+        <title>Bad Request</title>\n\
+        </head>\n\
+        <body>\n\
+            <div style=\"margin-left: 5%; margin-top:10%;\">\n\
+            <hr>\n";
+
     if (directory)
     {
         while ((en = readdir(directory)) != nullptr)
-            _dirContent.push_back(en->d_name);
+        {
+            fileName = en->d_name;
+            if (en->d_type == DT_DIR)
+                fileName.append("/");
+            _autoIndexPage.append("\t\t\t<p><a href=\"/" + fileName + "\">" + fileName + "</a></p>\n");
+        }
         closedir(directory);
     }
-    _autoIndexPage = "<!DOCTYPE html>\n<html lang=\"en\">\n\
-    \t<head>\n\
-    \t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\
-    \t\t<title>Bad Request</title>\n\
-    \t\t<style>.container {margin-left: 5%; margin-top:10%;}</style>\n\
-    \t</head>\n\
-    \t<body>\n\
-    \t\t<div class=\"container\">\n\t\t\t<hr>\n";
+    _autoIndexPage += "\
+                <hr>\n\
+            </div>\n\
+        </body>\n\
+    </html>\n";
 
-    for (size_t i = 0; i < _dirContent.size(); i++)
-    {
-        _autoIndexPage += "\t\t\t<a href=\"/" + _dirContent[i] + "\">" + _dirContent[i] + "</a><br>\n";
-    }
-
-    _autoIndexPage += "\t\t\t<hr>\n\t\t</div>\n\t</body>\n</html>";
     std::cout << "+++++++++++++++++++++++++++++++++++++++++---------------------" << std::endl;
     std::cout << _autoIndexPage << std::endl;
     _body = _autoIndexPage;
@@ -131,48 +188,93 @@ bool Response::isLocationExist()
     // for (std::vector<Location>::iterator it = _server.getLocations().begin(); it != _server.getLocations().end(); ++it)
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
+        // std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].getIsCGI() << "|" << std::endl;
         if (_request.getStartLineVal("url").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
         {
             std::cout << "***************>>> " << _server.getLocations()[i].getLocationName() << std::endl;
-            if (_server.getLocations()[i].getLocationName().compare(_request.getStartLineVal("url")) == 0)
-            {
-                _location = _server.getLocations()[i];
-                // _locPos = i;
-                std::cout << "1‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
-                _isLocation = true;
-            }
-            else
-            {
-                _location = _server.getLocations()[i];
-                // _locPos = i;
-                std::cout << "2‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
-                _isLocation = false;
-            }
+            //? if (_server.getLocations()[i].getLocationName().compare(_request.getStartLineVal("url")) == 0)
+            //? {
+            _location = _server.getLocations()[i];
+            // _locPos = i;
+            std::cout << "1‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
+            _isLocation = true;
+            //?}
+            //?else
+            //?{
+            //?    _location = _server.getLocations()[i];
+            //?    // _locPos = i;
+            //?    std::cout << "2‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡‡>>> " << _location.getLocationName() << std::endl;
+            //?    _isLocation = false;
+            //?}
         }
     }
     return _isLocation;
 }
 
-bool Response::isDirectory()
+std::string Response::getDirectory()
 {
+    char buffer[1000];
+    std::string dirPath = "";
+
+    if (!getcwd(buffer, sizeof(buffer)))
+        throw std::invalid_argument("Exception: Path not found");
+    else
+    {
+        dirPath = buffer;
+        if (_location.getRoot().length())
+        {
+            if (_location.getRoot().find(dirPath) != std::string::npos || dirPath.find(_location.getRoot()) != std::string::npos)
+                return _location.getRoot();
+            if (_location.getRoot().front() != '/')
+                dirPath.append("/");
+            dirPath.append(_location.getRoot());
+        }
+        else
+        {
+            if (_server.getRoot().find(dirPath) != std::string::npos || dirPath.find(_server.getRoot()) != std::string::npos)
+                return _server.getRoot();
+            if (_server.getRoot().front() != '/')
+                dirPath.append("/");
+            dirPath.append(_server.getRoot());
+        }
+    }
+    std::cout << "DIR _> " << dirPath << std::endl;
+    return dirPath;
+}
+
+// bool Response::isDirectory()
+// {
+//     DIR *r;
+
+//     size_t locLen = _location.getLocationName().size();
+
+//     std::cout << "url --->>> |" << _request.getStartLineVal("url") << "|" << std::endl;
+//     std::cout << "root --->>> |" << _location.getRoot() << "|" << std::endl;
+//     if (_request.getStartLineVal("url").find(_location.getLocationName()) != std::string::npos)
+//     {
+//         std::string locPath = _request.getStartLineVal("url").substr(0, locLen);
+//         std::cout << "LocPath: |" << locPath << "| locName: |" << _location.getLocationName() << "|" << std::endl;
+//         if (_request.getStartLineVal("url").size() > 1 && locPath.compare(_location.getLocationName()) == 0)
+//         {
+//             _dirPath.append(getDirectory() + "/" + _request.getStartLineVal("url").substr(locLen));
+//             // _serv->setCurrentDir(_dirPath, _locPos);
+//         }
+//         std::cout << "dirPath—————————————————————————————————————————————————————>>> |" << _dirPath << "|" << std::endl;
+//     }
+//     if ((r = opendir(_dirPath.c_str())))
+//     {
+//         closedir(r);
+//         return true;
+//     }
+//     return false;
+// }
+
+bool Response::isDirectory(const std::string &path)
+{
+    std::string s = path;
     DIR *r;
 
-    size_t locLen = _location.getLocationName().size();
-
-    std::cout << "url --->>> |" << _request.getStartLineVal("url") << "|" << std::endl;
-    std::cout << "root --->>> |" << _location.getRoot() << "|" << std::endl;
-    if (_request.getStartLineVal("url").find(_location.getLocationName()) != std::string::npos)
-    {
-        std::string locPath = _request.getStartLineVal("url").substr(0, locLen);
-        std::cout << "LocPath: |" << locPath << "| locName: |" << _location.getLocationName() << "|" << std::endl;
-        if (_request.getStartLineVal("url").size() > 1 && locPath.compare(_location.getLocationName()) == 0)
-        {
-            _dirPath.append(_location.getRoot() + "/" + _request.getStartLineVal("url").substr(locLen));
-            // _serv->setCurrentDir(_dirPath, _locPos);
-        }
-        std::cout << "dirPath—————————————————————————————————————————————————————>>> |" << _dirPath << "|" << std::endl;
-    }
-    if ((r = opendir(_dirPath.c_str())))
+    if ((r = opendir(s.c_str())))
     {
         closedir(r);
         return true;
@@ -215,55 +317,102 @@ std::string &Response::getHeaders()
     return this->_headers;
 }
 
+std::string Response::getUriFilePath(std::string uri)
+{
+    std::string path = uri;
+    std::string filePath;
+
+    if (uri.back() != '/')
+        uri.append("/");
+    filePath = uri;
+    if (_location.getLocationName().compare(filePath) == 0)
+        return filePath.append(_location.getIndexes()[0]);
+    return path;
+}
+
+std::string Response::getRootDirectory()
+{
+    if (_location.getRoot().size())
+        return _location.getRoot();
+    return _server.getRoot();
+}
+
+std::string Response::getPath(std::string uriFilePath)
+{
+    std::string path = getRootDirectory();
+    std::cout << "dir ___> |" << path << "|" << std::endl;
+    if (uriFilePath.front() != '/')
+        uriFilePath = "/" + uriFilePath;
+    path.append(uriFilePath);
+    return path;
+}
+
 void Response::getMethod()
 {
     std::cout << "GET METHOD" << std::endl;
-    bool isLoc = isLocationExist();
-    bool isDir = isDirectory();
 
-    std::cout << "isLoc ±±±±±>> " << isLoc << " | isDir ±±±±±±>>" << isDir << std::endl;
-    if (isLoc || isDir)
-    {
-        std::cout << "LOCATION >>> EXIST" << std::endl;
-        if (_location.getAutoIndex())
-        {
-            if (isDir)
-                _dr = _dirPath;
-            else if (_location.getAutoIndex())
-                _dr = _location.getRoot();
-            std::cout << ".." << _dr << std::endl;
-            indexingFiles();
-            std::cout << ".." << _dr << std::endl;
-        }
-        else if (_location.getRoot().size() && (_index = std::find(_location.getIndexes().begin(), _location.getIndexes().end(), "index.html")) != _location.getIndexes().end())
-        {
-            std::cout << "ROOT && INDEX >>> EXIST" << std::endl;
-            std::ifstream indexFile(_location.getRoot() + "/" + *_index);
-            if (indexFile)
-            {
-                std::cout << "INDEX PATH >>> VALID" << std::endl;
-                std::ostringstream ss;
-                ss << indexFile.rdbuf();
-                _body = ss.str();
-            }
-            else
-            {
-                std::cout << "INDEX PATH >>> INVALID" << std::endl;
-                _body = getHtmlTemplate();
-            }
-        }
-        else
-        {
-            _body = getHtmlTemplate();
-            std::cout << "ACH HADA EMMM AHAAAA ACH HADAAAA" << std::endl;
-        }
-    }
-    else
-    {
-        std::cout << "LOCATION >>> DOESN'T EXIST" << std::endl;
-        _body = notFoundPage();
-        _status = 404;
-    }
+    bool isLoc = isLocationExist();
+    (void)isLoc;
+    std::string filrnamefromuri = getUriFilePath(_request.getStartLineVal("url"));
+    std::string directoryPath = getPath(filrnamefromuri);
+    std::cout << "uri_> |" << _request.getStartLineVal("url") << "|" << std::endl;
+    std::cout << "filrnamefromuri _> |" << filrnamefromuri << "|" << std::endl;
+    std::cout << "root _> |" << _server.getRoot() << "|" << std::endl;
+    std::cout << "PATH _> |" << directoryPath << "|" << std::endl;
+    exit(1);
+    // if (isDirectory(directoryPath))
+    // {
+    //     if (_location.getAutoIndex())
+    //         indexingFiles();
+    //     std::cout << "IS DIR" << std::endl;
+    // }
+    // else
+    //     std::cout << "IS NOT DIR" << std::endl;
+    // _status = OK_STATUS;
+
+    // std::cout << "isLoc ±±±±±>> " << isLoc << " | isDir ±±±±±±>>" << isDir << std::endl;
+    // if (isLoc || isDir)
+    // {
+    //     std::cout << "LOCATION >>> EXIST" << std::endl;
+    //     if (_location.getAutoIndex() || isDir)
+    //     {
+    //         if (isDir)
+    //             _dr = _dirPath;
+    //         else if (_location.getAutoIndex())
+    //             _dr = _location.getRoot();
+    //         std::cout << ".." << _dr << std::endl;
+    //         indexingFiles();
+    //         std::cout << ".." << _dr << std::endl;
+    //     }
+    //     else if (_location.getRoot().size() && (_index = std::find(_location.getIndexes().begin(), _location.getIndexes().end(), "index.html")) != _location.getIndexes().end())
+    //     {
+    //         std::cout << "ROOT && INDEX >>> EXIST" << std::endl;
+    //         std::ifstream indexFile(_location.getRoot() + "/" + *_index);
+    //         if (indexFile)
+    //         {
+    //             std::cout << "INDEX PATH >>> VALID" << std::endl;
+    //             std::ostringstream ss;
+    //             ss << indexFile.rdbuf();
+    //             _body = ss.str();
+    //         }
+    //         else
+    //         {
+    //             std::cout << "INDEX PATH >>> INVALID" << std::endl;
+    //             _body = getHtmlTemplate();
+    //         }
+    //     }
+    //     else
+    //     {
+    //         _body = getHtmlTemplate();
+    //         std::cout << "ACH HADA EMMM AHAAAA ACH HADAAAA" << std::endl;
+    //     }
+    // }
+    // else
+    // {
+    //     std::cout << "LOCATION >>> DOESN'T EXIST" << std::endl;
+    //     _body = notFoundPage();
+    //     _status = 404;
+    // }
 }
 
 void Response::postMethod()
@@ -276,9 +425,8 @@ void Response::deleteMethod()
     std::cout << "DELETE METHOD" << std::endl;
 }
 
-void Response::buildResponse()
+void Response::generateResponse()
 {
-    // check for errors
     // get redirection
     if (_request.getStartLineVal("method").compare("GET") == 0)
         getMethod();
@@ -287,10 +435,19 @@ void Response::buildResponse()
     else if (_request.getStartLineVal("method").compare("DELETE") == 0)
         deleteMethod();
     buildHeaders();
+}
+
+void Response::buildResponse()
+{
+    // check for errors
+    if (_status != OK_STATUS)
+        manageReqErrors();
+    else
+        generateResponse();
     _request.clearRequest();
 }
 
-std::string Response::getErrorPage(int status)
+std::string Response::getDefaultErrorPage(int status)
 {
     //examples
     std::string errorPage = "<!DOCTYPE html>\n\

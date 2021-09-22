@@ -163,22 +163,22 @@ void ConfigFileParser::checkHost(std::string hostBuffer)
 
 void ConfigFileParser::parseLocation(std::string _data)
 {
-	bool isRootSeted = false;
+	// bool isRootSeted = false;
 	std::string buffer;
 	std::istringstream str(_data.substr(_data.find("location: ")));
 
 	this->_countauto = 0;
 	this->_isEnabled = 0;
-	std::string locBlock = _data.substr(0, _data.find("}") + 1);
+	// std::string locBlock = _data.substr(0, _data.find("}") + 1);
 
 	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 	// std::cout << locBlock << std::endl;
 	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-	if (locBlock.find("root") == std::string::npos)
-	{
-		isRootSeted = true;
-		_location.setRoot(_server.getRoot());
-	}
+	// if (locBlock.find("root") == std::string::npos)
+	// {
+	// 	isRootSeted = true;
+	// 	_location.setRoot(_server.getRoot());
+	// }
 	while (std::getline(str, buffer))
 	{
 		if (buffer.find("#") != std::string::npos)
@@ -287,12 +287,16 @@ void ConfigFileParser::parseLocation(std::string _data)
 				if (!this->_location.getFastCgiPass().size())
 				{
 					syntaxChecker(buffer, 1);
+					buffer.pop_back();
 					this->split(trimContent(buffer.substr(buffer.find("=") + 1)), ' ');
 					if (_mapTmp.size() != 1)
 						throw std::invalid_argument("Exception:\tWrong number of arguments");
 					this->_location.setFastCgiPass(trimContent(buffer.substr(buffer.find("=") + 1)));
+					// std::cout << "+_*/------>>>>................" << std::endl;
+					// std::cout << "+_*/------>>>> " << _location.getIsCGI() << std::endl;
 					if (!this->_location.getFastCgiPass().size())
 						throw std::invalid_argument("Exception:\tfastcgi_pass path not found");
+					this->_location.setIsCGI(true);
 				}
 				else
 					throw std::invalid_argument("Exception:\tDuplicated fastcgi_pass");
@@ -541,6 +545,7 @@ void ConfigFileParser::printContentData()
 			for (std::map<int, std::string>::iterator ret = it->getLocations()[i].getReturn().begin(); ret != it->getLocations()[i].getReturn().end(); ++ret)
 				std::cout << "return               .... |" << ret->first << "| |" << ret->second << "|" << std::endl;
 			std::cout << "fastCgiPass          .... |" << it->getLocations()[i].getFastCgiPass() << "|" << std::endl;
+			std::cout << "isCGI                .... |" << it->getLocations()[i].getIsCGI() << "|" << std::endl;
 			std::cout << "uploadEnable         .... |" << it->getLocations()[i].getUploadEnable() << "|" << std::endl;
 			std::cout << "uploadStore          .... |" << it->getLocations()[i].getUploadStore() << "|" << std::endl;
 			std::cout << "••••••••••••••••••" << std::endl;
