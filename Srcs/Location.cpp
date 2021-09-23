@@ -40,7 +40,7 @@ Location &Location::operator=(Location const &src)
 		this->_autoindex = src._autoindex;
 		this->_locationName = src._locationName;
 		this->_root = src._root;
-		this->_indexes.assign(src._indexes.begin(), src._indexes.end());
+		this->_index = src._index;
 		this->_allowedMethods = src._allowedMethods;
 		this->_ret = src._ret;
 		this->_fastCgiPass = src._fastCgiPass;
@@ -58,7 +58,7 @@ void Location::setAutoIndex(std::string index)
 		this->_autoindex = true;
 }
 
-bool &Location::getAutoIndex()
+bool const &Location::getAutoIndex() const
 {
 	return this->_autoindex;
 }
@@ -82,14 +82,14 @@ std::string &Location::getRoot()
 	return this->_root;
 }
 
-void Location::setIndex(std::string _index)
+void Location::setIndex(std::string index)
 {
-	this->_indexes.push_back(_index);
+	this->_index = index;
 }
 
-std::vector<std::string> &Location::getIndexes()
+std::string &Location::getIndex()
 {
-	return this->_indexes;
+	return this->_index;
 }
 
 void Location::setAllowedMethods(std::string _allowedMethods)
@@ -117,13 +117,12 @@ void Location::setFastCgiPass(std::string _cgiPass)
 	this->_fastCgiPass = _cgiPass;
 }
 
-void Location::setIsCGI(bool isTrue)
+void Location::setIsCGI(bool const &iscgi)
 {
-	this->_isCGI = isTrue;
-	// std::cout << "************** this is CGI : " << this->_isCGI << std::endl;
+	_isCGI = iscgi;
 }
 
-bool &Location::getIsCGI()
+const bool &Location::isCGI() const
 {
 	return this->_isCGI;
 }
@@ -141,7 +140,7 @@ void Location::setUploadEnable(std::string uploadEnable)
 		this->_uploadEnable = true;
 }
 
-bool &Location::getUploadEnable()
+const bool &Location::getUploadEnable() const
 {
 	return this->_uploadEnable;
 }
@@ -164,7 +163,7 @@ void Location::clearAll()
 	this->_allowedMethods.clear();
 	this->_locationName.clear();
 	this->_root.clear();
-	this->_indexes.clear();
+	this->_index.clear();
 	this->_fastCgiPass.clear();
 	this->_isCGI = false;
 	this->_uploadEnable = false;

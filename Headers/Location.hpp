@@ -25,7 +25,7 @@ private:
 	bool _autoindex;
 	std::string _locationName;
 	std::string _root;
-	std::vector<std::string> _indexes;
+	std::string _index;
 	std::vector<std::string> _allowedMethods;
 	std::map<int, std::string> _ret;
 	std::string _fastCgiPass;
@@ -42,7 +42,7 @@ public:
 	void clearAll();
 
 	void setAutoIndex(std::string);
-	bool &getAutoIndex();
+	const bool &getAutoIndex() const;
 
 	void setLocationName(std::string);
 	std::string &getLocationName();
@@ -51,7 +51,7 @@ public:
 	std::string &getRoot();
 
 	void setIndex(std::string);
-	std::vector<std::string> &getIndexes();
+	std::string &getIndex();
 
 	void setAllowedMethods(std::string);
 	std::vector<std::string> &getAllowedMethods();
@@ -63,13 +63,13 @@ public:
 	std::string &getFastCgiPass();
 
 	void setUploadEnable(std::string);
-	bool &getUploadEnable();
+	const bool &getUploadEnable() const;
 
 	void setUploadStore(std::string);
 	std::string &getUploadStore();
 
-	void setIsCGI(bool);
-	bool &getIsCGI();
+	void setIsCGI(bool const &iscgi);
+	const bool &isCGI() const;
 };
 
 #endif

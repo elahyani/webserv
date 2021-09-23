@@ -62,9 +62,8 @@ private:
     bool _notFound;
     bool _isLocation;
     std::map<int, std::string> _errors;
-    std::vector<std::string>::iterator _index;
     std::vector<std::string> _dirContent;
-    size_t _locPos;
+    std::string _redirectedLocation;
 
 public:
     Response();
@@ -91,9 +90,11 @@ public:
     bool indexIsExist();
     bool autoIndex();
     void indexingFiles();
-    bool isLocationExist();
+    Location isLocationExist();
+    Location getRedirection(std::string locName);
     bool isDirectory(const std::string &); //TODO 5
     std::string getDirectory();            // TODO 6
+    void clearAll();
     // std::string readFile
 };
 

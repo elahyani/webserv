@@ -24,6 +24,9 @@
 class Request;
 #include "Response.hpp"
 
+#define BUFFER_SIZE 1024
+#define BACKLOG 2048
+
 class Server
 {
 private:
@@ -43,7 +46,7 @@ private:
 	int _maxSockFD;
 	char *_fileName;
 	std::map<int, std::string> _clients;
-	std::map<int, int> _serverAddrS;
+	std::map<int, int> _accptMaster;
 	Request _request;
 	// std::string _dirPath;
 	// size_t _locPos;
@@ -65,9 +68,7 @@ public:
 	void exampleOfResponse(char *, int &);
 	void createMasterSockets();
 
-	HttpServer findTheTargetServer(int &);
-
-	// void setCurrentDir(std::string &, size_t);
+	void findTheTargetServer(int &, HttpServer *, short *);
 };
 
 #endif

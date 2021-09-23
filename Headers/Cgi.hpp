@@ -2,39 +2,55 @@
 # define CGI_HPP
 
 # include "Request.hpp"
+# include "HttpServer.hpp"
+# include "Server.hpp"
 # include <cstdlib>
 # include <string>
+# include <unistd.h>
 
-struct MetaVariables
-{
-    std::string requestMethod; // Method used to request
-    std::string serverProtocol; // protocol and version
-    std::string contentType; //The data type of the content, used when the client is sending attached content to the server. For example file upload etc.
-    std::string contentLength; // The length of the query information that is available only for POST requests.
-    std::string httpCookie; // Returns the set cookies in the form of key & value pair.
-    std::string httpUserAgent; // The User-Agent request-header field contains information about the user agent originating the request. It is a name of the web browser
-    std::string pathInfo; // The path for the CGI script
-    std::string queryString; // The URL-encoded information that is sent with GET method request.
-    std::string remoteAddr; // The IP address of the remote host making the request. This can be useful for logging or for authentication purpose.
-    std::string remoteHost;  // 
-    std::string scriptFileName; // Full path to script file
-    std::string scriptName; // Name of script file
-    std::string serverName;
-};
+extern char** environ;
 
 class Cgi
 {
 private:
-	struct MetaVariables _envCgi;
-
+	Request _request;
+	HttpServer _server;
+	short _port;
+	std::string _cgiResult;
 public:
 	Cgi();
-	Cgi(Request &);
+	Cgi(Request &, HttpServer &, short &);
 	Cgi(Cgi const &);
 	~Cgi();
 	Cgi & operator=(Cgi const &);
 
-	void printCgiEnv();
+	void setEnvCgi();
+	void cgiExec();
+	std::string & getCgiResult();
+
 };
 
 #endif
+
+// REQUEST_METHOD = get method from request √
+// SERVER_PROTOCOL = HTTP/1.1 √
+// CONTENT_TYPE = get from request √
+// CONTENT_LENGTH = get from request √
+// PATH_INFO = get from request "url" √ /Users/asaadi/.Work/webserv
+// QUERY_STRING =  ?...... √
+// SERVER_SOFTWARE = webserv √
+// GATEWAY_INTERFACE = CGI/1.1 √
+// DOCUMENT_ROOT = getRoot from server √
+// SERVER_ADDR = IP address or hostName √
+// SCRIPT_NAME = *.php 
+// SCRIPT_FILENAME = $DOCUMENT_ROOT$SCRIPT_NAME 
+// SCRIPT_NAME = scriptName from server location 
+// SERVER_NAME = get from the server 
+// SERVER_PORT = get from server ports
+// REMOTE_ADD = 
+
+// REMOTE_ADDR
+// PATH_TRANSLATED
+// REDIRECT_STATUS
+
+// /usr/local/bin/php-cgi

@@ -63,6 +63,8 @@ public:
     int checkReqErrors();
 
     std::vector<Bodies> getBody();
+
+    void setHeaderVal(std::string, std::string);
     std::string &getHeaderVal(std::string const &key);
 
     void setStartLineVal(std::string, std::string);

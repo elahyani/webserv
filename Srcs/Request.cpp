@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
+/*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/17 12:04:27 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/21 08:40:38 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,12 +28,26 @@ Request::Request() : _content(""),
 
 Request::Request(const Request &src)
 {
+	*this = src;
 	(void)src;
 }
 
 Request &Request::operator=(const Request &rhs)
 {
-	(void)rhs;
+	if (this != &rhs)
+	{
+		this->_headers = rhs._headers;
+		this->_startLine = rhs._startLine;
+		this->_errors = rhs._errors;
+		this->_mapTmp = rhs._mapTmp;
+		this->_methods = rhs._methods;
+		this->_bodiesList = rhs._bodiesList;
+		this->_content = rhs._content;
+		this->_method = rhs._method;
+		this->_urlPath = rhs._urlPath;
+		this->_urlQuery = rhs._urlQuery;
+		this->_protocol = rhs._protocol;
+	}
 	return *this;
 }
 
@@ -58,7 +72,7 @@ void Request::parseRequest()
 			// std::cout << ">>>>>>>>>>>>>>>>>>>>>>> " << tmp << std::endl;
 			if (!this->_method.size() && !this->_protocol.size())
 			{
-
+				std::cout << "__>" + tmp << std::endl;
 				this->split(tmp, " ");
 				if (this->_mapTmp.size() == 3)
 				{
@@ -265,6 +279,11 @@ void Request::split(std::string line, std::string splitter)
 		i++;
 	}
 	this->_mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
+}
+
+void Request::setHeaderVal(std::string key, std::string val)
+{
+	this->_headers[key] = val;
 }
 
 std::string &Request::getHeaderVal(std::string const &key)
