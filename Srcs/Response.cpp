@@ -67,8 +67,8 @@ void Response::manageErrorHeaders(int _status)
 {
     time_t rawTime;
     std::string tm;
-    std::cout << "--------------------------------------------------------------> HERE" << std::endl;
 
+    this->_headers.clear();
     time(&rawTime);
     tm = ctime(&rawTime);
     tm.pop_back();
@@ -81,7 +81,7 @@ void Response::manageErrorHeaders(int _status)
     this->_headers.append("Server: webServ\r\n");
     this->_headers.append("Date: " + tm.append(" GMT"));
     this->_headers.append("\r\n");
-    this->_headers.append("Connection: close\r\n");
+    this->_headers.append("Connection: keep-alive\r\n");
     this->_headers.append("Content-Type: text/html; charset=UTF-8");
     this->_headers.append("\r\n");
     this->_headers.append("Content-Length: " + std::to_string(_body.length()));
@@ -96,15 +96,23 @@ void Response::manageReqErrors()
         if (_server.getErrorsPages()[_status].length())
             getErrorPage(_server.getErrorsPages()[_status]);
         else
-            getDefaultErrorPage(_status);
+            _body = getDefaultErrorPage(_status);
     }
     else if (_status == HTTP_VERSION_NOT_SUPPORTED_STATUS)
     {
         if (_server.getErrorsPages()[_status].length())
             getErrorPage(_server.getErrorsPages()[_status]);
         else
-            getDefaultErrorPage(_status);
+            _body = getDefaultErrorPage(_status);
     }
+    else if (_status == NOT_ALLOWED_STATUS)
+    {
+        if (_server.getErrorsPages()[_status].length())
+            getErrorPage(_server.getErrorsPages()[_status]);
+        else
+            _body = getDefaultErrorPage(_status);
+    }
+
     manageErrorHeaders(_status);
 }
 
@@ -149,63 +157,6 @@ void Response::indexingFiles()
     std::cout << "+++++++++++++++++++++++++++++++++++++++++---------------------" << std::endl;
 }
 
-std::string Response::notFoundPage()
-{
-    std::string notFoundPage = "<!DOCTYPE html>\n\
-    <html lang=\"en\">\n\
-    <head>\n\
-        <meta charset=\"UTF-8\" />\n\
-        <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n\
-        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n\
-        <title>Document</title>\n\
-        <style>\n\
-        .container {margin: 10%;text-align: center;color: rgba(52, 151, 250, 0.705);}\n\
-        h1 {font-size: 14rem;font-family: \"Courier New\", Courier, monospace;font-weight: bold;margin:-5rem 0 0 0;}\n\
-        .parag {margin:0;font-weight: bold;font-size: 5rem;font-family: \"Courier New\", Courier, monospace;}\n\
-        </style>\n\
-    </head>\n\
-    <body>\n\
-        <div class=\"container\">\n\
-        <h1>404</h1>\n\
-        <p class=\"parag\">Page Not Found</p>\n\
-        </div>\n\
-    </body>\n\
-    </html>\n";
-
-    return notFoundPage;
-}
-
-// std::string Response::getDirectory()
-// {
-//     char buffer[1000];
-//     std::string dirPath = "";
-
-//     if (!getcwd(buffer, sizeof(buffer)))
-//         throw std::invalid_argument("Exception: Path not found");
-//     else
-//     {
-//         dirPath = buffer;
-//         if (_location.getRoot().length())
-//         {
-//             if (_location.getRoot().find(dirPath) != std::string::npos || dirPath.find(_location.getRoot()) != std::string::npos)
-//                 return _location.getRoot();
-//             if (_location.getRoot().front() != '/')
-//                 dirPath.append("/");
-//             dirPath.append(_location.getRoot());
-//         }
-//         else
-//         {
-//             if (_server.getRoot().find(dirPath) != std::string::npos || dirPath.find(_server.getRoot()) != std::string::npos)
-//                 return _server.getRoot();
-//             if (_server.getRoot().front() != '/')
-//                 dirPath.append("/");
-//             dirPath.append(_server.getRoot());
-//         }
-//     }
-//     std::cout << "DIR _> " << dirPath << std::endl;
-//     return dirPath;
-// }
-
 bool Response::isDirectory(const std::string &path)
 {
     std::string s = path;
@@ -226,27 +177,40 @@ std::string &Response::getHeaders()
 
 std::string Response::getDefaultErrorPage(int status)
 {
-    //examples
     std::string errorPage = "<!DOCTYPE html>\n\
     <html>\n\
         <head>\n\
-        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\
-        <title>Bad Request</title>\n\
-        <style>\n\
-            .container{margin:0;top:0;}\n\
-            .error{font-size: 2.5rem;text-align: center;margin-top: 40%;color:dodgerblue;}\n\
-        </style>\n\
+            <meta charset=\"UTF-8\" />\n\
+            <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n\
+            <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n\
+            <title>Document</title>\n\
+            <style>\n\
+            .container {\n\
+                margin: 10%;\n\
+                text-align: center;\n\
+                color: rgba(52, 151, 250, 0.705);\n\
+            }\n\
+            h1 {\n\
+                font-size: 14rem;\n\
+                font-family: \"Courier New\", Courier, monospace;\n\
+                font-weight: bold;\n\
+                margin:-5rem 0 0 0;\n\
+            }\n\
+            .parag {\n\
+                margin:0;\n\
+                font-weight: bold;\n\
+                font-size: 5rem;\n\
+                font-family: \"Courier New\", Courier, monospace;\n\
+            }\n\
+            </style>\n\
         </head>\n\
         <body>\n\
             <div class=\"container\">\n\
-                <div class=\"error\">\n\
-                    <h1>$1</h1>\n\
-                    <h1>$2</h1>\n\
-                </div>\n\
+            <h1>$1</h1>\n\
+            <p class=\"parag\">$2</p>\n\
             </div>\n\
         </body>\n\
     </html>";
-
     errorPage.replace(errorPage.find("$1"), 2, std::to_string(status));
     errorPage.replace(errorPage.find("$2"), 2, _errors[status]);
     return errorPage;
@@ -327,15 +291,20 @@ Location Response::isLocationExist()
     }
     if (_location.getReturn().size())
     {
-        if (_location.getReturn().begin()->first == MOVED_PERMANENTLY_STATUS)
+        if (_location.getLocationName().compare(_request.getStartLineVal("url")) == 0)
         {
-            _status = MOVED_PERMANENTLY_STATUS;
-            _request.setHeaderVal("Connection", "close");
-            _request.setStartLineVal("url", _location.getReturn().begin()->second);
-            _redirectedLocation = _location.getReturn().begin()->second;
-            _location.clearAll();
-            return getRedirection(_location.getLocationName());
+            if (_location.getReturn().begin()->first == MOVED_PERMANENTLY_STATUS)
+            {
+                _status = MOVED_PERMANENTLY_STATUS;
+                _request.setHeaderVal("Connection", "close");
+                _request.setStartLineVal("url", _location.getReturn().begin()->second);
+                _redirectedLocation = _location.getReturn().begin()->second;
+                _location.clearAll();
+                return getRedirection(_location.getLocationName());
+            }
         }
+        else
+            _body = getDefaultErrorPage(NOT_FOUND_STATUS);
     }
     return _location;
 }
@@ -371,10 +340,10 @@ std::string Response::getPath(std::string uriFilePath)
 void Response::getMethod()
 {
     std::cout << "GET METHOD" << std::endl;
-    std::string filrnamefromuri = getUriFilePath(_request.getStartLineVal("url"));
-    std::string directoryPath = getPath(filrnamefromuri);
+    std::string fileNameFromUri = getUriFilePath(_request.getStartLineVal("url"));
+    std::string directoryPath = getPath(fileNameFromUri);
     std::cout << "uri_> |" << _request.getStartLineVal("url") << "|" << std::endl;
-    std::cout << "filrnamefromuri _> |" << filrnamefromuri << "|" << std::endl;
+    std::cout << "fileNameFromUri _> |" << fileNameFromUri << "|" << std::endl;
     std::cout << "root _> |" << _server.getRoot() << "|" << std::endl;
     std::cout << "PATH _> |" << directoryPath << "|" << std::endl;
 
@@ -384,9 +353,11 @@ void Response::getMethod()
         if (_location.getAutoIndex())
             indexingFiles();
     }
-    else if (filrnamefromuri.find(_location.getIndex()) != std::string::npos)
+    else if (_location.getIndex().size() && fileNameFromUri.find(_location.getIndex()) != std::string::npos)
     {
         // read the file
+        std::cout << "AM IN JUST LIKE THAT ->" + fileNameFromUri << std::endl;
+        std::cout << "AM IN JUST LIKE THAT ->" + _location.getIndex() << std::endl;
         if (_location.getRoot().size() && _location.getIndex().size())
         {
             std::cout << "ROOT && INDEX >>> EXIST" << std::endl;
@@ -412,9 +383,11 @@ void Response::getMethod()
     }
     else
     {
-        std::cout << "LOCATION >>> DOESN'T EXIST" << std::endl;
-        _body = notFoundPage();
         _status = NOT_FOUND_STATUS;
+        if (_server.getErrorsPages()[_status].length())
+            getErrorPage(_server.getErrorsPages()[_status]);
+        else
+            _body = getDefaultErrorPage(_status);
     }
 }
 
@@ -446,7 +419,7 @@ void Response::buildHeaders()
     {
         this->_headers.append("Location: " + _redirectedLocation);
         this->_headers.append("\r\n");
-        this->_headers.append("Connection: close");
+        this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
         this->_headers.append("\r\n\r\n");
     }
     else

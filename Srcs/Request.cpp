@@ -211,30 +211,14 @@ int Request::checkReqErrors()
 
 	if (pVersion.compare("1.1") != 0)
 		this->_statusCode = 505;
-	if (this->_protocol.compare("HTTP/1.1") != 0)
-	{
-		std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here1" << std::endl;
+	else if (this->_protocol.compare("HTTP/1.1") != 0)
 		this->_statusCode = 400;
-		exit(1);
-	}
-	if (this->_startLine["method"].compare("GET") != 0 && this->_startLine["method"].compare("POST") != 0 && this->_startLine["method"].compare("DELETE") != 0)
-	{
-		std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here2 |" << this->_startLine["method"] << "|" << std::endl;
+	else if (this->_startLine["method"].compare("GET") != 0 && this->_startLine["method"].compare("POST") != 0 && this->_startLine["method"].compare("DELETE") != 0)
+		this->_statusCode = 405;
+	else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size())
 		this->_statusCode = 400;
-		exit(1);
-	}
-	if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size())
-	{
-		std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here3 |" << this->_headers["Content-Length"] << "|" << std::endl;
+	else if (!_startLine["url"].size() || (_startLine["url"].size() && _startLine["url"][0] != '/'))
 		this->_statusCode = 400;
-		exit(1);
-	}
-	if (!_startLine["url"].size() || (_startLine["url"].size() && _startLine["url"][0] != '/'))
-	{
-		std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here4" << std::endl;
-		this->_statusCode = 400;
-		exit(1);
-	}
 	return this->_statusCode;
 }
 
