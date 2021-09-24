@@ -191,6 +191,7 @@ void Server::existConnectHandling(int &accptSockFD)
 	if (valRead > 0)
 	{
 		_buffRes[valRead] = '\0';
+		std::cout << "_buffReq ===> " << _buffRes << std::endl;
 		std::map<int, std::string>::iterator it = _clients.find(accptSockFD);
 		if (it != _clients.end())
 			it->second += _buffRes;
@@ -206,7 +207,7 @@ void Server::existConnectHandling(int &accptSockFD)
 			it->second = "";
 		}
 	}
-	else if (valRead == 0 || _request.getHeaderVal("Connection").compare("close") == 0)
+	else if (valRead == 0)
 	{
 		std::cout << "Disconnect socket: " << std::to_string(accptSockFD) << " valRead == " << valRead << std::endl;
 		close(accptSockFD);

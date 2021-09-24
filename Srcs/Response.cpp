@@ -51,6 +51,26 @@ Response::~Response()
 {
 }
 
+void Response::clearAll()
+{
+    _status = 0;
+    _server.clearAll();
+    _request.clearRequest();
+    _location.clearAll();
+    _responseMsg.clear();
+    _headers.clear();
+    _body.clear();
+    _indexPath.clear();
+    _autoIndexPage.clear();
+    _dirPath.clear();
+    _dr.clear();
+    _autoIndex = false;
+    _notFound = false;
+    _isLocation = false;
+    _errors.clear();
+    _dirContent.clear();
+}
+
 void Response::getErrorPage(std::string ErrorPagePath)
 {
     std::ifstream indexFile(ErrorPagePath);
@@ -89,7 +109,7 @@ void Response::manageErrorHeaders(int _status)
     this->_headers.append(_body);
 }
 
-void Response::manageReqErrors()
+void Response::manageErrors()
 {
     if (_status == BAD_REQUEST_STATUS)
     {
@@ -112,8 +132,63 @@ void Response::manageReqErrors()
         else
             _body = getDefaultErrorPage(_status);
     }
-
+    else if (_status == NOT_FOUND_STATUS)
+    {
+        if (_server.getErrorsPages()[_status].length())
+            getErrorPage(_server.getErrorsPages()[_status]);
+        else
+            _body = getDefaultErrorPage(_status);
+    }
+    else if (_status == FORBIDDEN_STATUS)
+    {
+        if (_server.getErrorsPages()[_status].length())
+            getErrorPage(_server.getErrorsPages()[_status]);
+        else
+            _body = getDefaultErrorPage(_status);
+    }
+    else if (_status == INTERNAL_SERVER_ERROR_STATUS)
+    {
+        if (_server.getErrorsPages()[_status].length())
+            getErrorPage(_server.getErrorsPages()[_status]);
+        else
+            _body = getDefaultErrorPage(_status);
+    }
     manageErrorHeaders(_status);
+}
+
+void Response::readFile(std::string path)
+{
+    std::cout << "---------------> " << path << std::endl;
+    if (access(path.c_str(), F_OK) != 0)
+    {
+        std::cout << "OK" << std::endl;
+        _status = NOT_FOUND_STATUS;
+        manageErrors();
+    }
+    else
+    {
+        if (access(path.c_str(), R_OK) == 0)
+        {
+            std::ifstream file(path);
+            if (file)
+            {
+                std::ostringstream ss;
+                ss << file.rdbuf();
+                _body = ss.str();
+                file.close();
+            }
+            else
+            {
+                _status = INTERNAL_SERVER_ERROR_STATUS;
+                manageErrors();
+            }
+        }
+        else
+        {
+            _status = FORBIDDEN_STATUS;
+            manageErrors();
+        }
+    }
 }
 
 void Response::indexingFiles()
@@ -141,7 +216,7 @@ void Response::indexingFiles()
             fileName = en->d_name;
             if (en->d_type == DT_DIR)
                 fileName.append("/");
-            _autoIndexPage.append("\t\t\t<p><a href=\"/" + fileName + "\">" + fileName + "</a></p>\n");
+            _autoIndexPage.append("\t\t\t<p><a href=\"" + fileName + "\">" + fileName + "</a></p>\n");
         }
         closedir(directory);
     }
@@ -245,26 +320,6 @@ std::string Response::getHtmlTemplate()
     return htmlTemplate;
 }
 
-void Response::clearAll()
-{
-    _status = 0;
-    _server.clearAll();
-    _request.clearRequest();
-    _location.clearAll();
-    _responseMsg.clear();
-    _headers.clear();
-    _body.clear();
-    _indexPath.clear();
-    _autoIndexPage.clear();
-    _dirPath.clear();
-    _dr.clear();
-    _autoIndex = false;
-    _notFound = false;
-    _isLocation = false;
-    _errors.clear();
-    _dirContent.clear();
-}
-
 Location Response::getRedirection(std::string locName)
 {
     for (size_t i = 0; i < _server.getLocations().size(); i++)
@@ -296,7 +351,6 @@ Location Response::isLocationExist()
             if (_location.getReturn().begin()->first == MOVED_PERMANENTLY_STATUS)
             {
                 _status = MOVED_PERMANENTLY_STATUS;
-                _request.setHeaderVal("Connection", "close");
                 _request.setStartLineVal("url", _location.getReturn().begin()->second);
                 _redirectedLocation = _location.getReturn().begin()->second;
                 _location.clearAll();
@@ -315,9 +369,14 @@ std::string Response::getUriFilePath(std::string uri)
 
     if (path.back() != '/')
         path.append("/");
-    if ((!_location.getAutoIndex() && uri.compare(_location.getLocationName()) == 0) || path.compare(_location.getIndex()) == 0)
+    if ((!_location.getAutoIndex() && uri.compare(_location.getLocationName()) == 0 && _location.getIndex().size()) || path.compare(_location.getIndex()) == 0)
+    {
+        std::cout << uri << " | " << _location.getLocationName() << std::endl;
         return path.append(_location.getIndex());
-    return path;
+    }
+    else
+        _body = getHtmlTemplate();
+    return uri;
 }
 
 std::string Response::getRootDirectory()
@@ -349,45 +408,50 @@ void Response::getMethod()
 
     if (isDirectory(directoryPath))
     {
-        std::cout << "LOCATION >>> EXIST" << std::endl;
+        std::cout << "is Directory" << std::endl;
         if (_location.getAutoIndex())
             indexingFiles();
-    }
-    else if (_location.getIndex().size() && fileNameFromUri.find(_location.getIndex()) != std::string::npos)
-    {
-        // read the file
-        std::cout << "AM IN JUST LIKE THAT ->" + fileNameFromUri << std::endl;
-        std::cout << "AM IN JUST LIKE THAT ->" + _location.getIndex() << std::endl;
-        if (_location.getRoot().size() && _location.getIndex().size())
+        else if (_isLocation && !_location.getIndex().size())
+            _body = getHtmlTemplate();
+        else
         {
-            std::cout << "ROOT && INDEX >>> EXIST" << std::endl;
-            std::ifstream indexFile(_location.getRoot() + "/" + _location.getIndex());
-            if (indexFile)
+            _status = NOT_FOUND_STATUS;
+            manageErrors();
+        }
+    }
+    else if (_isLocation && _request.getStartLineVal("url").compare(_location.getLocationName()) == 0)
+    {
+        if (_location.getIndex().size() && fileNameFromUri.find(_location.getIndex()) != std::string::npos)
+        {
+            std::cout << "IS INDEX" << std::endl;
+            if (_location.getIndex().size())
             {
-                std::cout << "INDEX PATH >>> VALID" << std::endl;
-                std::ostringstream ss;
-                ss << indexFile.rdbuf();
-                _body = ss.str();
+                std::cout << "ROOT && INDEX >>> EXIST" << std::endl;
+                std::ifstream indexFile(getRootDirectory() + "/" + _location.getIndex());
+                if (indexFile)
+                {
+                    std::cout << "INDEX PATH >>> VALID" << std::endl;
+                    std::ostringstream ss;
+                    ss << indexFile.rdbuf();
+                    _body = ss.str();
+                }
+                else
+                {
+                    std::cout << "INDEX PATH >>> INVALID" << std::endl;
+                    _body = getHtmlTemplate();
+                }
             }
             else
             {
-                std::cout << "INDEX PATH >>> INVALID" << std::endl;
+                std::cout << "NO INDEX IN THIS LOCATION" << std::endl;
                 _body = getHtmlTemplate();
             }
-        }
-        else
-        {
-            _body = getHtmlTemplate();
-            std::cout << "ACH HADA EMMM AHAAAA ACH HADAAAA" << std::endl;
         }
     }
     else
     {
-        _status = NOT_FOUND_STATUS;
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
+        std::cout << "FILE READED" << std::endl;
+        readFile(directoryPath);
     }
 }
 
@@ -399,6 +463,38 @@ void Response::postMethod()
 void Response::deleteMethod()
 {
     std::cout << "DELETE METHOD" << std::endl;
+    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("url")));
+
+    if (isDirectory(directoryPath))
+    {
+        _status = NOT_FOUND_STATUS;
+        manageErrors();
+    }
+    else
+    {
+        if (access(directoryPath.c_str(), F_OK) != 0)
+        {
+            _status = NOT_FOUND_STATUS;
+            manageErrors();
+        }
+        else
+        {
+            if (access(directoryPath.c_str(), W_OK) == 0)
+            {
+                if (std::remove(directoryPath.c_str()) != 0)
+                {
+                    _status = INTERNAL_SERVER_ERROR_STATUS;
+                    manageErrors();
+                }
+                std::cout << "DELETED" << std::endl;
+            }
+            else
+            {
+                _status = FORBIDDEN_STATUS;
+                manageErrors();
+            }
+        }
+    }
 }
 
 void Response::buildHeaders()
@@ -419,7 +515,6 @@ void Response::buildHeaders()
     {
         this->_headers.append("Location: " + _redirectedLocation);
         this->_headers.append("\r\n");
-        this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
         this->_headers.append("\r\n\r\n");
     }
     else
@@ -453,7 +548,7 @@ void Response::buildResponse()
 {
     // check for errors
     if (_status != OK_STATUS)
-        manageReqErrors();
+        manageErrors();
     else
         generateResponse();
 }

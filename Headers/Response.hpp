@@ -72,12 +72,13 @@ public:
 
     void buildHeaders();
     void getErrorPage(std::string);
-    void manageReqErrors();                      //TODO ****
-    void manageErrorHeaders(int _status);        // TODO 1
-    void generateResponse();                     // TODO 2
-    std::string getPath(std::string);            // TODO 3
-    std::string getUriFilePath(std::string);     // TODO 4
-    std::string getRootDirectory();              // TODO 7
+    void manageErrors();                     //TODO ****
+    void manageErrorHeaders(int _status);    // TODO 1
+    void generateResponse();                 // TODO 2
+    std::string getPath(std::string);        // TODO 3
+    std::string getUriFilePath(std::string); // TODO 4
+    std::string getRootDirectory();
+    void readFile(std::string path);             // TODO 7
     void getMethod();                            //
     void postMethod();                           //
     void deleteMethod();                         //
