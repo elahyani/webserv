@@ -14,12 +14,13 @@ class Cgi
 {
 private:
 	Request _request;
+	Location _location;
 	HttpServer _server;
 	short _port;
 	std::string _cgiResult;
 public:
 	Cgi();
-	Cgi(Request &, HttpServer &, short &);
+	Cgi(Request &, Location &, HttpServer &, short &);
 	Cgi(Cgi const &);
 	~Cgi();
 	Cgi & operator=(Cgi const &);
@@ -27,7 +28,6 @@ public:
 	void setEnvCgi();
 	void cgiExec();
 	std::string & getCgiResult();
-
 };
 
 #endif

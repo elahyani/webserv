@@ -4,7 +4,7 @@ Cgi::Cgi(): _port(0), _cgiResult("")
 {
 }
 
-Cgi::Cgi(Request &request, HttpServer &server, short &port): _request(request), _server(server), _port(port), _cgiResult("")
+Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port): _request(request), _location(location), _server(server), _port(port), _cgiResult("")
 {
 	this->setEnvCgi();
 	this->cgiExec();
@@ -25,6 +25,7 @@ Cgi & Cgi::operator=(Cgi const &ths)
 	if(this != &ths)
 	{
 		this->_request = ths._request;
+		this->_location = ths._location;
 		this->_server = ths._server;
 		this->_port = ths._port;
 		this->_cgiResult = ths._cgiResult;
@@ -56,8 +57,8 @@ void Cgi::cgiExec()
 	int				pipeFDs[2];
 	int				nbytes;
 	char			buffer[BUFFER_SIZE + 1];
-	std::string		cgiPath = "/usr/local/bin/php-cgi"; // path of cgi || in config file is a fastcfgi_pass
-	args[0] = cgiPath.c_str(); 
+	std::string		cgiPath = "/usr/local/bin/php-cgi";//_location.getFastCgiPass(); 
+	args[0] = cgiPath.c_str();
 	args[1] = getenv("SCRIPT_FILENAME");
 	args[2] = NULL;
 	if(pipe(pipeFDs) < 0)
@@ -66,7 +67,7 @@ void Cgi::cgiExec()
 	if (childPID < 0) { throw std::runtime_error("Unable to create child by fork.");}
 	if (childPID == 0)
 	{
-		dup2(pipeFDs[1], STDOUT_FILENO);
+		dup2(pipeFDs[1], STDOUT_FILENO); 
 		close(pipeFDs[0]);
 		chdir(_server.getRoot().c_str());
 		if (execve(cgiPath.c_str(), (char *const *)args, environ) < 0)

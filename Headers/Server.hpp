@@ -30,12 +30,12 @@ class Request;
 class Server
 {
 private:
-	ConfigFileParser _parser;
+	ConfigFileParser	_parser;
 	std::vector<HttpServer> _servers;
 	int _masterSockFD;
 	std::vector<int> _masterSockFDs;
-	short _port;
 	std::vector<short> _ports;
+	short _port;
 	std::string _host;
 	struct sockaddr_in _serverAddr;
 	struct sockaddr_in _clientAddr;
@@ -44,12 +44,15 @@ private:
 	fd_set _readFDs;
 	fd_set _writeFDs;
 	int _maxSockFD;
-	char *_fileName;
 	std::map<int, std::string> _clients;
 	std::map<int, int> _accptMaster;
 	Request _request;
+<<<<<<< HEAD
 	// std::string _dirPath;
 	// size_t _locPos;
+=======
+	char *_fileName;
+>>>>>>> 0902391 (feat(CGI): Handling php script)
 
 public:
 	Server();

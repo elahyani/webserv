@@ -2,7 +2,7 @@
 
 Server::Server() {}
 
-Server::Server(ConfigFileParser &parser, char *fileName) : _parser(parser), _maxSockFD(0), _fileName(fileName)
+Server::Server(ConfigFileParser &parser, char *fileName) : _parser(parser), _addrLen(0), _maxSockFD(0), _fileName(fileName)
 {
 	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->createMasterSockets();
@@ -58,12 +58,23 @@ Server &Server::operator=(Server const &ths)
 {
 	if (this != &ths)
 	{
+		this->_parser = ths._parser;
+		this->_servers = ths._servers;
+		this->_masterSockFDs = ths._masterSockFDs;
 		this->_masterSockFD = ths._masterSockFD;
+		this->_ports = ths._ports;
 		this->_port = ths._port;
+		this->_host = ths._host;
 		this->_serverAddr = ths._serverAddr;
+		this->_clientAddr = ths._clientAddr;
 		this->_addrLen = ths._addrLen;
+		this->_masterFDs = ths._masterFDs;
 		this->_readFDs = ths._readFDs;
+		this->_writeFDs = ths._writeFDs;
 		this->_maxSockFD = ths._maxSockFD;
+		this->_clients = ths._clients;
+		this->_accptMaster = ths._accptMaster;
+		this->_request = ths._request;
 	}
 	return *this;
 }
@@ -79,23 +90,28 @@ void Server::createMasterSockets()
 		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort)
 		{
 			_port = *itPort;
+			int noBind = 0;
 			std::cout << _host << ':' << _port << std::endl;
 			// Socket creating
+			this->createSocket();
 			try
 			{
-				this->createSocket();
 				// Bind socket
 				this->bindSocket();
+			}
+			catch (const std::exception &e)
+			{
+				noBind = 1;
+				close(_masterSockFD);
+				std::cerr << e.what() << '\n';
+			}
+			if (!noBind)
+			{
 				FD_SET(_masterSockFD, &_masterFDs);
 				_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
 				// Listen to client in socket
 				this->listenToClient();
 				_masterSockFDs.push_back(_masterSockFD);
-			}
-			catch (const std::exception &e)
-			{
-				close(_masterSockFD);
-				std::cerr << e.what() << '\n';
 			}
 		}
 	}
@@ -175,6 +191,12 @@ bool checkRequest(std::string &buffReq)
 			if (body.length() < length)
 				return false;
 		}
+		else if (headers.find("Transfer-Encoding") != std::string::npos)
+		{
+			// check for chunked request and unchunked it 
+			// read the bytes chunked
+			// get the data 
+		}	
 		return true;
 	}
 	return false;
@@ -253,7 +275,7 @@ void Server::exampleOfResponse(char *fileName, int &accptSockFD)
 	HttpServer server;
 	short port = 0;
 	findTheTargetServer(accptSockFD, &server, &port);
-	Cgi excutionCgi(_request, server, port);
+	Cgi excutionCgi(_request, server.getLoactions().at(0), server, port);
 	Response response(this->_request, server);
 
 	std::string msgRes(""); // Will hold the data that we will send
