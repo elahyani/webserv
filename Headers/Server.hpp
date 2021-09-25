@@ -55,17 +55,18 @@ public:
 	~Server();
 	Server &operator=(const Server &);
 
+	void makeSockets();
 	void createSocket();
 	void bindSocket();
-	void listenToClient();
+	void listenSocket();
 
+	void waitingForConnections();
 	void newConnectHandling(int &);
-	void existConnectHandling(int &);
-
+	void accptedConnectHandling(int &);
 	void responseHandling(int &);
-	void createMasterSockets();
+	void getServerBySocket(int &, HttpServer *, short *);
 
-	void findTheTargetServer(int &, HttpServer *, short *);
+
 };
 
 #endif
