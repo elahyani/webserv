@@ -1,6 +1,10 @@
 #include "Server.hpp"
 
-Server::Server() {}
+Server::Server():	_masterSockFD(0),
+					_port(0),
+					_host(""),
+					_maxSockFD(0)
+{}
 
 Server::Server(ConfigFileParser & parser) : _parser(parser), _addrLen(0), _maxSockFD(0)
 {
@@ -11,7 +15,7 @@ Server::Server(ConfigFileParser & parser) : _parser(parser), _addrLen(0), _maxSo
 	{
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
-		struct timeval _tv = {1, 0};
+		struct timeval _tv = {0, 0};
 		int selectRet = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
 		if (selectRet < 0)
 			throw std::runtime_error("Unable to select work socket.");
@@ -190,7 +194,8 @@ bool checkRequest(std::string &buffReq)
 		{
 			// check for chunked request and unchunked it 
 			// read the bytes chunked
-			// get the data 
+			// get the data
+			
 		}	
 		return true;
 	}
