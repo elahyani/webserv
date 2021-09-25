@@ -426,7 +426,7 @@ std::string Response::getDispContentFilename(std::string contentDisp)
 
 std::string Response::getUploadDir()
 {
-    std::string upDir = getRootDirectory().append(_location.getLocationName());
+    std::string upDir = getRootDirectory().append(_location.getUploadStore());
     if (upDir.back() != '/')
         upDir.append("/");
     return upDir;
@@ -570,4 +570,4 @@ void Response::buildResponse()
         setErrorPage(_status);
     else
         generateResponse();
-}
+0}
