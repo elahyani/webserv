@@ -268,7 +268,7 @@ void Server::responseHandling(int &accptSockFD)
 	HttpServer server;
 	short port = 0;
 	findTheTargetServer(accptSockFD, &server, &port);
-	Cgi excutionCgi(_request, server.getLoactions().at(0), server, port);
+	Cgi excutionCgi(_request, server.getLocations().at(0), server, port);
 	Response response(this->_request, server);
 
 	std::string msgRes(""); // Will hold the data that we will send

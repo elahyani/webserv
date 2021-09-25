@@ -47,15 +47,6 @@ private:
 	std::map<int, std::string> _clients;
 	std::map<int, int> _accptMaster;
 	Request _request;
-<<<<<<< HEAD
-<<<<<<< HEAD
-	// std::string _dirPath;
-	// size_t _locPos;
-=======
-	char *_fileName;
->>>>>>> 0902391 (feat(CGI): Handling php script)
-=======
->>>>>>> 10cf81e (refactor(webserv): Accept the new changin)
 
 public:
 	Server();
