@@ -72,7 +72,7 @@ public:
 
     void buildHeaders();
     void getErrorPage(std::string);
-    void manageErrors();                     //TODO ****
+    void setErrorPage(int _status);          //TODO 8
     void manageErrorHeaders(int _status);    // TODO 1
     void generateResponse();                 // TODO 2
     std::string getPath(std::string);        // TODO 3
@@ -95,6 +95,8 @@ public:
     Location getRedirection(std::string locName);
     bool isDirectory(const std::string &); //TODO 5
     std::string getDirectory();            // TODO 6
+    std::string getDispContentFilename(std::string);
+    std::string getUploadDir();
     void clearAll();
     // std::string readFile
 };

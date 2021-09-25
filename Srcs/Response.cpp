@@ -71,18 +71,6 @@ void Response::clearAll()
     _dirContent.clear();
 }
 
-void Response::getErrorPage(std::string ErrorPagePath)
-{
-    std::ifstream indexFile(ErrorPagePath);
-    if (indexFile)
-    {
-        std::cout << "ERROR PAGE PATH >>> VALID" << std::endl;
-        std::ostringstream ss;
-        ss << indexFile.rdbuf();
-        _body = ss.str();
-    }
-}
-
 void Response::manageErrorHeaders(int _status)
 {
     time_t rawTime;
@@ -109,61 +97,35 @@ void Response::manageErrorHeaders(int _status)
     this->_headers.append(_body);
 }
 
-void Response::manageErrors()
+void Response::getErrorPage(std::string ErrorPagePath)
 {
-    if (_status == BAD_REQUEST_STATUS)
+    std::ifstream indexFile(ErrorPagePath);
+    if (indexFile)
     {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
+        std::cout << "ERROR PAGE PATH >>> VALID" << std::endl;
+        std::ostringstream ss;
+        ss << indexFile.rdbuf();
+        _body = ss.str();
     }
-    else if (_status == HTTP_VERSION_NOT_SUPPORTED_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
-    else if (_status == NOT_ALLOWED_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
-    else if (_status == NOT_FOUND_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
-    else if (_status == FORBIDDEN_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
-    else if (_status == INTERNAL_SERVER_ERROR_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
+    else
+        _body = getDefaultErrorPage(_status);
+}
+
+void Response::setErrorPage(int _status)
+{
+    if (_server.getErrorsPages()[_status].length())
+        getErrorPage(_server.getErrorsPages()[_status]);
+    else
+        _body = getDefaultErrorPage(_status);
     manageErrorHeaders(_status);
 }
 
 void Response::readFile(std::string path)
 {
-    std::cout << "---------------> " << path << std::endl;
     if (access(path.c_str(), F_OK) != 0)
     {
-        std::cout << "OK" << std::endl;
         _status = NOT_FOUND_STATUS;
-        manageErrors();
+        setErrorPage(_status);
     }
     else
     {
@@ -180,13 +142,13 @@ void Response::readFile(std::string path)
             else
             {
                 _status = INTERNAL_SERVER_ERROR_STATUS;
-                manageErrors();
+                setErrorPage(_status);
             }
         }
         else
         {
             _status = FORBIDDEN_STATUS;
-            manageErrors();
+            setErrorPage(_status);
         }
     }
 }
@@ -416,7 +378,7 @@ void Response::getMethod()
         else
         {
             _status = NOT_FOUND_STATUS;
-            manageErrors();
+            setErrorPage(_status);
         }
     }
     else if (_isLocation && _request.getStartLineVal("url").compare(_location.getLocationName()) == 0)
@@ -455,9 +417,66 @@ void Response::getMethod()
     }
 }
 
+std::string Response::getDispContentFilename(std::string contentDisp)
+{
+    std::string tmp = contentDisp.substr(contentDisp.find("filename=") + 10);
+    std::string filename = tmp.substr(0, tmp.find("\""));
+    return filename;
+}
+
+std::string Response::getUploadDir()
+{
+    std::string upDir = getRootDirectory().append(_location.getLocationName());
+    if (upDir.back() != '/')
+        upDir.append("/");
+    return upDir;
+}
+
 void Response::postMethod()
 {
     std::cout << "POST METHOD" << std::endl;
+    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("url")));
+    std::string dispoFilename;
+    std::string fileDir;
+    std::string buffer;
+
+    if (_location.getUploadEnable())
+    {
+        std::cout << "-------------------Upload Enabled-------------------" << std::endl;
+        for (size_t i = 0; i < _request.getBody().size(); i++)
+        {
+            std::cout << "---------------==============*****************++++++++++++" << std::endl;
+            dispoFilename = getDispContentFilename(_request.getBody()[i].contentDesp);
+            fileDir = getUploadDir().append(dispoFilename);
+            if (access(fileDir.c_str(), F_OK) != 0)
+            {
+                std::cout << fileDir << " -> NOT FOUND" << std::endl;
+                _status = NOT_FOUND_STATUS;
+                setErrorPage(_status);
+            }
+            else
+            {
+                if (access(fileDir.c_str(), W_OK) == 0)
+                {
+                    std::ofstream file(fileDir);
+                    std::stringstream ss(_request.getBody()[i].body);
+                    while (std::getline(ss, buffer))
+                    {
+                        // std::cout << "-------------> |" << buffer << "|" << std::endl;
+                        file << buffer.append("\n");
+                    }
+                    file.close();
+                    _body = "<html><head><body><div><h5>File Uploaded successfully</h5></div></body></head></html>";
+                }
+                else
+                {
+                    _status = FORBIDDEN_STATUS;
+                    setErrorPage(_status);
+                }
+            }
+        }
+        std::cout << "The File -> [" << dispoFilename << "] is uploaded!" << std::endl;
+    }
 }
 
 void Response::deleteMethod()
@@ -468,14 +487,14 @@ void Response::deleteMethod()
     if (isDirectory(directoryPath))
     {
         _status = NOT_FOUND_STATUS;
-        manageErrors();
+        setErrorPage(_status);
     }
     else
     {
         if (access(directoryPath.c_str(), F_OK) != 0)
         {
             _status = NOT_FOUND_STATUS;
-            manageErrors();
+            setErrorPage(_status);
         }
         else
         {
@@ -484,14 +503,14 @@ void Response::deleteMethod()
                 if (std::remove(directoryPath.c_str()) != 0)
                 {
                     _status = INTERNAL_SERVER_ERROR_STATUS;
-                    manageErrors();
+                    setErrorPage(_status);
                 }
                 std::cout << "DELETED" << std::endl;
             }
             else
             {
                 _status = FORBIDDEN_STATUS;
-                manageErrors();
+                setErrorPage(_status);
             }
         }
     }
@@ -548,7 +567,7 @@ void Response::buildResponse()
 {
     // check for errors
     if (_status != OK_STATUS)
-        manageErrors();
+        setErrorPage(_status);
     else
         generateResponse();
 }

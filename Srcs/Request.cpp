@@ -151,16 +151,15 @@ void Request::parseRequest()
 int Request::getBodiesLen(std::string buffer)
 {
 	std::string tmp;
+	std::string bodyboundary = "--" + this->_headers["Boundary"];
 	std::istringstream bLines(buffer);
 	int len = 0;
 
 	while (std::getline(bLines, tmp))
 	{
-		if (tmp.find(this->_headers["Boundary"]) != std::string::npos)
-		{
-			// std::cout << "" << std::endl;
+		tmp.pop_back();
+		if (tmp.compare(bodyboundary) == 0)
 			len++;
-		}
 	}
 	return len;
 }
@@ -171,37 +170,42 @@ void Request::parseBody()
 	std::istringstream s(_content.substr(_content.find("\r\n\r\n") + 4));
 	this->_bLen = getBodiesLen(_content.substr(_content.find("\r\n\r\n") + 4));
 	Bodies bodies[this->_bLen];
+	std::string bodyBoundary = "--" + this->_headers["Boundary"];
+	int i = 0;
 
-	int i = -1;
-
-	// std::cout << "BODIES LEN: " << bLen << std::endl;
+	// std::cout << "BODIES LEN: " << _bLen << std::endl;
 	// std::cout << "BODY" << std::endl;
 	while (std::getline(s, tmp))
 	{
-		// std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " << tmp << std::endl;
-		if (tmp.find(this->_headers["Boundary"]) != std::string::npos)
+		if (tmp.find(bodyBoundary) != std::string::npos)
 		{
-			// std::cout << "›››››››››››››››››››››››››››››" << std::endl;
-			i++;
-			bodies[i].contentDesp = "";
-			bodies[i].contentType = "";
-			bodies[i].body = "";
-			this->_bodiesList.push_back(bodies[i]);
+			if (tmp.compare(bodyBoundary + "\r") == 0 || tmp.compare(bodyBoundary + "--\r") == 0)
+			{
+				if (bodies[i].contentType.size()) // i = 0;
+				{
+					// std::cout << "››››››››››››››››››››››››››››› ADD BODY" << std::endl;
+					_bodiesList.push_back(bodies[i]);
+					bodies[i].contentDesp = "";
+					bodies[i].contentType = "";
+					bodies[i].body = "";
+					i++;
+				}
+			}
 		}
-		else if (!_bodiesList[i].contentDesp.size() && tmp.find("Content-Disposition") != std::string::npos)
-		{
-			this->_bodiesList[i].contentDesp = tmp.substr(tmp.find(": ") + 2);
-			this->_bodiesList[i].contentDesp.pop_back();
-		}
-		else if (!_bodiesList[i].contentType.size() && tmp.find("Content-Type") != std::string::npos)
-		{
-			this->_bodiesList[i].contentType = tmp.substr(tmp.find(": ") + 2);
-			this->_bodiesList[i].contentType.pop_back();
-		}
-		else if (_bodiesList[i].contentType.size() && tmp.find(this->_headers["Boundary"]) == std::string::npos)
-			this->_bodiesList[i].body.append(tmp).append("\n");
-		else if (tmp.compare(this->_headers["Boundary"].append("--")) == 0)
+		if (i == _bLen)
 			break;
+		else if (!bodies[i].contentDesp.size() && tmp.find("Content-Disposition") != std::string::npos)
+		{
+			bodies[i].contentDesp = tmp.substr(tmp.find(": ") + 2);
+			bodies[i].contentType.pop_back();
+		}
+		else if (!bodies[i].contentType.size() && tmp.find("Content-Type") != std::string::npos)
+		{
+			bodies[i].contentType = tmp.substr(tmp.find(": ") + 2);
+			bodies[i].contentType.pop_back();
+		}
+		else if (bodies[i].contentType.size() && tmp.compare(bodyBoundary) != 0)
+			bodies[i].body.append(tmp);
 	}
 }
 
@@ -239,11 +243,11 @@ void Request::printRequest()
 	std::cout << "Content Length    -> |" << this->_headers["Content-Length"] << "|" << std::endl;
 	std::cout << "Transfer Encoding -> |" << this->_headers["Transfer-Encoding"] << "|" << std::endl;
 	std::cout << "Boundary          -> |" << this->_headers["Boundary"] << "|" << std::endl;
-	if (this->_bodiesList.size())
+	for (size_t i = 0; i < _bodiesList.size(); i++)
 	{
-		std::cout << "Content-Dispos... -> |" << this->_bodiesList[0].contentDesp << "|" << std::endl;
-		std::cout << "Content-Type      -> |" << this->_bodiesList[0].contentType << "|" << std::endl;
-		std::cout << "Body              -> |" << this->_bodiesList[0].body << "|" << std::endl;
+		std::cout << "Content-Dispos... -> |" << this->_bodiesList[i].contentDesp << "|" << std::endl;
+		std::cout << "Content-Type      -> |" << this->_bodiesList[i].contentType << "|" << std::endl;
+		std::cout << "Body              -> |" << this->_bodiesList[i].body << "|" << std::endl;
 	}
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
 	// exit(1);

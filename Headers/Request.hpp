@@ -23,8 +23,8 @@
 struct Bodies
 {
     std::string contentType;
-    std::string body;
     std::string contentDesp;
+    std::string body;
 };
 
 class Request

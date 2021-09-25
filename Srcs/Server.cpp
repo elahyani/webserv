@@ -184,14 +184,10 @@ void Server::existConnectHandling(int &accptSockFD)
 {
 	char _buffRes[BUFFER_SIZE] = {0};
 	int valRead = recv(accptSockFD, _buffRes, sizeof(_buffRes), 0);
-	std::cout << "************************************" << std::endl;
-	std::cout << _buffRes << std::endl;
-	std::cout << "************************************" << std::endl;
 	std::cout << "Exist connection , socket fd is " << std::to_string(accptSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
 	if (valRead > 0)
 	{
 		_buffRes[valRead] = '\0';
-		std::cout << "_buffReq ===> " << _buffRes << std::endl;
 		std::map<int, std::string>::iterator it = _clients.find(accptSockFD);
 		if (it != _clients.end())
 			it->second += _buffRes;
@@ -199,7 +195,7 @@ void Server::existConnectHandling(int &accptSockFD)
 		{
 			_request.setRequestData(it->second);
 			_request.parseRequest();
-			// _request.printRequest();
+			_request.printRequest();
 			if (FD_ISSET(accptSockFD, &_writeFDs))
 			{
 				this->exampleOfResponse(_fileName, accptSockFD);
@@ -253,7 +249,7 @@ void Server::exampleOfResponse(char *fileName, int &accptSockFD)
 	HttpServer server;
 	short port = 0;
 	findTheTargetServer(accptSockFD, &server, &port);
-	Cgi excutionCgi(_request, server, port);
+	// Cgi excutionCgi(_request, server, port);
 	Response response(this->_request, server);
 
 	std::string msgRes(""); // Will hold the data that we will send
