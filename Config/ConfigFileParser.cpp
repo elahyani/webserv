@@ -175,25 +175,30 @@ void ConfigFileParser::checkLocAttr(void)
 		if (this->countauto == 0 && this->location.getIndexes().empty()
 			&& this->location.getAllowedMethods().empty() && this->location.getRoot().empty())
 			throw std::invalid_argument("Exception\t this location `" + this->location.getLocationName() + "` has no attribute");
-		if (this->countauto == 0)
-			throw std::invalid_argument("Exception\tMissing autoindex in this location `" + this->location.getLocationName() + "`");
-		if (this->location.getIndexes().empty())
-			throw std::invalid_argument("Exception\tMissing index in this location `" + this->location.getLocationName() + "`");
-		if (this->location.getAllowedMethods().empty())
-			throw std::invalid_argument("Exception\tMissing allow_methods in this location `" + this->location.getLocationName() + "`");
+		// if (this->countauto == 0)
+		// 	throw std::invalid_argument("Exception\tMissing autoindex in this location `" + this->location.getLocationName() + "`");
+		// if (this->location.getIndexes().empty())
+		// 	throw std::invalid_argument("Exception\tMissing index in this location `" + this->location.getLocationName() + "`");
+		// if (this->location.getAllowedMethods().empty())
+		// 	throw std::invalid_argument("Exception\tMissing allow_methods in this location `" + this->location.getLocationName() + "`");
 	}
 	if (this->location.getLocationName().compare("/return") == 0)
 	{
 		if (this->location.getReturn().empty())
 			throw std::invalid_argument("Exception\tMissing redirection code and path in this location `" + this->location.getLocationName() + "`");
+			// throw std::invalid_argument("Exception\t this location `" + this->location.getLocationName() + "` has no attribute");
 	}
 	if (this->location.getLocationName().compare("*.php") == 0)
 	{
+		if (this->location.getAllowedMethods().empty() && this->location.getFastCgiPass().empty())
+			throw std::invalid_argument("Exception\t this location `" + this->location.getLocationName() + "` has no attribute");
 		if (this->location.getAllowedMethods().empty())
 			throw std::invalid_argument("Exception\tMissing allow_methods in this location `" + this->location.getLocationName() + "`");
 	}
 	if (this->location.getLocationName().compare("*.py") == 0)
 	{
+		if (this->location.getAllowedMethods().empty() && this->location.getFastCgiPass().empty())
+			throw std::invalid_argument("Exception\t this location `" + this->location.getLocationName() + "` has no attribute");
 		if (this->location.getAllowedMethods().empty())
 			throw std::invalid_argument("Exception\tMissing allow_methods in this location `" + this->location.getLocationName() + "`");
 	}
@@ -656,9 +661,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				if (buffer.back() == ';')
 					throw std::invalid_argument("Exception:\tLocation name must not end with ';'");
 				if (buffer.find(".php") != std::string::npos || buffer.find(".py") != std::string::npos)
-				{
 					_isCGI = true;
-				}
 				this->location.setLocationName(trimContent(buffer.substr(buffer.find(":") + 1)));
 				checkLocationName(buffer);
 				_isLoc = true;
@@ -666,9 +669,6 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				// if (mapTmp.size() != 1)
 				// 	throw std::invalid_argument("Exception:\tWrong number of arguments");
 				this->parseLocation(data.substr(data.find("location: " + this->location.getLocationName())));
-				// std::cout << "HANAAA >>>>>>>>>>>>>>|" << buffer << "|\n";
-				// buffer = data.substr(data.find("}") + 1);
-				// std::cout << "HANAAA >>>>>>>>>>>>>>|" << this->location.getLocationName() << "|\n";
 				// std::cout << "HANAAA >>>>>>>>>>>>>>|" << buffer << "|\n";
 			}
 			else if (buffer.find("{") == std::string::npos && buffer.find("}") == std::string::npos &&
@@ -685,6 +685,16 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 			if ((buffer.find("{") != std::string::npos || buffer.find("}") != std::string::npos) && !_isLoc)
 				throw std::invalid_argument("Exception:\tMisplaced curly braces");
 		}
+		else if (buffer.find("[") == std::string::npos &&
+				buffer.find("]") == std::string::npos &&
+				buffer.find("server") == std::string::npos &&
+				buffer != "\n" && buffer != "\0")
+		{
+			// std::cout << ">>>>>>>>>>>>>>>>???????????????????|" << buffer << "|\n";
+			throw std::invalid_argument("Exception:\tInvaid Identifier");
+
+		}
+
 		// else if (!serversNumber && buffer.find("server") == std::string::npos)
 		// 	throw std::invalid_argument("Exception:\tEmpty Configuration File");
 		// std::cout << ">>>>>>>>>>>>>>SERVER NUM|" << serversNumber << " " << buffer<< "|" << std::endl;
