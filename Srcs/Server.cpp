@@ -2,7 +2,7 @@
 
 Server::Server() {}
 
-Server::Server(ConfigFileParser &parser, char *fileName) : _parser(parser), _addrLen(0), _maxSockFD(0), _fileName(fileName)
+Server::Server(ConfigFileParser & parser) : _parser(parser), _addrLen(0), _maxSockFD(0)
 {
 	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->createMasterSockets();
@@ -90,28 +90,23 @@ void Server::createMasterSockets()
 		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort)
 		{
 			_port = *itPort;
-			int noBind = 0;
 			std::cout << _host << ':' << _port << std::endl;
-			// Socket creating
-			this->createSocket();
 			try
 			{
+				// Socket creating
+				this->createSocket();
 				// Bind socket
 				this->bindSocket();
-			}
-			catch (const std::exception &e)
-			{
-				noBind = 1;
-				close(_masterSockFD);
-				std::cerr << e.what() << '\n';
-			}
-			if (!noBind)
-			{
 				FD_SET(_masterSockFD, &_masterFDs);
 				_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
 				// Listen to client in socket
 				this->listenToClient();
 				_masterSockFDs.push_back(_masterSockFD);
+			}
+			catch (const std::exception &e)
+			{
+				close(_masterSockFD);
+				std::cerr << e.what() << '\n';
 			}
 		}
 	}
@@ -224,7 +219,7 @@ void Server::existConnectHandling(int &accptSockFD)
 			// _request.printRequest();
 			if (FD_ISSET(accptSockFD, &_writeFDs))
 			{
-				this->exampleOfResponse(_fileName, accptSockFD);
+				this->responseHandling(accptSockFD);
 			}
 			it->second = "";
 		}
@@ -268,10 +263,8 @@ void Server::findTheTargetServer(int &accptSockFD, HttpServer *server, short *po
 	return;
 }
 
-void Server::exampleOfResponse(char *fileName, int &accptSockFD)
+void Server::responseHandling(int &accptSockFD)
 {
-	(void)fileName;
-
 	HttpServer server;
 	short port = 0;
 	findTheTargetServer(accptSockFD, &server, &port);

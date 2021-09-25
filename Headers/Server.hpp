@@ -48,15 +48,18 @@ private:
 	std::map<int, int> _accptMaster;
 	Request _request;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// std::string _dirPath;
 	// size_t _locPos;
 =======
 	char *_fileName;
 >>>>>>> 0902391 (feat(CGI): Handling php script)
+=======
+>>>>>>> 10cf81e (refactor(webserv): Accept the new changin)
 
 public:
 	Server();
-	Server(ConfigFileParser &, char *);
+	Server(ConfigFileParser &);
 	Server(Server const &);
 	~Server();
 	Server &operator=(const Server &);
@@ -68,7 +71,7 @@ public:
 	void newConnectHandling(int &);
 	void existConnectHandling(int &);
 
-	void exampleOfResponse(char *, int &);
+	void responseHandling(int &);
 	void createMasterSockets();
 
 	void findTheTargetServer(int &, HttpServer *, short *);
