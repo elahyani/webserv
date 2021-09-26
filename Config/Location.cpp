@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/12 15:23:32 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/21 10:02:52 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/26 11:53:18 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,9 @@ Location &Location::operator=(Location const &src)
 		this->locationName = src.locationName;
 		this->root = src.root;
 		this->indexes.assign(src.indexes.begin(), src.indexes.end());
-		this->allowedMethods = src.allowedMethods;
+		// this->allowedMethods = src.allowedMethods;
+		this->allowedMethods.assign(src.allowedMethods.begin(), src.allowedMethods.end());
+		//! how to assign to map
 		this->ret = src.ret;
 		this->fastCgiPass = src.fastCgiPass;
 		this->uploadEnable = src.uploadEnable;
@@ -57,7 +59,7 @@ void Location::setAutoIndex(std::string index)
 		this->autoindex = true;
 }
 
-bool &Location::getAutoIndex()
+bool const &Location::getAutoIndex() const
 {
 	return this->autoindex;
 }
@@ -66,7 +68,7 @@ void Location::setLocationName(std::string locName)
 {
 	this->locationName = locName;
 }
-std::string &Location::getLocationName()
+std::string const &Location::getLocationName() const
 {
 	return this->locationName;
 }
@@ -77,7 +79,7 @@ void Location::setRoot(std::string _root)
 	this->root = _root;
 }
 
-std::string &Location::getRoot()
+std::string const &Location::getRoot() const
 {
 	return this->root;
 }
@@ -87,7 +89,7 @@ void Location::setIndex(std::string _index)
 	this->indexes.push_back(_index);
 }
 
-std::vector<std::string> &Location::getIndexes()
+std::vector<std::string> const &Location::getIndexes() const
 {
 	return this->indexes;
 }
@@ -97,7 +99,7 @@ void Location::setAllowedMethods(std::string _allowedMethods)
 	this->allowedMethods.push_back(_allowedMethods);
 }
 
-std::vector<std::string> &Location::getAllowedMethods()
+std::vector<std::string> const &Location::getAllowedMethods() const
 {
 	return this->allowedMethods;
 }
@@ -109,7 +111,7 @@ void Location::setReturn(int code, std::string _ret)
 	this->ret.insert(std::pair<int, std::string>(code, _ret));
 }
 
-std::map<int, std::string> &Location::getReturn()
+std::map<int, std::string> const &Location::getReturn() const
 {
 	return this->ret;
 }
@@ -120,21 +122,20 @@ void Location::setFastCgiPass(std::string _cgiPass)
 	this->fastCgiPass = _cgiPass;
 }
 
-std::string &Location::getFastCgiPass()
+std::string const &Location::getFastCgiPass() const
 {
 	return this->fastCgiPass;
 }
 
 void Location::setUploadEnable(std::string _uploadEnable)
 {
-	_uploadEnable.pop_back();
 	if (_uploadEnable.compare("off") == 0)
 		this->uploadEnable = false;
 	else if (_uploadEnable.compare("on") == 0)
 		this->uploadEnable = true;
 }
 
-bool &Location::getUploadEnable()
+bool const &Location::getUploadEnable() const
 {
 	return this->uploadEnable;
 }
@@ -145,7 +146,7 @@ void Location::setUploadStore(std::string _uploadStore)
 	this->uploadStore = _uploadStore;
 }
 
-std::string &Location::getUploadStore()
+std::string const &Location::getUploadStore() const
 {
 	return this->uploadStore;
 }

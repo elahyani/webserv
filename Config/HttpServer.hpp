@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/13 11:22:44 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/15 13:13:14 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/25 12:51:20 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,31 +36,31 @@ public:
 	HttpServer &operator=(HttpServer const &src);
 
 	void setPorts(int port);
-	std::vector<int> &getPorts();
+	std::vector<int> const &getPorts() const;
 
 	void setHost(std::string);
-	std::string &getHost();
+	std::string const &getHost() const;
 
 	void setClientMaxBodySize(size_t);
-	size_t &getClientMaxBodySize();
+	size_t const &getClientMaxBodySize() const;
 
 	void setErrorsPages(int, std::string);
-	std::map<int, std::string> &getErrorsPages();
+	std::map<int, std::string> const &getErrorsPages() const;
 
 	void setRoot(std::string);
-	std::string &getRoot();
+	std::string const &getRoot() const;
 
 	void setServerName(std::string);
-	std::vector<std::string> &getServerName();
+	std::vector<std::string> const &getServerName() const;
 
 	void setErrorCode(int);
-	int &getErrorCode();
+	int const &getErrorCode() const;
 
 	void setErrorPagePath(std::string);
-	std::string &getErrorPagePath();
+	std::string const &getErrorPagePath() const;
 
 	void setLocation(Location const &);
-	std::vector<Location> &getLoactions();
+	std::vector<Location> const &getLoactions() const;
 
 	void clearAll();
 };

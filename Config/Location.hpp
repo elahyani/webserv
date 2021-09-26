@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 16:02:14 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/20 18:25:17 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/25 12:58:40 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,31 +41,31 @@ public:
 	void clearAll();
 
 	void setAutoIndex(std::string);
-	bool &getAutoIndex();
+	bool const &getAutoIndex() const;
 
 	void setLocationName(std::string);
-	std::string &getLocationName();
+	std::string const &getLocationName() const;
 
 	void setRoot(std::string);
-	std::string &getRoot();
+	std::string const &getRoot() const;
 
 	void setIndex(std::string);
-	std::vector<std::string> &getIndexes();
+	std::vector<std::string> const &getIndexes() const;
 
 	void setAllowedMethods(std::string);
-	std::vector<std::string> &getAllowedMethods();
+	std::vector<std::string> const &getAllowedMethods() const;
 
 	void setReturn(int, std::string);
-	std::map<int, std::string> &getReturn();
+	std::map<int, std::string> const &getReturn() const;
 
 	void setFastCgiPass(std::string);
-	std::string &getFastCgiPass();
+	std::string const &getFastCgiPass() const;
 
 	void setUploadEnable(std::string);
-	bool &getUploadEnable();
+	bool const &getUploadEnable() const;
 
 	void setUploadStore(std::string);
-	std::string &getUploadStore();
+	std::string const &getUploadStore() const;
 };
 
 #endif
