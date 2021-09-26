@@ -89,7 +89,8 @@ void Response::manageErrorHeaders(int _status)
     this->_headers.append("Server: webServ\r\n");
     this->_headers.append("Date: " + tm.append(" GMT"));
     this->_headers.append("\r\n");
-    this->_headers.append("Connection: keep-alive\r\n");
+    this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
+    this->_headers.append("\r\n");
     this->_headers.append("Content-Type: text/html; charset=UTF-8");
     this->_headers.append("\r\n");
     this->_headers.append("Content-Length: " + std::to_string(_body.length()));
@@ -412,7 +413,7 @@ void Response::getMethod()
     }
     else
     {
-        std::cout << "FILE READED" << std::endl;
+        std::cout << "FILE READ" << std::endl;
         readFile(directoryPath);
     }
 }
@@ -441,39 +442,22 @@ void Response::postMethod()
     std::string buffer;
 
     if (_location.getUploadEnable())
-    {
+    { 
         std::cout << "-------------------Upload Enabled-------------------" << std::endl;
         for (size_t i = 0; i < _request.getBody().size(); i++)
         {
             std::cout << "---------------==============*****************++++++++++++" << std::endl;
             dispoFilename = getDispContentFilename(_request.getBody()[i].contentDesp);
             fileDir = getUploadDir().append(dispoFilename);
-            if (access(fileDir.c_str(), F_OK) != 0)
+            std::ofstream file(fileDir);
+            std::stringstream ss(_request.getBody()[i].body);
+            while (std::getline(ss, buffer))
             {
-                std::cout << fileDir << " -> NOT FOUND" << std::endl;
-                _status = NOT_FOUND_STATUS;
-                setErrorPage(_status);
+                std::cout << "->" + buffer << std::endl;
+                file << buffer.append("\n");
+                // file << buffer.substr(0, buffer.find("\r")).append("\n");
             }
-            else
-            {
-                if (access(fileDir.c_str(), W_OK) == 0)
-                {
-                    std::ofstream file(fileDir);
-                    std::stringstream ss(_request.getBody()[i].body);
-                    while (std::getline(ss, buffer))
-                    {
-                        // std::cout << "-------------> |" << buffer << "|" << std::endl;
-                        file << buffer.append("\n");
-                    }
-                    file.close();
-                    _body = "<html><head><body><div><h5>File Uploaded successfully</h5></div></body></head></html>";
-                }
-                else
-                {
-                    _status = FORBIDDEN_STATUS;
-                    setErrorPage(_status);
-                }
-            }
+            _body = "<html><head><body><div><h5>File Uploaded successfully</h5></div></body></head></html>";
         }
         std::cout << "The File -> [" << dispoFilename << "] is uploaded!" << std::endl;
     }
@@ -541,7 +525,7 @@ void Response::buildHeaders()
         this->_headers.append("Server: webServ\r\n");
         this->_headers.append("Date: " + tm.append(" GMT"));
         this->_headers.append("\r\n");
-        this->_headers.append("Connection: keep-alive");
+        this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
         this->_headers.append("\r\n");
         this->_headers.append("Content-Type: text/html; charset=UTF-8");
         this->_headers.append("\r\n");
@@ -570,4 +554,4 @@ void Response::buildResponse()
         setErrorPage(_status);
     else
         generateResponse();
-0}
+}

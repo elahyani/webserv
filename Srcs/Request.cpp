@@ -204,9 +204,12 @@ void Request::parseBody()
 			bodies[i].contentType = tmp.substr(tmp.find(": ") + 2);
 			bodies[i].contentType.pop_back();
 		}
-		else if (bodies[i].contentType.size() && tmp.compare(bodyBoundary) != 0)
-			bodies[i].body.append(tmp);
+		else if (bodies[i].contentType.size() && tmp.compare(bodyBoundary) != 0 && tmp.compare("\r") != 0)
+		{
+			bodies[i].body.append(tmp + "\n");
+		}
 	}
+	// exit(1);
 }
 
 int Request::checkReqErrors()
