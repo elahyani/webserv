@@ -1,10 +1,10 @@
 #include "Cgi.hpp"
 
-Cgi::Cgi(): _port(0), _cgiResult("")
+Cgi::Cgi() : _port(0), _cgiResult("")
 {
 }
 
-Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port): _request(request), _location(location), _server(server), _port(port), _cgiResult("")
+Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) : _request(request), _location(location), _server(server), _port(port), _cgiResult("")
 {
 	this->setEnvCgi();
 	this->cgiExec();
@@ -13,16 +13,16 @@ Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port):
 Cgi::Cgi(Cgi const &ths)
 {
 	*this = ths;
-	return ;
+	return;
 }
 
 Cgi::~Cgi()
 {
 }
 
-Cgi & Cgi::operator=(Cgi const &ths)
+Cgi &Cgi::operator=(Cgi const &ths)
 {
-	if(this != &ths)
+	if (this != &ths)
 	{
 		this->_request = ths._request;
 		this->_location = ths._location;
@@ -46,32 +46,41 @@ void Cgi::setEnvCgi()
 	(_location.getRoot().size()) ? setenv("DOCUMENT_ROOT", _location.getRoot().c_str(), 1) : setenv("DOCUMENT_ROOT", _server.getRoot().c_str(), 1);
 	setenv("SERVER_NAME", _server.getHost().c_str(), 1);
 	setenv("SERVER_PORT", std::to_string(_port).c_str(), 1);
-	setenv("SCRIPT_FILENAME", "/Users/asaadi/.Work/webserv/public/index.php", 1);
 	setenv("SCRIPT_NAME", _request.getStartLineVal("script-name").c_str(), 1);
+	setenv("SCRIPT_FILENAME", (_location.getRoot().size()) ?
+		_location.getRoot().append("/").append(_request.getStartLineVal("script-name")).c_str() :
+		_server.getRoot().append("/").append(_request.getStartLineVal("script-name")).c_str(), 1);
 	setenv("REDIRECT_STATUS", std::to_string(_request.getStatusCode()).c_str(), 1);
 }
 
 void Cgi::cgiExec()
 {
-	char const		*args[3];
-	int				pipeFDs[2];
-	int				nbytes;
-	char			buffer[BUFFER_SIZE + 1];
-	std::string		cgiPath = "/usr/local/bin/php-cgi";//_location.getFastCgiPass(); 
+	char const *args[3];
+	int pipeFDs[2];
+	int nbytes;
+	char buffer[BUFFER_SIZE + 1];
+	std::string cgiPath = _location.getFastCgiPass();
+	std::cout << "####### ###################### ######## "<<std::endl;
 	args[0] = cgiPath.c_str();
 	args[1] = getenv("SCRIPT_FILENAME");
 	args[2] = NULL;
-	if(pipe(pipeFDs) < 0)
+	for (int i = 0; i < 2; i++)
+		std::cout << args[i] << std::endl;
+	std::cout << "####### ###################### ######## "<<std::endl;
+	if (pipe(pipeFDs) < 0)
 		throw std::runtime_error("pipe failed.");
-	pid_t			childPID  = fork();
-	if (childPID < 0) { throw std::runtime_error("Unable to create child by fork.");}
+	pid_t childPID = fork();
+	if (childPID < 0)
+	{
+		throw std::runtime_error("Unable to create child by fork.");
+	}
 	if (childPID == 0)
 	{
-		dup2(pipeFDs[1], STDOUT_FILENO); 
+		dup2(pipeFDs[1], STDOUT_FILENO);
 		close(pipeFDs[0]);
-		chdir(_server.getRoot().c_str());
-		if (execve(cgiPath.c_str(), (char *const *)args, environ) < 0)
-			throw std::runtime_error("Unable to execute the script "+ (std::string)args[1] +" by execve");
+		chdir(getenv("DOCUMENT_ROOT"));
+		if (execve(cgiPath.c_str(), (char *const *)args, environ) == -1)
+			throw std::runtime_error("Unable to execute the script " + (std::string)args[1] + " by execve");
 	}
 	else
 	{
@@ -86,7 +95,7 @@ void Cgi::cgiExec()
 	}
 }
 
-std::string & Cgi::getCgiResult()
+std::string &Cgi::getCgiResult()
 {
 	return _cgiResult;
 }

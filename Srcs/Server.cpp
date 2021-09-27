@@ -206,39 +206,11 @@ std::string Server::unchunkingRequest(std::string &request)
 	std::string line("");
 	std::stringstream bodyStream(body);
 	// not work
-	for(;;) {
 		std::getline(bodyStream, line);
 		std::cout << line << std::endl;
 		std::getline(bodyStream, line);
 		std::cout << line << std::endl;
 		if (std::strcmp(line.c_str(), "\r\n"))
-			break ;
-	}
-	// for(;;)
-	// {
-	// 	if(line.find("0\r\n") != std::string::npos)
-	// 	{
-	// 		break ;
-	// 	}
-	// }
-		// 		length := 0
-		//		read chunk-size, chunk-ext (if any), and CRLF
-		// 		while (chunk-size > 0) {
-		//      	read chunk-data and CRLF
-		//      	append chunk-data to decoded-body
-		//      	length := length + chunk-size
-		//      	read chunk-size, chunk-ext (if any), and CRLF
-		//   }
-		//   read trailer field
-		//   while (trailer field is not empty) {
-		//      if (trailer field is allowed to be sent in a trailer) {
-		//          append trailer field to existing header fields
-		//      }
-		//      read trailer-field
-		//   }
-		//   Content-Length := length
-		//   Remove "chunked" from Transfer-Encoding
-		//   Remove Trailer from existing header fields
 	_isChunked = false;
 	return body;
 }

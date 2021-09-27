@@ -303,12 +303,39 @@ Location Response::isLocationExist()
     // std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].isCGI() << "|" << std::endl;
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
-        if (_server.getLocations()[i].getFastCgiPass().size())
-            _server.getLocations()[i].setIsCGI(true);
         if (_request.getStartLineVal("uri").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
         {
             _location = _server.getLocations()[i];
             _isLocation = true;
+            if (_request.getStartLineVal("uri").find(".php") != std::string::npos)
+            {
+                std::cout << "PHP------------->" << std::endl;
+                for (size_t i = 0; i < _server.getLocations().size(); i++)
+                {
+                    if (_server.getLocations()[i].getLocationName().find(".php") != std::string::npos)
+                    {
+                        _location = _server.getLocations()[i];
+                        if (_location.getFastCgiPass().size())
+                            _location.setIsCGI(true);
+                        break;
+                    }
+                }
+            }
+            else if (_request.getStartLineVal("uri").find(".py") != std::string::npos)
+            {
+                std::cout << "PYT------------->" << std::endl;
+                for (size_t i = 0; i < _server.getLocations().size(); i++)
+                {
+
+                    if (_server.getLocations()[i].getLocationName().find(".py") != std::string::npos)
+                    {
+                        _location = _server.getLocations()[i];
+                        if (_location.getFastCgiPass().size())
+                            _location.setIsCGI(true);
+                        break;
+                    }
+                }
+            }
         }
     }
     if (_location.getReturn().size())
@@ -542,10 +569,16 @@ void Response::buildHeaders()
 void Response::generateResponse()
 {
     _location = isLocationExist();
+    std::cout << "-------------> " << _location.getLocationName() << std::endl;
+    std::cout << "-------------> " << _location.isCGI() << std::endl;
     if (_location.isCGI())
     {
+        std::cout << "IS CGI" << std::endl;
         Cgi cgi(_request, _location, _server, _port);
         _cgiBody = cgi.getCgiResult();
+        std::cout << "=========================================" << std::endl;
+        std::cout << _cgiBody << std::endl;
+        std::cout << "=========================================" << std::endl;
     }
     if (_request.getStartLineVal("method").compare("GET") == 0)
         getMethod();
