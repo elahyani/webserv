@@ -39,13 +39,14 @@ void Cgi::setEnvCgi()
 	setenv("SERVER_PROTOCOL", _request.getStartLineVal("protocol").c_str(), 1);
 	setenv("CONTENT_TYPE", _request.getHeaderVal("Content-Type").c_str(), 1);
 	setenv("CONTENT_LENGTH", _request.getHeaderVal("Content-Length").c_str(), 1);
-	setenv("PATH_INFO", "/Users/asaadi/.Work/webserv", 1);
+	setenv("PATH_INFO", _request.getHeaderVal("url").c_str(), 1);
 	setenv("QUERY_STRING", _request.getStartLineVal("query").c_str(), 1);
 	setenv("SERVER_SOFTWARE", "webserv", 1);
 	setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
 	setenv("DOCUMENT_ROOT", _server.getRoot().c_str(), 1);
 	setenv("SERVER_NAME", _server.getHost().c_str(), 1);
 	setenv("SERVER_PORT", std::to_string(_port).c_str(), 1);
+	// setenv("SCRIPT_NAME", _request.getStartLineVal("script-name").c_str(), 1);
 	setenv("SCRIPT_FILENAME", "/Users/asaadi/.Work/webserv/public/index.php", 1);
 	setenv("SCRIPT_NAME", "index.php", 1);
 	setenv("REDIRECT_STATUS", std::to_string(_request.getStatusCode()).c_str(), 1);
