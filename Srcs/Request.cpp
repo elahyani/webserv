@@ -14,9 +14,10 @@
 
 Request::Request() : _content(""),
 					 _method(""),
-					 _urlPath(""),
+					 _uriPath(""),
 					 _urlQuery(""),
 					 _protocol(""),
+					 _scriptName(""),
 					 _bLen(0),
 					 _statusCode(200)
 {
@@ -44,7 +45,7 @@ Request &Request::operator=(const Request &rhs)
 		this->_bodiesList = rhs._bodiesList;
 		this->_content = rhs._content;
 		this->_method = rhs._method;
-		this->_urlPath = rhs._urlPath;
+		this->_uriPath = rhs._uriPath;
 		this->_urlQuery = rhs._urlQuery;
 		this->_protocol = rhs._protocol;
 	}
@@ -73,31 +74,43 @@ void Request::parseRequest()
 			if (!this->_method.size() && !this->_protocol.size())
 			{
 				std::cout << "__>" + tmp << std::endl;
-				this->split(tmp, " ");
+				this->split(tmp, ' ');
 				if (this->_mapTmp.size() == 3)
 				{
 					if (_mapTmp[0] != _methods[0] && _mapTmp[0] != _methods[1] && _mapTmp[0] != _methods[2])
 						throw std::invalid_argument("Bad Request: Method Not Allowed");
-					if (_mapTmp[1].at(0) != '/')
+					else if (_mapTmp[1].at(0) != '/')
 						throw std::invalid_argument("Bad Request: Absolute path required!");
-					if (_mapTmp[2].find("HTTP/1.1") != std::string::npos)
+					else if (_mapTmp[2].find("HTTP/1.1") != std::string::npos)
 					{
 						this->_mapTmp[2].pop_back();
 						if (_mapTmp[2] != "HTTP/1.1")
 							throw std::invalid_argument("Bad Request: Wrrong HTTP version!");
 					}
 					this->_method = this->_mapTmp[0];
-					this->_urlPath = this->_mapTmp[1];
+					this->_uriPath = this->_mapTmp[1];
 					this->_protocol = this->_mapTmp[2];
-					if (this->_urlPath.find("?") != std::string::npos)
+					if (this->_uriPath.find("?") != std::string::npos)
 					{
-						this->_urlQuery = this->_urlPath.substr(this->_urlPath.find("?") + 1);
-						this->_urlPath = this->_urlPath.substr(0, this->_urlPath.find("?"));
+						this->_urlQuery = this->_uriPath.substr(this->_uriPath.find("?") + 1);
+						this->_uriPath = this->_uriPath.substr(0, this->_uriPath.find("?"));
 					}
+					split(_uriPath, '/');
+					for (size_t i = 0; i < _mapTmp.size(); i++)
+					{
+						if (_mapTmp[i].find(".php") != std::string::npos || _mapTmp[i].find(".py") != std::string::npos)
+						{
+							this->_scriptName = _mapTmp[i];
+							break;
+						}
+					}
+					split(_scriptName, '.');
 					this->_startLine["method"] = _method;
-					this->_startLine["url"] = _urlPath;
+					this->_startLine["uri"] = _uriPath;
 					this->_startLine["query"] = _urlQuery;
 					this->_startLine["protocol"] = _protocol;
+					if (_mapTmp[1].compare("php") == 0 || _mapTmp[1].compare("py") == 0)
+						this->_startLine["script-name"] = _scriptName;
 				}
 				else
 					throw std::invalid_argument("Bad Request: Too much or too few arguments!");
@@ -224,7 +237,7 @@ int Request::checkReqErrors()
 		this->_statusCode = 405;
 	else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size())
 		this->_statusCode = 400;
-	else if (!_startLine["url"].size() || (_startLine["url"].size() && _startLine["url"][0] != '/'))
+	else if (!_startLine["uri"].size() || (_startLine["uri"].size() && _startLine["uri"][0] != '/'))
 		this->_statusCode = 400;
 	return this->_statusCode;
 }
@@ -238,8 +251,9 @@ void Request::printRequest()
 {
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
 	std::cout << "Method            -> |" << this->_startLine["method"] << "|" << std::endl;
-	std::cout << "Url               -> |" << this->_startLine["url"] << "|" << std::endl;
+	std::cout << "Url               -> |" << this->_startLine["uri"] << "|" << std::endl;
 	std::cout << "Protocol Version  -> |" << this->_startLine["protocol"] << "|" << std::endl;
+	std::cout << "Script Name       -> |" << this->_startLine["script-name"] << "|" << std::endl;
 	std::cout << "Host              -> |" << this->_headers["Host"] << "|" << std::endl;
 	std::cout << "Connection        -> |" << this->_headers["Connection"] << "|" << std::endl;
 	std::cout << "Content Type      -> |" << this->_headers["Content-Type"] << "|" << std::endl;
@@ -256,16 +270,24 @@ void Request::printRequest()
 	// exit(1);
 }
 
-void Request::split(std::string line, std::string splitter)
+void Request::split(std::string line, char splitter)
 {
 	int i = 0;
+	int k = 0;
 	int start = 0;
 	int end = line.find(splitter);
 
+	this->_mapTmp.clear();
 	while (end != -1)
 	{
+		k = end;
 		this->_mapTmp.insert(std::pair<int, std::string>(i, line.substr(start, end - start)));
-		start = end + splitter.size();
+		while (line[k] == splitter)
+		{
+			end++;
+			k++;
+		}
+		start = end;
 		end = line.find(splitter, start);
 		i++;
 	}
@@ -306,7 +328,7 @@ void Request::clearRequest()
 	this->_methods.clear();
 	this->_bodiesList.clear();
 	this->_method.clear();
-	this->_urlPath.clear();
+	this->_uriPath.clear();
 	this->_urlQuery.clear();
 	this->_protocol.clear();
 	this->_content.clear();

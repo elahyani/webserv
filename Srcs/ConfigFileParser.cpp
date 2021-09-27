@@ -193,6 +193,7 @@ void ConfigFileParser::parseLocation(std::string _data)
 			this->_locationsNumber++;
 			this->_inLocation = false;
 			this->_server.setLocation(this->_location);
+			std::cout << "CGI --**-->> " << _location.getLocationName() << " -> " << _location.isCGI() << std::endl;
 			this->_location.clearAll();
 			return;
 		}
@@ -294,7 +295,6 @@ void ConfigFileParser::parseLocation(std::string _data)
 					// std::cout << "+_*/------>>>> " << _location.getIsCGI() << std::endl;
 					if (!this->_location.getFastCgiPass().size())
 						throw std::invalid_argument("Exception:\tfastcgi_pass path not found");
-					this->_location.setIsCGI(true);
 				}
 				else
 					throw std::invalid_argument("Exception:\tDuplicated fastcgi_pass");
@@ -507,6 +507,8 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 				this->split(this->_location.getLocationName(), ' ');
 				if (_mapTmp.size() != 1)
 					throw std::invalid_argument("Exception:\tWrong number of arguments");
+				if (_location.getLocationName().compare("*.php") == 0 || _location.getLocationName().compare("*.py") == 0)
+					this->_location.setIsCGI(true);
 				this->parseLocation(_data.substr(_data.find("location: " + this->_location.getLocationName())));
 			}
 		}
@@ -533,18 +535,18 @@ void ConfigFileParser::printContentData()
 		std::cout << "\n-------------------[LOCATIONS]-------------------" << std::endl;
 		for (size_t i = 0; i < it->getLocations().size(); i++)
 		{
-			std::cout << "LocationName         .... |" << it->getLocations()[i].getLocationName() << "|" << std::endl;
-			std::cout << "autoindex            .... |" << it->getLocations()[i].getAutoIndex() << "|" << std::endl;
-			std::cout << "root                 .... |" << it->getLocations()[i].getRoot() << "|" << std::endl;
-			std::cout << "index                .... |" << it->getLocations()[i].getIndex() << "|" << std::endl;
-			for (size_t j = 0; j < it->getLocations()[i].getAllowedMethods().size(); j++)
-				std::cout << "allow_methods        .... |" << it->getLocations()[i].getAllowedMethods()[j] << "|" << std::endl;
-			for (std::map<int, std::string>::iterator ret = it->getLocations()[i].getReturn().begin(); ret != it->getLocations()[i].getReturn().end(); ++ret)
-				std::cout << "return               .... |" << ret->first << "| |" << ret->second << "|" << std::endl;
+			// std::cout << "LocationName         .... |" << it->getLocations()[i].getLocationName() << "|" << std::endl;
+			// std::cout << "autoindex            .... |" << it->getLocations()[i].getAutoIndex() << "|" << std::endl;
+			// std::cout << "root                 .... |" << it->getLocations()[i].getRoot() << "|" << std::endl;
+			// std::cout << "index                .... |" << it->getLocations()[i].getIndex() << "|" << std::endl;
+			// for (size_t j = 0; j < it->getLocations()[i].getAllowedMethods().size(); j++)
+			// 	std::cout << "allow_methods        .... |" << it->getLocations()[i].getAllowedMethods()[j] << "|" << std::endl;
+			// for (std::map<int, std::string>::iterator ret = it->getLocations()[i].getReturn().begin(); ret != it->getLocations()[i].getReturn().end(); ++ret)
+			// 	std::cout << "return               .... |" << ret->first << "| |" << ret->second << "|" << std::endl;
 			std::cout << "fastCgiPass          .... |" << it->getLocations()[i].getFastCgiPass() << "|" << std::endl;
 			std::cout << "isCGI                .... |" << it->getLocations()[i].isCGI() << "|" << std::endl;
-			std::cout << "uploadEnable         .... |" << it->getLocations()[i].getUploadEnable() << "|" << std::endl;
-			std::cout << "uploadStore          .... |" << it->getLocations()[i].getUploadStore() << "|" << std::endl;
+			// std::cout << "uploadEnable         .... |" << it->getLocations()[i].getUploadEnable() << "|" << std::endl;
+			// std::cout << "uploadStore          .... |" << it->getLocations()[i].getUploadStore() << "|" << std::endl;
 			std::cout << "••••••••••••••••••" << std::endl;
 		}
 		std::cout << "\n››››››››››››››››››››››››››››››››››››››››››››››››" << std::endl;

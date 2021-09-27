@@ -117,9 +117,9 @@ void Location::setFastCgiPass(std::string _cgiPass)
 	this->_fastCgiPass = _cgiPass;
 }
 
-void Location::setIsCGI(bool const &iscgi)
+void Location::setIsCGI(const bool &cgi)
 {
-	_isCGI = iscgi;
+	this->_isCGI = cgi;
 }
 
 const bool &Location::isCGI() const

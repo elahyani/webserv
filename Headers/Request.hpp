@@ -38,9 +38,10 @@ private:
     std::vector<Bodies> _bodiesList;
     std::string _content;
     std::string _method; // GET POST DELETE
-    std::string _urlPath;
+    std::string _uriPath;
     std::string _urlQuery; // .?.....
     std::string _protocol; // http/1.1
+    std::string _scriptName;
     int _bLen;
     int _statusCode;
     bool _requestError;
@@ -59,7 +60,7 @@ public:
     int getBodiesLen(std::string);
     bool checkRequest(std::string &);
     void printRequest();
-    void split(std::string, std::string);
+    void split(std::string, char);
     int checkReqErrors();
 
     std::vector<Bodies> getBody();

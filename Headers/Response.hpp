@@ -25,6 +25,7 @@
 // class Server;
 #include "Request.hpp"
 #include "HttpServer.hpp"
+#include "Cgi.hpp"
 
 #define OK_STATUS 200
 #define MOVED_PERMANENTLY_STATUS 301
@@ -61,13 +62,15 @@ private:
     bool _autoIndex;
     bool _notFound;
     bool _isLocation;
+    short _port;
     std::map<int, std::string> _errors;
     std::vector<std::string> _dirContent;
     std::string _redirectedLocation;
+    std::string _cgiBody;
 
 public:
     Response();
-    Response(Request &req, HttpServer &server /* , Server *serv */);
+    Response(Request &req, HttpServer &server, short &port);
     ~Response();
 
     void buildHeaders();

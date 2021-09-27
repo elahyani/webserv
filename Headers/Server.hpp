@@ -30,12 +30,12 @@ class Request;
 class Server
 {
 private:
-	ConfigFileParser _parser;
+	ConfigFileParser	_parser;
 	std::vector<HttpServer> _servers;
 	int _masterSockFD;
 	std::vector<int> _masterSockFDs;
-	short _port;
 	std::vector<short> _ports;
+	short _port;
 	std::string _host;
 	struct sockaddr_in _serverAddr;
 	struct sockaddr_in _clientAddr;
@@ -44,31 +44,31 @@ private:
 	fd_set _readFDs;
 	fd_set _writeFDs;
 	int _maxSockFD;
-	char *_fileName;
 	std::map<int, std::string> _clients;
 	std::map<int, int> _accptMaster;
 	Request _request;
-	// std::string _dirPath;
-	// size_t _locPos;
+	bool _isChunked;
 
 public:
 	Server();
-	Server(ConfigFileParser &, char *);
+	Server(ConfigFileParser &);
 	Server(Server const &);
 	~Server();
 	Server &operator=(const Server &);
 
+	void makeSockets();
 	void createSocket();
 	void bindSocket();
-	void listenToClient();
+	void listenSocket();
 
+	void waitingForConnections();
 	void newConnectHandling(int &);
-	void existConnectHandling(int &);
-
-	void exampleOfResponse(char *, int &);
-	void createMasterSockets();
-
-	void findTheTargetServer(int &, HttpServer *, short *);
+	void accptedConnectHandling(int &);
+	void responseHandling(int &);
+	void getServerBySocket(int &, HttpServer *, short *);
+	bool detectEndRequest(std::string &);
+	std::string unchunkingRequest(std::string &body);
 };
+
 
 #endif

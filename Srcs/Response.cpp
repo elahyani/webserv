@@ -12,19 +12,21 @@
 
 #include "Response.hpp"
 
-Response::Response(Request &req, HttpServer &server /* , Server *serv */) : _status(-1),
-                                                                            _request(req),
-                                                                            _server(server),
-                                                                            _responseMsg(""),
-                                                                            _headers(""),
-                                                                            _body(""),
-                                                                            _indexPath(""),
-                                                                            _autoIndexPage(""),
-                                                                            _dirPath(""),
-                                                                            _dr(""),
-                                                                            _autoIndex(false),
-                                                                            _notFound(false),
-                                                                            _isLocation(false)
+Response::Response(Request &req, HttpServer &server, short &port) : _status(-1),
+                                                                    _request(req),
+                                                                    _server(server),
+                                                                    _responseMsg(""),
+                                                                    _headers(""),
+                                                                    _body(""),
+                                                                    _indexPath(""),
+                                                                    _autoIndexPage(""),
+                                                                    _dirPath(""),
+                                                                    _dr(""),
+                                                                    _autoIndex(false),
+                                                                    _notFound(false),
+                                                                    _isLocation(false),
+                                                                    _port(port),
+                                                                    _cgiBody("")
 {
     this->_errors[200] = "OK";
     this->_errors[301] = "Moved Permanently";
@@ -157,9 +159,9 @@ void Response::readFile(std::string path)
 void Response::indexingFiles()
 {
     std::cout << "------------------------------------------------------------" << std::endl;
-    std::cout << getPath(_request.getStartLineVal("url")) << std::endl;
+    std::cout << getPath(_request.getStartLineVal("uri")) << std::endl;
     std::cout << "------------------------------------------------------------" << std::endl;
-    DIR *directory = opendir(getPath(_request.getStartLineVal("url")).c_str());
+    DIR *directory = opendir(getPath(_request.getStartLineVal("uri")).c_str());
     struct dirent *en;
     std::string fileName;
 
@@ -298,18 +300,19 @@ Location Response::getRedirection(std::string locName)
 
 Location Response::isLocationExist()
 {
-    // std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].getIsCGI() << "|" << std::endl;
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
-        if (_request.getStartLineVal("url").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
+        std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].isCGI() << "|" << std::endl;
+        if (_request.getStartLineVal("uri").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
         {
             _location = _server.getLocations()[i];
             _isLocation = true;
         }
     }
+    exit(1);
     if (_location.getReturn().size())
     {
-        if (_location.getLocationName().compare(_request.getStartLineVal("url")) == 0)
+        if (_location.getLocationName().compare(_request.getStartLineVal("uri")) == 0)
         {
             if (_location.getReturn().begin()->first == MOVED_PERMANENTLY_STATUS)
             {
@@ -362,9 +365,9 @@ std::string Response::getPath(std::string uriFilePath)
 void Response::getMethod()
 {
     std::cout << "GET METHOD" << std::endl;
-    std::string fileNameFromUri = getUriFilePath(_request.getStartLineVal("url"));
+    std::string fileNameFromUri = getUriFilePath(_request.getStartLineVal("uri"));
     std::string directoryPath = getPath(fileNameFromUri);
-    std::cout << "uri_> |" << _request.getStartLineVal("url") << "|" << std::endl;
+    std::cout << "uri_> |" << _request.getStartLineVal("uri") << "|" << std::endl;
     std::cout << "fileNameFromUri _> |" << fileNameFromUri << "|" << std::endl;
     std::cout << "root _> |" << _server.getRoot() << "|" << std::endl;
     std::cout << "PATH _> |" << directoryPath << "|" << std::endl;
@@ -382,7 +385,7 @@ void Response::getMethod()
             setErrorPage(_status);
         }
     }
-    else if (_isLocation && _request.getStartLineVal("url").compare(_location.getLocationName()) == 0)
+    else if (_isLocation && _request.getStartLineVal("uri").compare(_location.getLocationName()) == 0)
     {
         if (_location.getIndex().size() && fileNameFromUri.find(_location.getIndex()) != std::string::npos)
         {
@@ -436,13 +439,13 @@ std::string Response::getUploadDir()
 void Response::postMethod()
 {
     std::cout << "POST METHOD" << std::endl;
-    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("url")));
+    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("uri")));
     std::string dispoFilename;
     std::string fileDir;
     std::string buffer;
 
     if (_location.getUploadEnable())
-    { 
+    {
         std::cout << "-------------------Upload Enabled-------------------" << std::endl;
         for (size_t i = 0; i < _request.getBody().size(); i++)
         {
@@ -466,7 +469,7 @@ void Response::postMethod()
 void Response::deleteMethod()
 {
     std::cout << "DELETE METHOD" << std::endl;
-    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("url")));
+    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("uri")));
 
     if (isDirectory(directoryPath))
     {
@@ -538,6 +541,11 @@ void Response::buildHeaders()
 void Response::generateResponse()
 {
     _location = isLocationExist();
+    if (_location.isCGI())
+    {
+        Cgi cgi(_request, _location, _server, _port);
+        _cgiBody = cgi.getCgiResult();
+    }
     if (_request.getStartLineVal("method").compare("GET") == 0)
         getMethod();
     else if (_request.getStartLineVal("method").compare("POST") == 0)

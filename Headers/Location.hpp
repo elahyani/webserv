@@ -62,14 +62,14 @@ public:
 	void setFastCgiPass(std::string);
 	std::string &getFastCgiPass();
 
+	void setIsCGI(const bool &cgi);
+	const bool &isCGI() const;
+
 	void setUploadEnable(std::string);
 	const bool &getUploadEnable() const;
 
 	void setUploadStore(std::string);
 	std::string &getUploadStore();
-
-	void setIsCGI(bool const &iscgi);
-	const bool &isCGI() const;
 };
 
 #endif
