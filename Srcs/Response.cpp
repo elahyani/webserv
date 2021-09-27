@@ -300,16 +300,17 @@ Location Response::getRedirection(std::string locName)
 
 Location Response::isLocationExist()
 {
+    // std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].isCGI() << "|" << std::endl;
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
-        std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].isCGI() << "|" << std::endl;
+        if (_server.getLocations()[i].getFastCgiPass().size())
+            _server.getLocations()[i].setIsCGI(true);
         if (_request.getStartLineVal("uri").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
         {
             _location = _server.getLocations()[i];
             _isLocation = true;
         }
     }
-    exit(1);
     if (_location.getReturn().size())
     {
         if (_location.getLocationName().compare(_request.getStartLineVal("uri")) == 0)

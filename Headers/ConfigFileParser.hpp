@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/15 13:55:55 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/25 11:02:08 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,8 @@ class ConfigFileParser
 {
 private:
 	std::string _data;
-	int _serversNumber;
-	int _locationsNumber;
+	size_t _serversNumber;
+	size_t _locationsNumber;
 	bool _inServer;
 	bool _inLocation;
 	std::string _filename;
@@ -38,6 +38,8 @@ private:
 	std::map<int, std::string> _mapTmp;
 	size_t _countauto;
 	size_t _isEnabled;
+	bool _isLoc;
+	bool _isServ;
 
 public:
 	ConfigFileParser();
@@ -55,6 +57,9 @@ public:
 	void checkMissingAttrs();
 	void checkHost(std::string);
 	void parseLocation(std::string);
+	void checkLocationName(std::string &buffer);
+	void checkLocAttr(void);
+	void chekDupServerName(void);
 	std::vector<HttpServer> &getServers();
 };
 
