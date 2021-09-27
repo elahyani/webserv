@@ -5,13 +5,15 @@ Server::Server() :	_masterSockFD(0),
 					_port(0),
 					_host(""),
 					_maxSockFD(0),
-					_isChunked(false)
+					_isChunked(false),
+					_contentLength(0)
 {}
 
 Server::Server(ConfigFileParser & parser) :	_parser(parser), 
 											_addrLen(0),
 											_maxSockFD(0),
-											_isChunked(false)
+											_isChunked(false),
+											_contentLength(0)
 {
 	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->makeSockets();
@@ -135,10 +137,10 @@ void Server::waitingForConnections() {
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
 		struct timeval _tv = {0, 0};
-		int selectRet = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
-		if (selectRet == -1)
+		int activity = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
+		if (activity == -1)
 			throw std::runtime_error("Select failed to multiplexing Input/Output.");
-		if (selectRet > 0)
+		if (activity > 0)
 			for (int sockFD = 0; sockFD < _maxSockFD + 1; sockFD++)
 			{
 				if (FD_ISSET(sockFD, &_readFDs))
@@ -161,22 +163,22 @@ void Server::waitingForConnections() {
 void Server::newConnectHandling(int &sockFD)
 {
 	std::cout << "Master socket is " << std::to_string(sockFD) << std::endl;
-	int newSockFD = accept(sockFD, (struct sockaddr *)&_clientAddr, &_addrLen);
-	if (newSockFD == -1)
-		throw std::runtime_error("Unable to accept the connection from client by the socket " + std::to_string(newSockFD));
-	std::cout << "New connection , socket fd is " << std::to_string(newSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
-	if (fcntl(newSockFD, F_SETFL, O_NONBLOCK) == -1)
-		throw std::runtime_error("Unable to set the socket " + std::to_string(newSockFD) + " to non-blocking.");
-	FD_SET(newSockFD, &_masterFDs);
-	FD_SET(newSockFD, &_writeFDs);
-	if (newSockFD > _maxSockFD)
-		_maxSockFD = newSockFD;
-	_clients.insert(std::pair<int, std::string>(newSockFD, ""));
-	std::map<int, int>::iterator it = _accptMaster.find(newSockFD);
+	int accptSockFD = accept(sockFD, (struct sockaddr *)&_clientAddr, &_addrLen);
+	if (accptSockFD == -1)
+		throw std::runtime_error("Unable to accept the connection from client by the socket " + std::to_string(accptSockFD));
+	std::cout << "New connection , socket fd is " << std::to_string(accptSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
+	if (fcntl(accptSockFD, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error("Unable to set the socket " + std::to_string(accptSockFD) + " to non-blocking.");
+	FD_SET(accptSockFD, &_masterFDs);
+	FD_SET(accptSockFD, &_writeFDs);
+	if (accptSockFD > _maxSockFD)
+		_maxSockFD = accptSockFD;
+	_clients.insert(std::pair<int, std::string>(accptSockFD, ""));
+	std::map<int, int>::iterator it = _accptMaster.find(accptSockFD);
 	if (it != _accptMaster.end())
 		it->second = sockFD;
 	else
-		_accptMaster.insert(std::pair<int, int>(newSockFD, sockFD));
+		_accptMaster.insert(std::pair<int, int>(accptSockFD, sockFD));
 }
 
 bool Server::detectEndRequest(std::string &buffReq)
