@@ -15,7 +15,6 @@ Server::Server(ConfigFileParser & parser) :	_parser(parser),
 {
 	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->makeSockets();
-	std::cout << "\t<Server running... waiting for connections./>" << std::endl;
 	this->waitingForConnections();
 }
 
@@ -32,8 +31,11 @@ Server::~Server() {
 	{
 		close(*it);
 	}
+	_servers.clear();
 	_masterSockFDs.clear();
+	_ports.clear();
 	_clients.clear();
+	_accptMaster.clear();
 }
 
 // Assignment operator=
@@ -128,6 +130,7 @@ void Server::listenSocket() {
 }
 
 void Server::waitingForConnections() {
+	std::cout << "\t<Server running... waiting for connections./>" << std::endl;
 	for(;;) {
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
@@ -190,29 +193,44 @@ bool Server::detectEndRequest(std::string &buffReq)
 		}
 		else if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
 		{
-			this->_isChunked = true;
+			_isChunked = true;
 			if (buffReq.find("0\r\n\r\n") == std::string::npos)
 				return false;
-		}	
+		}
 		return true;
 	}
 	return false;
 }
 
+int getChunkedDataSize(std::string & chunkSize) {
+ 	int size = 0;
+	std::stringstream stream(chunkSize);
+	stream >> std::hex >> size;
+	return size;
+}
+
 std::string Server::unchunkingRequest(std::string &request)
 {
+	std::cout << "#############################" << std::endl;
 	std::string body = request.substr(request.find("\r\n\r\n") + 4);
-	std::string unchunked("");
+	std::string unchunkedData = request.substr(0 , request.find("\r\n\r\n") + 4);
 	std::string line("");
+	int chunkSize = 0;
+	int contentLength = 0;
 	std::stringstream bodyStream(body);
-	// not work
+	for(;;) {
 		std::getline(bodyStream, line);
-		std::cout << line << std::endl;
+		chunkSize = getChunkedDataSize(line);
 		std::getline(bodyStream, line);
 		std::cout << line << std::endl;
 		if (std::strcmp(line.c_str(), "\r\n"))
+		unchunkedData.append(line.c_str(), chunkSize);
+		contentLength += chunkSize;
+		if(chunkSize == 0)
+			break ;
+	}
 	_isChunked = false;
-	return body;
+	return unchunkedData;
 }
 
 
@@ -227,14 +245,13 @@ void Server::accptedConnectHandling(int &accptSockFD)
 		_buffRes[valRead] = '\0';
 		std::cout << "*********************** buffer begin *********************" << std::endl;
 		std::cout << "_buffReq ===> " << _buffRes << std::endl;
-		std::cout << "*********************** buffer end *********************" << std::endl;
+		std::cout << "*********************** buffer  end  *********************" << std::endl;
 		std::map<int, std::string>::iterator it = _clients.find(accptSockFD);
 		if (it != _clients.end())
 			it->second += _buffRes;
 		if (detectEndRequest(it->second))
 		{
 			if (_isChunked)
-				// std::cout << "isChunked == " << _isChunked << " it->second == " << it->second << std::endl;
 				it->second = unchunkingRequest(it->second);
 			_request.setRequestData(it->second);
 			_request.parseRequest();
@@ -289,7 +306,6 @@ void Server::responseHandling(int &accptSockFD)
 	HttpServer server;
 	short port = 0;
 	getServerBySocket(accptSockFD, &server, &port);
-	// Cgi excutionCgi(_request, server.getLocations().at(0), server, port);
 	Response response(this->_request, server, port);
 
 	std::string msgRes(""); // Will hold the data that we will send
