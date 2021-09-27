@@ -78,7 +78,6 @@ void Server::makeSockets()
 		_host = itServer->getHost();
 		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort) {
 			_port = *itPort;
-			std::cout << _host << ':' << _port << std::endl;
 			try
 			{
 				// Socket creating
@@ -91,6 +90,7 @@ void Server::makeSockets()
 				// Listen for socket connections
 				this->listenSocket();
 				_masterSockFDs.push_back(_masterSockFD);
+				std::cout << "New socket " + std::to_string(_masterSockFD) + " bind to "<< _host << ':' << _port << std::endl;
 			}
 			catch (const std::exception &e)
 			{
@@ -122,7 +122,7 @@ void Server::bindSocket() {
 	_serverAddr.sin_port = htons(_port);
 	_serverAddr.sin_addr.s_addr = (_host == "ANY") ? htonl(INADDR_ANY) : inet_addr(_host.c_str());
 	if (bind(_masterSockFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) == -1)
-		throw std::runtime_error("Unable to bind() " + _host + ":" + std::to_string(_port) + " to the socket " + std::to_string(_masterSockFD));
+		throw std::runtime_error("Unable to bind the socket " + std::to_string(_masterSockFD) + " with " + _host + ":" + std::to_string(_port) + ": Already used");
 }
 
 // Listen for incoming connections from clients
@@ -162,11 +162,10 @@ void Server::waitingForConnections() {
 
 void Server::newConnectHandling(int &sockFD)
 {
-	std::cout << "Master socket is " << std::to_string(sockFD) << std::endl;
 	int accptSockFD = accept(sockFD, (struct sockaddr *)&_clientAddr, &_addrLen);
 	if (accptSockFD == -1)
 		throw std::runtime_error("Unable to accept the connection from client by the socket " + std::to_string(accptSockFD));
-	std::cout << "New connection , socket fd is " << std::to_string(accptSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
+	std::cout << "New connection: Master socket " << std::to_string(sockFD) << ". Accept socket " + std::to_string(accptSockFD) << ", address " << inet_ntoa(_clientAddr.sin_addr) << ":" << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
 	if (fcntl(accptSockFD, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error("Unable to set the socket " + std::to_string(accptSockFD) + " to non-blocking.");
 	FD_SET(accptSockFD, &_masterFDs);
@@ -204,8 +203,8 @@ bool Server::detectEndRequest(std::string &buffReq)
 	return false;
 }
 
-int getChunkedDataSize(std::string & chunkSize) {
- 	int size = 0;
+size_t getChunkedDataSize(std::string & chunkSize) {
+ 	size_t size = 0;
 	std::stringstream stream(chunkSize);
 	stream >> std::hex >> size;
 	return size;
@@ -216,31 +215,30 @@ std::string Server::unchunkingRequest(std::string &request)
 	std::string body = request.substr(request.find("\r\n\r\n") + 4);
 	std::string unchunkedData = request.substr(0, request.find("\r\n\r\n") + 4);
 	std::string line("");
-	int chunkSize = 0;
+	size_t chunkSize = 0;
 	_contentLength = 0;
 	std::stringstream bodyStream(body);
 	for(;;) {
+		int end = 0;
 		std::getline(bodyStream, line);
 		chunkSize = getChunkedDataSize(line);
+		if (chunkSize == 0) end++;
 		std::getline(bodyStream, line);
-		std::cout << line << std::endl;
-		if (std::strcmp(line.c_str(), "\r\n"))
+		if (std::strcmp(line.c_str(), "\r\n")) end++;
 		unchunkedData.append(line.c_str(), chunkSize);
+		if (end == 2) break ;
 		_contentLength += chunkSize;
-		if(chunkSize == 0)
-			break ;
 	}
 	_isChunked = false;
 	return unchunkedData;
 }
-
 
 void Server::accptedConnectHandling(int &accptSockFD)
 {
 	char _buffRes[BUFFER_SIZE + 1] = { 0 };
 	bzero(_buffRes, sizeof(_buffRes));
 	int valRead = recv(accptSockFD, _buffRes, BUFFER_SIZE, 0);
-	std::cout << "Exist connection , socket fd is " << std::to_string(accptSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
+	// std::cout << "Exist connection , socket fd is " << std::to_string(accptSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
 	if (valRead > 0)
 	{
 		_buffRes[valRead] = '\0';
@@ -266,7 +264,7 @@ void Server::accptedConnectHandling(int &accptSockFD)
 	}
 	else if (valRead == 0)
 	{
-		std::cout << "Disconnect socket: " << std::to_string(accptSockFD) << " valRead == " << valRead << std::endl;
+		std::cout << "Disconnected socket " << std::to_string(accptSockFD) << std::endl;
 		close(accptSockFD);
 		FD_CLR(accptSockFD, &_masterFDs);
 		FD_CLR(accptSockFD, &_writeFDs);

@@ -63,7 +63,7 @@ private:
 
 	// Chunked request
 	bool _isChunked;
-	int _contentLength;
+	size_t _contentLength;
 
 public:
 	Server();
