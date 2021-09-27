@@ -217,7 +217,7 @@ std::string Server::unchunkingRequest(std::string &request)
 	std::string unchunkedData = request.substr(0, request.find("\r\n\r\n") + 4);
 	std::string line("");
 	int chunkSize = 0;
-	int contentLength = 0;
+	_contentLength = 0;
 	std::stringstream bodyStream(body);
 	for(;;) {
 		std::getline(bodyStream, line);
@@ -226,7 +226,7 @@ std::string Server::unchunkingRequest(std::string &request)
 		std::cout << line << std::endl;
 		if (std::strcmp(line.c_str(), "\r\n"))
 		unchunkedData.append(line.c_str(), chunkSize);
-		contentLength += chunkSize;
+		_contentLength += chunkSize;
 		if(chunkSize == 0)
 			break ;
 	}
