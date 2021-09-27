@@ -211,9 +211,12 @@ int getChunkedDataSize(std::string & chunkSize) {
 
 std::string Server::unchunkingRequest(std::string &request)
 {
-	std::cout << "#############################" << std::endl;
 	std::string body = request.substr(request.find("\r\n\r\n") + 4);
+<<<<<<< HEAD
 	std::string unchunkedData = request.substr(0 , request.find("\r\n\r\n") + 4);
+=======
+	std::string unchunkedData = request.substr(0, request.find("\r\n\r\n") + 4);
+>>>>>>> b0010d0 (feat(Server): Handling of the chunked request.)
 	std::string line("");
 	int chunkSize = 0;
 	int contentLength = 0;
@@ -230,6 +233,12 @@ std::string Server::unchunkingRequest(std::string &request)
 			break ;
 	}
 	_isChunked = false;
+<<<<<<< HEAD
+=======
+	std::cout << "###################" << std::endl;
+	std::cout << unchunkedData << std::endl;
+	std::cout << "###################" << std::endl;
+>>>>>>> b0010d0 (feat(Server): Handling of the chunked request.)
 	return unchunkedData;
 }
 
