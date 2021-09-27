@@ -47,6 +47,7 @@ private:
 	std::map<int, std::string> _clients;
 	std::map<int, int> _accptMaster;
 	Request _request;
+	bool _isChunked;
 
 public:
 	Server();
@@ -65,8 +66,9 @@ public:
 	void accptedConnectHandling(int &);
 	void responseHandling(int &);
 	void getServerBySocket(int &, HttpServer *, short *);
-
-
+	bool detectEndRequest(std::string &);
+	std::string unchunkingRequest(std::string &body);
 };
+
 
 #endif
