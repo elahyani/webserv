@@ -345,7 +345,7 @@ Location Response::isLocationExist()
             if (_location.getReturn().begin()->first == MOVED_PERMANENTLY_STATUS)
             {
                 _status = MOVED_PERMANENTLY_STATUS;
-                _request.setStartLineVal("url", _location.getReturn().begin()->second);
+                _request.setStartLineVal("uri", _location.getReturn().begin()->second);
                 _redirectedLocation = _location.getReturn().begin()->second;
                 _location.clearAll();
                 return getRedirection(_location.getLocationName());
@@ -575,12 +575,12 @@ void Response::generateResponse()
     {
         std::cout << "IS CGI" << std::endl;
         Cgi cgi(_request, _location, _server, _port);
-        _cgiBody = cgi.getCgiResult();
+        _body = cgi.getCgiResult();
         std::cout << "=========================================" << std::endl;
-        std::cout << _cgiBody << std::endl;
+        std::cout << _body << std::endl;
         std::cout << "=========================================" << std::endl;
     }
-    if (_request.getStartLineVal("method").compare("GET") == 0)
+    else if (_request.getStartLineVal("method").compare("GET") == 0)
         getMethod();
     else if (_request.getStartLineVal("method").compare("POST") == 0)
         postMethod();
