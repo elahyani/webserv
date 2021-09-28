@@ -8,8 +8,8 @@ Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) 
 {
 	_root = (location.getRoot().size()) ? location.getRoot().c_str() : _server.getRoot().c_str();
 	_cgiPath = location.getFastCgiPass();
-	if (access(_cgiPath.c_str(), F_OK)  == -1)
-		throw std::runtime_error(": No such file or directory {" + _cgiPath +'}');
+	if (access(_cgiPath.c_str(), F_OK) == -1)
+		throw std::runtime_error(": No such file or directory {" + _cgiPath + '}');
 	if (access(_cgiPath.c_str(), X_OK) == -1)
 		throw std::runtime_error(": " + _cgiPath + ": Permission denied.");
 	_contentLength = std::atoi(_request.getHeaderVal("Content-Length").c_str());

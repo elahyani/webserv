@@ -118,16 +118,22 @@ void Request::parseRequest()
 			}
 			else if (!_headers["Host"].size() && tmp.find("Host") != std::string::npos)
 			{
+				if (tmp.find(":") == std::string::npos)
+					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 				_headers["Host"] = tmp.substr(tmp.find(": ") + 2);
 				_headers["Host"].pop_back();
 			}
 			else if (!_headers["Connection"].size() && tmp.find("Connection") != std::string::npos)
 			{
+				if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 				_headers["Connection"] = tmp.substr(tmp.find(": ") + 2);
 				_headers["Connection"].pop_back();
 			}
 			else if (!_headers["Content-Type"].size() && tmp.find("Content-Type") != std::string::npos)
 			{
+				if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 				_headers["Content-Type"] = tmp.substr(tmp.find(": ") + 2);
 				_headers["Content-Type"].pop_back();
 				if (!_headers["Boundary"].size() && tmp.find("boundary") != std::string::npos)
@@ -138,11 +144,15 @@ void Request::parseRequest()
 			}
 			else if (!_headers["Content-Length"].size() && tmp.find("Content-Length") != std::string::npos)
 			{
+				if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 				_headers["Content-Length"] = tmp.substr(tmp.find(": ") + 2);
 				_headers["Content-Length"].pop_back();
 			}
 			else if (!_headers["Transfer-Encoding"].size() && tmp.find("Transfer-Encoding") != std::string::npos)
 			{
+				if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 				_headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
 				_headers["Transfer-Encoding"].pop_back();
 			}
