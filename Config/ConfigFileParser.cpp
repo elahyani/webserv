@@ -248,13 +248,13 @@ void ConfigFileParser::checkLocAttr(void)
 
 void ConfigFileParser::chekDupServerName(void)
 {
-	for (int i = 0; i < serversNumber; i++)
+	for (size_t i = 0; i < serversNumber; i++)
 	{
-		for (int j = 0; j < this->servers[i].getServerName().size(); j++)
+		for (size_t j = 0; j < this->servers[i].getServerName().size(); j++)
 		{
 			if (i + 1 < serversNumber)
 			{
-				for (int k = 0; k < this->servers[i + 1].getServerName().size(); k++)
+				for (size_t k = 0; k < this->servers[i + 1].getServerName().size(); k++)
 				{
 						std::cout << "this |" << this->servers[i].getServerName()[j] << "| and that |";
 						std::cout << this->servers[i + 1].getServerName()[k] << "|\n";
@@ -581,7 +581,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 
 				if (this->server.getPorts().size())
 				{
-					for (int i = 0; i < this->server.getPorts().size(); i++)
+					for (size_t i = 0; i < this->server.getPorts().size(); i++)
 					{
 						if (this->server.getPorts()[i] == port)
 							throw std::invalid_argument("Exception:\tDuplicated port!");
@@ -611,7 +611,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 					syntaxChecker(buffer, 0);
 					buffer.pop_back();
 					this->split(trimContent(buffer.substr(buffer.find(":") + 1)), ' ');
-					for (int i = 0; i < mapTmp.size(); i++)
+					for (size_t i = 0; i < mapTmp.size(); i++)
 						this->server.setServerName(mapTmp[i]);
 					if (!this->server.getServerName().size())
 						throw std::invalid_argument("Exception:\tServer name not found");
@@ -746,10 +746,10 @@ void ConfigFileParser::printContentData()
 	for (std::vector<HttpServer>::iterator it = this->servers.begin(); it != this->servers.end(); ++it)
 	{
 		std::cout << "servers number       .... " << serversNumber << std::endl;
-		for (int i = 0; i < it->getPorts().size(); i++)
+		for (size_t i = 0; i < it->getPorts().size(); i++)
 			std::cout << "listen on            .... |" << it->getPorts()[i] << "|" << std::endl;
 		std::cout << "Host                 .... |" << it->getHost() << "|" << std::endl;
-		for (int i = 0; i < it->getServerName().size(); i++)
+		for (size_t i = 0; i < it->getServerName().size(); i++)
 			std::cout << "Server name          .... |" << it->getServerName()[i] << "|" << std::endl;
 		std::cout << "Client Max Body Size .... |" << it->getClientMaxBodySize() << "|" << std::endl;
 		std::cout << "Root                 .... |" << it->getRoot() << "|" << std::endl;
@@ -762,9 +762,9 @@ void ConfigFileParser::printContentData()
 			std::cout << "LocationName         .... |" << it->getLoactions()[i].getLocationName() << "|" << std::endl;
 			std::cout << "autoindex            .... |" << it->getLoactions()[i].getAutoIndex() << "|" << std::endl;
 			std::cout << "root                 .... |" << it->getLoactions()[i].getRoot() << "|" << std::endl;
-			for (int j = 0; j < it->getLoactions()[i].getIndexes().size(); j++)
+			for (size_t j = 0; j < it->getLoactions()[i].getIndexes().size(); j++)
 				std::cout << "index                .... |" << it->getLoactions()[i].getIndexes()[j] << "|" << std::endl;
-			for (int j = 0; j < it->getLoactions()[i].getAllowedMethods().size(); j++)
+			for (size_t j = 0; j < it->getLoactions()[i].getAllowedMethods().size(); j++)
 				std::cout << "allow_methods        .... |" << it->getLoactions()[i].getAllowedMethods()[j] << "|" << std::endl;
 			for (std::map<int, std::string>::const_iterator ret = it->getLoactions()[i].getReturn().begin(); ret != it->getLoactions()[i].getReturn().end(); ++ret)
 				std::cout << "return               .... |" << ret->first << "| |" << ret->second << "|" << std::endl;

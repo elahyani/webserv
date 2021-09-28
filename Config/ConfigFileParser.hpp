@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/25 11:02:08 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/27 16:16:05 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,8 @@ class ConfigFileParser
 {
 private:
 	std::string data;
-	int serversNumber;
-	int locationsNumber;
+	size_t serversNumber;
+	size_t locationsNumber;
 	bool inServer;
 	bool inLocation;
 	std::string filename;
