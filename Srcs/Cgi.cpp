@@ -93,8 +93,13 @@ void Cgi::cgiExec()
 		close(pipeFDsRead[1]);
 		close(pipeFDsWrite[0]);
 		for (size_t i = 0; i < _request.getBody().size(); i++)
+		{
+			std::cout << "booody -> " << _request.getBody()[i].body << std::endl;
 			if (_request.getBody()[i].body.size())
 				_request.setReqBody(_request.getBody()[i].body);
+		}
+		std::cout << "body = " << _request.getReqBody() << std::endl;
+		_request.setReqBody("name=hello");
 		if (_contentLength)
 			write(pipeFDsWrite[1], _request.getReqBody().c_str(), _request.getReqBody().size());
 		close(pipeFDsWrite[1]);

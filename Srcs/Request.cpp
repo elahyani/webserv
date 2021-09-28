@@ -116,58 +116,86 @@ void Request::parseRequest()
 				else
 					throw std::invalid_argument("Bad Request: Too much or too few arguments!");
 			}
-			else if (!_headers["Host"].size() && tmp.find("Host") != std::string::npos)
+			else if (tmp.find("Host") != std::string::npos)
 			{
-				if (tmp.find(":") == std::string::npos)
-					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
-				_headers["Host"] = tmp.substr(tmp.find(": ") + 2);
-				_headers["Host"].pop_back();
-			}
-			else if (!_headers["Connection"].size() && tmp.find("Connection") != std::string::npos)
-			{
-				if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
-					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
-				_headers["Connection"] = tmp.substr(tmp.find(": ") + 2);
-				_headers["Connection"].pop_back();
-			}
-			else if (!_headers["Content-Type"].size() && tmp.find("Content-Type") != std::string::npos)
-			{
-				if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
-					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
-				_headers["Content-Type"] = tmp.substr(tmp.find(": ") + 2);
-				_headers["Content-Type"].pop_back();
-				if (!_headers["Boundary"].size() && tmp.find("boundary") != std::string::npos)
+				if (!_headers["Host"].size())
 				{
-					_headers["Boundary"] = tmp.substr(tmp.find("boundary=") + 9);
-					_headers["Boundary"].pop_back();
+					if (tmp.find("Host: ") == std::string::npos)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
+					_headers["Host"] = tmp.substr(tmp.find(": ") + 2);
+					_headers["Host"].pop_back();
+					if (std::count(_headers["Host"].begin(), _headers["Host"].end(), ':') != 1)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 				}
+				else
+					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
 			}
-			else if (!_headers["Content-Length"].size() && tmp.find("Content-Length") != std::string::npos)
+			else if (tmp.find("Connection") != std::string::npos)
 			{
-				if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
-					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
-				_headers["Content-Length"] = tmp.substr(tmp.find(": ") + 2);
-				_headers["Content-Length"].pop_back();
+				if (!_headers["Connection"].size())
+				{
+					if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
+					_headers["Connection"] = tmp.substr(tmp.find(": ") + 2);
+					_headers["Connection"].pop_back();
+				}
+				else
+					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
 			}
-			else if (!_headers["Transfer-Encoding"].size() && tmp.find("Transfer-Encoding") != std::string::npos)
+			else if (tmp.find("Content-Type") != std::string::npos)
 			{
-				if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
-					throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
-				_headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
-				_headers["Transfer-Encoding"].pop_back();
+				if (!_headers["Content-Type"].size())
+				{
+					if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
+					_headers["Content-Type"] = tmp.substr(tmp.find(": ") + 2);
+					_headers["Content-Type"].pop_back();
+					if (!_headers["Boundary"].size() && tmp.find("boundary") != std::string::npos)
+					{
+						_headers["Boundary"] = tmp.substr(tmp.find("boundary=") + 9);
+						_headers["Boundary"].pop_back();
+					}
+				}
+				else
+					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
+			}
+			else if (tmp.find("Content-Length") != std::string::npos)
+			{
+				if (!_headers["Content-Length"].size())
+				{
+					if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
+					_headers["Content-Length"] = tmp.substr(tmp.find(": ") + 2);
+					_headers["Content-Length"].pop_back();
+				}
+				else
+					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
+			}
+			else if (tmp.find("Transfer-Encoding") != std::string::npos)
+			{
+				if (!_headers["Transfer-Encoding"].size())
+				{
+					if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
+					_headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
+					_headers["Transfer-Encoding"].pop_back();
+				}
+				else
+					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
 			}
 			// std::cout << "len:" << tmp.find("Content-Length") << std::endl;
 			else if (this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos)
 				break;
 		}
-		if (this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos)
+		if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || _headers["Content-Length"].size())
 			parseBody();
 		checkReqErrors();
 		// exit(1);
 	}
 	catch (const std::exception &e)
 	{
-		clearRequest();
+		_statusCode = 400;
+		setHeaderVal("Connection", "close");
 		std::cerr << e.what() << '\n';
 	}
 }
@@ -188,6 +216,7 @@ int Request::getBodiesLen(std::string buffer)
 	return len;
 }
 
+//! refactor this shit
 void Request::parseBody()
 {
 	std::string tmp;
@@ -197,7 +226,7 @@ void Request::parseBody()
 	std::string bodyBoundary = "--" + this->_headers["Boundary"];
 	int i = 0;
 
-	// std::cout << "BODIES LEN: " << _bLen << std::endl;
+	std::cout << "BODIES LEN: " << _bLen << std::endl;
 	// std::cout << "BODY" << std::endl;
 	while (std::getline(s, tmp))
 	{

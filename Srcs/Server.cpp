@@ -222,6 +222,9 @@ void Server::accptedConnectHandling(int &accptSockFD)
 			it->second += _buffRes;
 		if (detectEndRequest(it->second))
 		{
+			std::cout << "*********************" << std::endl;
+			std::cout << it->second << std::endl;
+			std::cout << "*********************" << std::endl;
 			if (_isChunked)
 				it->second = unchunkingRequest(it->second);
 			_request.setRequestData(it->second);
