@@ -21,7 +21,6 @@ private:
 	std::string _cgiPath;
 	std::string _cgiResult;
 	int _contentLength;
-	int _fd;
 	
 public:
 	Cgi();

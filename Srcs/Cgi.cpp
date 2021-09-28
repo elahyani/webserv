@@ -62,43 +62,49 @@ void Cgi::setEnvCgi()
 void Cgi::cgiExec()
 {
 	char const *args[3];
-	int pipeFDs[2];
-	int readBytes = 0;
-	char buffer[BUFFER_SIZE + 1];
+	int pipeFDsWrite[2];
+	int pipeFDsRead[2];
 	pid_t childPID;
+	char buffer[BUFFER_SIZE + 1];
+	int readBytes = 0;
 
 	args[0] = _cgiPath.c_str();
 	args[1] = getenv("SCRIPT_FILENAME");
 	args[2] = NULL;
-	if (pipe(pipeFDs) < 0)
+	if (pipe(pipeFDsWrite) < 0)
+		throw std::runtime_error("pipe failed.");
+	if (pipe(pipeFDsRead) < 0)
 		throw std::runtime_error("pipe failed.");
 	childPID = fork();
 	if (childPID < 0)
 		throw std::runtime_error("Unable to create child by fork.");
-	if (childPID == 0)
+	if (!childPID)
 	{
-		close(pipeFDs[1]);
-		dup2(pipeFDs[0], STDIN_FILENO);
-		dup2(_fd, STDOUT_FILENO);
+		dup2(pipeFDsWrite[0], STDIN_FILENO); // stdin
+		close(pipeFDsWrite[1]);
+		dup2(pipeFDsRead[1], STDOUT_FILENO); // stdout
+		close(pipeFDsRead[0]);
 		chdir(_root.c_str());
 		if (execve(_cgiPath.c_str(), (char *const *)args, environ) == -1)
 			exit(1);
 	}
 	else
 	{
-		close(pipeFDs[0]);
+		close(pipeFDsRead[1]);
+		close(pipeFDsWrite[0]);
 		for (size_t i = 0; i < _request.getBody().size(); i++)
 			if (_request.getBody()[i].body.size())
 				_request.setReqBody(_request.getBody()[i].body);
 		if (_contentLength)
-			write(pipeFDs[1], _request.getReqBody().c_str(), _request.getReqBody().size());
-		close(pipeFDs[1]);
+			write(pipeFDsWrite[1], _request.getReqBody().c_str(), _request.getReqBody().size());
+		close(pipeFDsWrite[1]);
 		bzero(buffer, BUFFER_SIZE);
-		while ((readBytes = read(_fd, buffer, BUFFER_SIZE)) > 0)
+		while ((readBytes = read(pipeFDsRead[0], buffer, BUFFER_SIZE)) > 0)
 		{
 			buffer[readBytes] = '\0';
 			_cgiResult.append(buffer, readBytes);
 		}
+		close(pipeFDsRead[0]);
 		wait(0);
 	}
 }
