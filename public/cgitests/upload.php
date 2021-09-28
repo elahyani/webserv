@@ -7,3 +7,4 @@ print_r($_POST);
 // 	echo "OK";
 // 	move_uploaded_file($_FILES["t"]["tmp_name"], "../toUpload/" . $_FILES["t"]["name"]);
 // }
+?>

@@ -4,18 +4,23 @@
 Server::Server() :	_masterSockFD(0),
 					_port(0),
 					_host(""),
+					_addrLen(0),
 					_maxSockFD(0),
-					_isChunked(false)
+					_isChunked(false),
+					_contentLength(0)
 {}
 
-Server::Server(ConfigFileParser & parser) :	_parser(parser), 
+Server::Server(ConfigFileParser & parser) :	_parser(parser),
+											_masterSockFD(0),
+											_port(0),
+											_host(""),
 											_addrLen(0),
 											_maxSockFD(0),
-											_isChunked(false)
+											_isChunked(false),
+											_contentLength(0)
 {
 	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->makeSockets();
-	std::cout << "\t<Server running... waiting for connections./>" << std::endl;
 	this->waitingForConnections();
 }
 
@@ -32,8 +37,11 @@ Server::~Server() {
 	{
 		close(*it);
 	}
+	_servers.clear();
 	_masterSockFDs.clear();
+	_ports.clear();
 	_clients.clear();
+	_accptMaster.clear();
 }
 
 // Assignment operator=
@@ -67,26 +75,22 @@ void Server::makeSockets()
 	// fd_set structures initializing
 	FD_ZERO(&_masterFDs);
 	FD_ZERO(&_writeFDs);
-
+	// making master sockets for()
 	for (std::vector<HttpServer>::iterator itServer = _servers.begin(); itServer != _servers.end(); itServer++)
 	{
 		_ports = itServer->getPorts();
 		_host = itServer->getHost();
 		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort) {
 			_port = *itPort;
-			std::cout << _host << ':' << _port << std::endl;
 			try
 			{
 				// Socket creating
 				this->createSocket();
 				// Bind a name to a socket
 				this->bindSocket();
-				// set socket to fd_set struct
-				FD_SET(_masterSockFD, &_masterFDs);
-				_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
 				// Listen for socket connections
 				this->listenSocket();
-				_masterSockFDs.push_back(_masterSockFD);
+				std::cout << "New socket " + std::to_string(_masterSockFD) + " bind to "<< _host << ':' << _port << std::endl;
 			}
 			catch (const std::exception &e)
 			{
@@ -104,7 +108,7 @@ void Server::createSocket() {
 	// set socket to non-blocking
 	if (fcntl(_masterSockFD, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error("Unable to set the socket " + std::to_string(_masterSockFD) + " to non-blocking.");
-	// set socket option ; option is to use the addr multiple times 
+	// set socket option of reusing address 
 	int opt = 1;
 	if (setsockopt(_masterSockFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1)
 		throw std::runtime_error("Unable to set socket option to the socket " + std::to_string(_masterSockFD));
@@ -118,24 +122,30 @@ void Server::bindSocket() {
 	_serverAddr.sin_port = htons(_port);
 	_serverAddr.sin_addr.s_addr = (_host == "ANY") ? htonl(INADDR_ANY) : inet_addr(_host.c_str());
 	if (bind(_masterSockFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) == -1)
-		throw std::runtime_error("Unable to bind() " + _host + ":" + std::to_string(_port) + " to the socket " + std::to_string(_masterSockFD));
+		throw std::runtime_error("Unable to bind the socket " + std::to_string(_masterSockFD) + " with " + _host + ":" + std::to_string(_port) + ": Already used");
 }
 
 // Listen for incoming connections from clients
 void Server::listenSocket() {
 	if (listen(_masterSockFD, BACKLOG) == -1)
-		throw std::runtime_error("Unable to listen() for connections in the socket " + std::to_string(_masterSockFD));
+		throw std::runtime_error("Unable to listen for connections in the socket " + std::to_string(_masterSockFD));
+	// set socket to fd_set struct	
+	FD_SET(_masterSockFD, &_masterFDs);
+	_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
+	// Add the socket to the sockets vector
+	_masterSockFDs.push_back(_masterSockFD);
 }
 
 void Server::waitingForConnections() {
+	std::cout << "\t<Server running... waiting for connections./>" << std::endl;
 	for(;;) {
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
 		struct timeval _tv = {0, 0};
-		int selectRet = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
-		if (selectRet == -1)
+		int activity = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
+		if (activity == -1)
 			throw std::runtime_error("Select failed to multiplexing Input/Output.");
-		if (selectRet > 0)
+		if (activity > 0)
 			for (int sockFD = 0; sockFD < _maxSockFD + 1; sockFD++)
 			{
 				if (FD_ISSET(sockFD, &_readFDs))
@@ -157,23 +167,22 @@ void Server::waitingForConnections() {
 
 void Server::newConnectHandling(int &sockFD)
 {
-	std::cout << "Master socket is " << std::to_string(sockFD) << std::endl;
-	int newSockFD = accept(sockFD, (struct sockaddr *)&_clientAddr, &_addrLen);
-	if (newSockFD == -1)
-		throw std::runtime_error("Unable to accept the connection from client by the socket " + std::to_string(newSockFD));
-	std::cout << "New connection , socket fd is " << std::to_string(newSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
-	if (fcntl(newSockFD, F_SETFL, O_NONBLOCK) == -1)
-		throw std::runtime_error("Unable to set the socket " + std::to_string(newSockFD) + " to non-blocking.");
-	FD_SET(newSockFD, &_masterFDs);
-	FD_SET(newSockFD, &_writeFDs);
-	if (newSockFD > _maxSockFD)
-		_maxSockFD = newSockFD;
-	_clients.insert(std::pair<int, std::string>(newSockFD, ""));
-	std::map<int, int>::iterator it = _accptMaster.find(newSockFD);
+	int accptSockFD = accept(sockFD, (struct sockaddr *)&_clientAddr, &_addrLen);
+	if (accptSockFD == -1)
+		throw std::runtime_error("Unable to accept the connection from client by the socket " + std::to_string(accptSockFD));
+	std::cout << "New connection: Master socket " << std::to_string(sockFD) << ". Accept socket " + std::to_string(accptSockFD) << ", address " << inet_ntoa(_clientAddr.sin_addr) << ":" << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
+	if (fcntl(accptSockFD, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error("Unable to set the socket " + std::to_string(accptSockFD) + " to non-blocking.");
+	FD_SET(accptSockFD, &_masterFDs);
+	FD_SET(accptSockFD, &_writeFDs);
+	if (accptSockFD > _maxSockFD)
+		_maxSockFD = accptSockFD;
+	_clients.insert(std::pair<int, std::string>(accptSockFD, ""));
+	std::map<int, int>::iterator it = _accptMaster.find(accptSockFD);
 	if (it != _accptMaster.end())
 		it->second = sockFD;
 	else
-		_accptMaster.insert(std::pair<int, int>(newSockFD, sockFD));
+		_accptMaster.insert(std::pair<int, int>(accptSockFD, sockFD));
 }
 
 bool Server::detectEndRequest(std::string &buffReq)
@@ -190,51 +199,33 @@ bool Server::detectEndRequest(std::string &buffReq)
 		}
 		else if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
 		{
-			this->_isChunked = true;
+			_isChunked = true;
 			if (buffReq.find("0\r\n\r\n") == std::string::npos)
 				return false;
-		}	
+		}
 		return true;
 	}
 	return false;
 }
-
-std::string Server::unchunkingRequest(std::string &request)
-{
-	std::string body = request.substr(request.find("\r\n\r\n") + 4);
-	std::string unchunked("");
-	std::string line("");
-	std::stringstream bodyStream(body);
-	// not work
-		std::getline(bodyStream, line);
-		std::cout << line << std::endl;
-		std::getline(bodyStream, line);
-		std::cout << line << std::endl;
-		if (std::strcmp(line.c_str(), "\r\n"))
-	_isChunked = false;
-	return body;
-}
-
 
 void Server::accptedConnectHandling(int &accptSockFD)
 {
 	char _buffRes[BUFFER_SIZE + 1] = { 0 };
 	bzero(_buffRes, sizeof(_buffRes));
 	int valRead = recv(accptSockFD, _buffRes, BUFFER_SIZE, 0);
-	std::cout << "Exist connection , socket fd is " << std::to_string(accptSockFD) << " , ip is : " << inet_ntoa(_clientAddr.sin_addr) << " , port : " << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
+	std::cout << "Activity in socket " << std::to_string(accptSockFD) << ", address: " << inet_ntoa(_clientAddr.sin_addr) << ':' << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
 	if (valRead > 0)
 	{
 		_buffRes[valRead] = '\0';
-		std::cout << "*********************** buffer begin *********************" << std::endl;
-		std::cout << "_buffReq ===> " << _buffRes << std::endl;
-		std::cout << "*********************** buffer end *********************" << std::endl;
 		std::map<int, std::string>::iterator it = _clients.find(accptSockFD);
 		if (it != _clients.end())
 			it->second += _buffRes;
 		if (detectEndRequest(it->second))
 		{
+			std::cout << "################################ begin" << std::endl;
+			std::cout <<'|'<< it->second << '|'<<std::endl;
+			std::cout << "################################ end" << std::endl;
 			if (_isChunked)
-				// std::cout << "isChunked == " << _isChunked << " it->second == " << it->second << std::endl;
 				it->second = unchunkingRequest(it->second);
 			_request.setRequestData(it->second);
 			_request.parseRequest();
@@ -248,14 +239,45 @@ void Server::accptedConnectHandling(int &accptSockFD)
 	}
 	else if (valRead == 0)
 	{
-		std::cout << "Disconnect socket: " << std::to_string(accptSockFD) << " valRead == " << valRead << std::endl;
+		std::cout << "Disconnected socket " << std::to_string(accptSockFD) << std::endl;
 		close(accptSockFD);
 		FD_CLR(accptSockFD, &_masterFDs);
 		FD_CLR(accptSockFD, &_writeFDs);
 		_clients.erase(accptSockFD);
 	}
 	else
-		return; // Socket is connected but doesn't send request.
+		return ; // Socket is connected but doesn't send request.
+}
+
+size_t getChunkedDataSize(std::string & chunkSize) {
+ 	size_t size = 0;
+	std::stringstream stream(chunkSize);
+	stream >> std::hex >> size;
+	return size;
+}
+
+std::string Server::unchunkingRequest(std::string &request)
+{
+	std::string body = request.substr(request.find("\r\n\r\n") + 4);
+	std::string unchunkedData = request.substr(0, request.find("\r\n\r\n") + 4);
+	std::string line("");
+	size_t chunkSize;
+	
+	_contentLength = 0;
+	std::stringstream bodyStream(body);
+	for(;;) {
+		int end = 0;
+		std::getline(bodyStream, line);
+		chunkSize = getChunkedDataSize(line);
+		if (chunkSize == 0) end++;
+		std::getline(bodyStream, line);
+		if (std::strcmp(line.c_str(), "\r\n")) end++;
+		unchunkedData.append(line.c_str(), chunkSize);
+		if (end == 2) break ;
+		_contentLength += chunkSize;
+	}
+	_isChunked = false;
+	return unchunkedData;
 }
 
 void Server::getServerBySocket(int &accptSockFD, HttpServer *server, short *port)
@@ -265,7 +287,6 @@ void Server::getServerBySocket(int &accptSockFD, HttpServer *server, short *port
 	std::memset(&serverAddr, 0, _addrLen);
 	if (getsockname(it->second, (struct sockaddr *)&serverAddr, &_addrLen) == -1)
 		throw std::runtime_error("Unable to get server informations from socket " + std::to_string(it->second));
-	std::cout << "Master socket fd is " << std::to_string(it->second) << " , ip is : " << inet_ntoa(serverAddr.sin_addr) << " , port : " << std::to_string(ntohs(serverAddr.sin_port)) << std::endl;
 	for (std::vector<HttpServer>::iterator it = _servers.begin(); it != _servers.end(); it++)
 	{
 		if (it->getHost() == inet_ntoa(serverAddr.sin_addr))
@@ -289,15 +310,12 @@ void Server::responseHandling(int &accptSockFD)
 	HttpServer server;
 	short port = 0;
 	getServerBySocket(accptSockFD, &server, &port);
-	// Cgi excutionCgi(_request, server.getLocations().at(0), server, port);
 	Response response(this->_request, server, port);
-
 	std::string msgRes(""); // Will hold the data that we will send
 	response.buildResponse();
 	msgRes.append(response.getHeaders());
 	_request.clearRequest();
 	response.clearAll();
-
 	if (FD_ISSET(accptSockFD, &_writeFDs))
 	{
 		if (send(accptSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
