@@ -42,6 +42,7 @@ private:
     std::string _urlQuery; // .?.....
     std::string _protocol; // http/1.1
     std::string _scriptName;
+    std::string _body;
     int _bLen;
     int _statusCode;
     bool _requestError;
@@ -62,6 +63,8 @@ public:
     void printRequest();
     void split(std::string, char);
     int checkReqErrors();
+    void setReqBody(std::string const &);
+    std::string &getReqBody();
 
     std::vector<Bodies> getBody();
 

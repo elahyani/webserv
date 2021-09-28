@@ -82,10 +82,17 @@ void Cgi::cgiExec()
 	{
 		close(pipeFDs[1]);
 		bzero(buffer, BUFFER_SIZE);
-		// std::cout << "hello---------" << nbytes << std::endl;
+		//!=========================================;
+		std::cout << "=========================================" << std::endl;
+		for (size_t i = 0; i < _request.getBody().size(); i++)
+			if (_request.getBody()[i].body.size())
+				_request.setReqBody(_request.getBody()[i].body);
+		std::cout << "reqBody ->> |" << _request.getReqBody() << "|" << std::endl;
+		std::cout << "=========================================" << std::endl;
+		//!=========================================;
+		std::cout << "hello---------" << std::endl;
 		while ((nbytes = read(pipeFDs[0], buffer, BUFFER_SIZE)) > 0)
 		{
-			std::cout << "hello---------" << std::endl;
 			buffer[nbytes] = '\0';
 			_cgiResult.append(buffer, nbytes);
 		}

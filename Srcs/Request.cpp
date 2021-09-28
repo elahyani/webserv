@@ -18,6 +18,7 @@ Request::Request() : _content(""),
 					 _urlQuery(""),
 					 _protocol(""),
 					 _scriptName(""),
+					 _body(""),
 					 _bLen(0),
 					 _statusCode(200)
 {
@@ -302,6 +303,16 @@ void Request::setHeaderVal(std::string key, std::string val)
 std::string &Request::getHeaderVal(std::string const &key)
 {
 	return this->_headers[key];
+}
+
+void Request::setReqBody(std::string const &body)
+{
+	this->_body = body;
+}
+
+std::string &Request::getReqBody()
+{
+	return this->_body;
 }
 
 void Request::setStartLineVal(std::string key, std::string val)
