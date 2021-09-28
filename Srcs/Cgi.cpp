@@ -13,7 +13,6 @@ Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) 
 	if (access(_cgiPath.c_str(), X_OK) == -1)
 		throw std::runtime_error(": " + _cgiPath + ": Permission denied.");
 	_contentLength = std::atoi(_request.getHeaderVal("Content-Length").c_str());
-
 	this->setEnvCgi();
 	this->cgiExec();
 }
@@ -65,8 +64,6 @@ void Cgi::cgiExec()
 	char const *args[3];
 	int pipeFDs[2];
 	int readBytes = 0;
-	int writeBytes = 0;
-
 	char buffer[BUFFER_SIZE + 1];
 	pid_t childPID;
 
@@ -81,7 +78,7 @@ void Cgi::cgiExec()
 	if (childPID == 0)
 	{
 		close(pipeFDs[1]);
-		dup2(pipeFDs[0], STDOUT_FILENO);
+		dup2(pipeFDs[0], STDIN_FILENO);
 		dup2(_fd, STDOUT_FILENO);
 		chdir(_root.c_str());
 		if (execve(_cgiPath.c_str(), (char *const *)args, environ) == -1)
@@ -89,28 +86,19 @@ void Cgi::cgiExec()
 	}
 	else
 	{
-		close(pipeFDs[1]);
-		bzero(buffer, BUFFER_SIZE);
-		//!=========================================;
-		std::cout << "=========================================" << std::endl;
+		close(pipeFDs[0]);
 		for (size_t i = 0; i < _request.getBody().size(); i++)
 			if (_request.getBody()[i].body.size())
 				_request.setReqBody(_request.getBody()[i].body);
-		std::cout << "reqBody ->> |" << _request.getReqBody() << "|" << std::endl;
-		std::cout << "=========================================" << std::endl;
-		//!=========================================;
-		std::cout << "hello---------" << std::endl;
-		while ((readBytes = read(pipeFDs[0], buffer, BUFFER_SIZE)) > 0)
+		if (_contentLength)
+			write(pipeFDs[1], _request.getReqBody().c_str(), _request.getReqBody().size());
+		close(pipeFDs[1]);
+		bzero(buffer, BUFFER_SIZE);
+		while ((readBytes = read(_fd, buffer, BUFFER_SIZE)) > 0)
 		{
 			buffer[readBytes] = '\0';
 			_cgiResult.append(buffer, readBytes);
 		}
-		// bzero(buffer, BUFFER_SIZE);
-		// while ((nbytes = read(_fd, buffer, BUFFER_SIZE)) > 0)
-		// {
-		// 	buffer[nbytes] = '\0';
-		// 	_cgiResult.append(buffer, nbytes);
-		// }
 		wait(0);
 	}
 }
