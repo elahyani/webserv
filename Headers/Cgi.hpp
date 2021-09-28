@@ -20,7 +20,9 @@ private:
 	std::string _root;
 	std::string _cgiPath;
 	std::string _cgiResult;
-
+	int _contentLength;
+	int _fd;
+	
 public:
 	Cgi();
 	Cgi(Request &, Location &, HttpServer &, short &);

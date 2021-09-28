@@ -1,13 +1,18 @@
 #include "Cgi.hpp"
 
-Cgi::Cgi() : _port(0), _root(""), _cgiPath(""), _cgiResult("")
+Cgi::Cgi() : _port(0), _root(""), _cgiPath(""), _cgiResult(""), _contentLength(0)
 {
 }
 
-Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) : _request(request), _server(server), _port(port), _root(""), _cgiPath(""), _cgiResult("")
+Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) : _request(request), _server(server), _port(port), _root(""), _cgiPath(""), _cgiResult(""), _contentLength(0)
 {
 	_root = (location.getRoot().size()) ? location.getRoot().c_str() : _server.getRoot().c_str();
 	_cgiPath = location.getFastCgiPass();
+	if (access(_cgiPath.c_str(), F_OK)  == -1)
+		throw std::runtime_error(": No such file or directory {" + _cgiPath +'}');
+	if (access(_cgiPath.c_str(), X_OK) == -1)
+		throw std::runtime_error(": " + _cgiPath + ": Permission denied.");
+	_contentLength = std::atoi(_request.getHeaderVal("Content-Length").c_str());
 
 	this->setEnvCgi();
 	this->cgiExec();
@@ -32,6 +37,7 @@ Cgi &Cgi::operator=(Cgi const &ths)
 		this->_port = ths._port;
 		this->_root = ths._root;
 		this->_cgiResult = ths._cgiResult;
+		this->_contentLength = ths._contentLength;
 	}
 	return *this;
 }
@@ -58,7 +64,9 @@ void Cgi::cgiExec()
 {
 	char const *args[3];
 	int pipeFDs[2];
-	int nbytes;
+	int readBytes = 0;
+	int writeBytes = 0;
+
 	char buffer[BUFFER_SIZE + 1];
 	pid_t childPID;
 
@@ -72,11 +80,12 @@ void Cgi::cgiExec()
 		throw std::runtime_error("Unable to create child by fork.");
 	if (childPID == 0)
 	{
-		dup2(pipeFDs[1], STDOUT_FILENO);
-		close(pipeFDs[0]);
+		close(pipeFDs[1]);
+		dup2(pipeFDs[0], STDOUT_FILENO);
+		dup2(_fd, STDOUT_FILENO);
 		chdir(_root.c_str());
 		if (execve(_cgiPath.c_str(), (char *const *)args, environ) == -1)
-			throw std::runtime_error("Unable to execute the script " + (std::string)args[1] + " by execve");
+			exit(1);
 	}
 	else
 	{
@@ -91,11 +100,17 @@ void Cgi::cgiExec()
 		std::cout << "=========================================" << std::endl;
 		//!=========================================;
 		std::cout << "hello---------" << std::endl;
-		while ((nbytes = read(pipeFDs[0], buffer, BUFFER_SIZE)) > 0)
+		while ((readBytes = read(pipeFDs[0], buffer, BUFFER_SIZE)) > 0)
 		{
-			buffer[nbytes] = '\0';
-			_cgiResult.append(buffer, nbytes);
+			buffer[readBytes] = '\0';
+			_cgiResult.append(buffer, readBytes);
 		}
+		// bzero(buffer, BUFFER_SIZE);
+		// while ((nbytes = read(_fd, buffer, BUFFER_SIZE)) > 0)
+		// {
+		// 	buffer[nbytes] = '\0';
+		// 	_cgiResult.append(buffer, nbytes);
+		// }
 		wait(0);
 	}
 }
