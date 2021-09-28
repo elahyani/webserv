@@ -31,6 +31,7 @@ class Server
 {
 private:
 	ConfigFileParser	_parser;
+	
 	// Servers
 	std::vector<HttpServer> _servers;
 

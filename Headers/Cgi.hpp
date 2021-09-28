@@ -8,16 +8,19 @@
 # include <string>
 # include <unistd.h>
 
+// Environement variables change during the program
 extern char** environ;
 
 class Cgi
 {
 private:
 	Request _request;
-	Location _location;
 	HttpServer _server;
 	short _port;
+	std::string _root;
+	std::string _cgiPath;
 	std::string _cgiResult;
+
 public:
 	Cgi();
 	Cgi(Request &, Location &, HttpServer &, short &);
@@ -31,26 +34,3 @@ public:
 };
 
 #endif
-
-// REQUEST_METHOD = get method from request √
-// SERVER_PROTOCOL = HTTP/1.1 √
-// CONTENT_TYPE = get from request √
-// CONTENT_LENGTH = get from request √
-// PATH_INFO = get from request "url" √ /Users/asaadi/.Work/webserv
-// QUERY_STRING =  ?...... √
-// SERVER_SOFTWARE = webserv √
-// GATEWAY_INTERFACE = CGI/1.1 √
-// DOCUMENT_ROOT = getRoot from server √
-// SERVER_ADDR = IP address or hostName √
-// SCRIPT_NAME = *.php 
-// SCRIPT_FILENAME = $DOCUMENT_ROOT$SCRIPT_NAME 
-// SCRIPT_NAME = scriptName from server location 
-// SERVER_NAME = get from the server 
-// SERVER_PORT = get from server ports
-// REMOTE_ADD = 
-
-// REMOTE_ADDR
-// PATH_TRANSLATED
-// REDIRECT_STATUS
-
-// /usr/local/bin/php-cgi
