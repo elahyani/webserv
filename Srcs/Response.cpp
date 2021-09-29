@@ -36,14 +36,14 @@ Response::Response(Request &req, HttpServer &server, short &port) : _status(-1),
     this->_errors[404] = "Not Found";
     this->_errors[405] = "Not Allowed";
     this->_errors[411] = "Length Required";
-    this->_errors[413] = "Payload Too Large";
+    this->_errors[413] = "Request Entity Too Large";
     this->_errors[414] = "Uri Too Long";
     this->_errors[415] = "Unsupported Media Type";
     this->_errors[500] = "Internal Server Error";
     this->_errors[501] = "Not Implemented";
     this->_errors[502] = "Bad Gateway";
     this->_errors[504] = "Gateway Timeout";
-    this->_errors[505] = "Http Version Not Supported";
+    this->_errors[505] = "HTTP Version Not Supported";
     this->_status = this->_request.getStatusCode();
 
     // std::cout << "status >>>>> " << this->_status << std::endl;
@@ -56,9 +56,6 @@ Response::~Response()
 void Response::clearAll()
 {
     _status = 0;
-    _server.clearAll();
-    _request.clearRequest();
-    _location.clearAll();
     _responseMsg.clear();
     _headers.clear();
     _body.clear();
@@ -71,6 +68,9 @@ void Response::clearAll()
     _isLocation = false;
     _errors.clear();
     _dirContent.clear();
+    // _request.clearRequest();
+    _location.clearAll();
+    _server.clearAll();
 }
 
 void Response::manageErrorHeaders(int _status)
@@ -112,6 +112,7 @@ void Response::getErrorPage(std::string ErrorPagePath)
     }
     else
         _body = getDefaultErrorPage(_status);
+    indexFile.close();
 }
 
 void Response::setErrorPage(int _status)
@@ -140,13 +141,13 @@ void Response::readFile(std::string path)
                 std::ostringstream ss;
                 ss << file.rdbuf();
                 _body = ss.str();
-                file.close();
             }
             else
             {
                 _status = INTERNAL_SERVER_ERROR_STATUS;
                 setErrorPage(_status);
             }
+            file.close();
         }
         else
         {
@@ -435,6 +436,7 @@ void Response::getMethod()
                     std::cout << "INDEX PATH >>> INVALID" << std::endl;
                     _body = getHtmlTemplate();
                 }
+                indexFile.close();
             }
             else
             {
@@ -489,6 +491,7 @@ void Response::postMethod()
                 file << buffer.append("\n");
                 // file << buffer.substr(0, buffer.find("\r")).append("\n");
             }
+            file.close();
             _body = "<html><head><body><div><h5>File Uploaded successfully</h5></div></body></head></html>";
         }
         std::cout << "The File -> [" << dispoFilename << "] is uploaded!" << std::endl;
@@ -567,28 +570,85 @@ void Response::buildHeaders()
     }
 }
 
+void Response::parseCgiResponse(std::string &cgiResp)
+{
+    std::string buffer;
+    std::istringstream s(cgiResp);
+    time_t rawTime;
+    std::string tm;
+
+    time(&rawTime);
+    tm = ctime(&rawTime);
+    tm.pop_back();
+    this->_headers.append("HTTP/1.1");
+    this->_headers.append(" ");
+    this->_headers.append(std::to_string(_status));
+    this->_headers.append(" ");
+    this->_headers.append(this->_errors[_status]);
+    this->_headers.append("\r\n");
+    this->_headers.append("Server: webServ\r\n");
+    this->_headers.append("Date: " + tm.append(" GMT"));
+    this->_headers.append("\r\n");
+    this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
+    this->_headers.append("\r\n");
+    while (std::getline(s, buffer))
+    {
+        if (buffer.find("X-Powered-By:") != std::string::npos)
+            this->_headers.append("X-Powered-By: " + buffer.substr(buffer.find(": ") + 2));
+        else if (buffer.find("Content-type:") != std::string::npos)
+            this->_headers.append("Content-type: " + buffer.substr(buffer.find(": ") + 2));
+        else if (buffer.find("\r\n\r\n"))
+            break;
+    }
+    this->_body = cgiResp.substr(cgiResp.find("\r\n\r\n") + 4);
+    this->_headers.append("\r\n");
+    this->_headers.append("Content-Length: " + std::to_string(_body.length()));
+    this->_headers.append("\r\n\r\n");
+    this->_headers.append(_body);
+}
+
 void Response::generateResponse()
 {
     _location = isLocationExist();
-    std::cout << "-------------> " << _location.getLocationName() << std::endl;
-    std::cout << "-------------> " << _location.isCGI() << std::endl;
     if (_location.isCGI())
     {
         std::cout << "IS CGI" << std::endl;
         std::cout << "hadi f respo -> " << _request.getReqBody() << std::endl;
-        Cgi cgi(_request, _location, _server, _port);
-        _body = cgi.getCgiResult();
-        std::cout << "=========================================" << std::endl;
-        std::cout << _body << std::endl;
-        std::cout << "=========================================" << std::endl;
+        std::string filePath = getRootDirectory() + _request.getStartLineVal("uri");
+        if (access(filePath.c_str(), F_OK) == 0)
+        {
+            if (access(filePath.c_str(), R_OK) == 0 && access(filePath.c_str(), W_OK) == 0)
+            {
+                Cgi cgi(_request, _location, _server, _port);
+                parseCgiResponse(cgi.getCgiResult());
+                std::cout << "==============================" << std::endl;
+                std::cout << _body << std::endl;
+                std::cout << "==============================" << std::endl;
+            }
+            else
+            {
+                _status = FORBIDDEN_STATUS;
+                setErrorPage(_status);
+                buildHeaders();
+            }
+        }
+        else
+        {
+            _status = NOT_FOUND_STATUS;
+            setErrorPage(_status);
+            buildHeaders();
+        }
     }
-    else if (_request.getStartLineVal("method").compare("GET") == 0)
-        getMethod();
-    else if (_request.getStartLineVal("method").compare("POST") == 0)
-        postMethod();
-    else if (_request.getStartLineVal("method").compare("DELETE") == 0)
-        deleteMethod();
-    buildHeaders();
+    else
+    {
+        if (_request.getStartLineVal("method").compare("GET") == 0)
+            getMethod();
+        else if (_request.getStartLineVal("method").compare("POST") == 0)
+            postMethod();
+        else if (_request.getStartLineVal("method").compare("DELETE") == 0)
+            deleteMethod();
+        buildHeaders();
+    }
 }
 
 void Response::buildResponse()

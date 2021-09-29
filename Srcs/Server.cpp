@@ -127,7 +127,7 @@ void Server::bindSocket() {
 
 // Listen for incoming connections from clients
 void Server::listenSocket() {
-	if (listen(_masterSockFD, BACKLOG) == -1)
+	if (listen(_masterSockFD, 2000) == -1)
 		throw std::runtime_error("Unable to listen for connections in the socket " + std::to_string(_masterSockFD));
 	// set socket to fd_set struct	
 	FD_SET(_masterSockFD, &_masterFDs);
@@ -141,6 +141,8 @@ void Server::waitingForConnections() {
 	for(;;) {
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
+		usleep(1);
+		// std::cout << "==> " <<  _maxSockFD << std::endl;
 		struct timeval _tv = {0, 0};
 		int activity = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
 		if (activity == -1)
@@ -192,9 +194,12 @@ bool Server::detectEndRequest(std::string &buffReq)
 		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n") + 4);
 		if (headers.find("Content-Length") != std::string::npos)
 		{
-			size_t length = std::atoi(headers.substr(headers.find("Content-Length: ")).c_str() + 16);
+			size_t length = std::stoi(headers.substr(headers.find("Content-Length: ") + 16));
 			std::string body = buffReq.substr(buffReq.find("\r\n\r\n") + 4);
-			if (body.length() < length)
+			std::cout << "------------------------------>> " << length << std::endl;
+			// if (length > )
+			// 	return true;
+			 if (body.length() < length)
 				return false;
 		}
 		else if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
@@ -207,13 +212,16 @@ bool Server::detectEndRequest(std::string &buffReq)
 	}
 	return false;
 }
-
+// body.len > max * 1024 * 1024;
 void Server::accptedConnectHandling(int &accptSockFD)
 {
+	// HttpServer server;
+	// short port = 0;
 	char _buffRes[BUFFER_SIZE + 1] = { 0 };
 	bzero(_buffRes, sizeof(_buffRes));
 	int valRead = recv(accptSockFD, _buffRes, BUFFER_SIZE, 0);
 	std::cout << "Activity in socket " << std::to_string(accptSockFD) << ", address: " << inet_ntoa(_clientAddr.sin_addr) << ':' << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
+	
 	if (valRead > 0)
 	{
 		_buffRes[valRead] = '\0';
@@ -225,6 +233,7 @@ void Server::accptedConnectHandling(int &accptSockFD)
 			std::cout << "*********************" << std::endl;
 			std::cout << it->second << std::endl;
 			std::cout << "*********************" << std::endl;
+			// getServerBySocket(accptSockFD, &server, &port);
 			if (_isChunked)
 				it->second = unchunkingRequest(it->second);
 			_request.setRequestData(it->second);
@@ -314,8 +323,8 @@ void Server::responseHandling(int &accptSockFD)
 	std::string msgRes(""); // Will hold the data that we will send
 	response.buildResponse();
 	msgRes.append(response.getHeaders());
-	_request.clearRequest();
 	response.clearAll();
+    _request.clearRequest();
 	if (FD_ISSET(accptSockFD, &_writeFDs))
 	{
 		if (send(accptSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())

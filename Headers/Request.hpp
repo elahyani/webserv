@@ -30,6 +30,7 @@ struct Bodies
 class Request
 {
 private:
+    // HttpServer _serverData;
     std::map<std::string, std::string> _headers;
     std::map<std::string, std::string> _startLine;
     std::map<int, std::string> _errors;

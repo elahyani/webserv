@@ -21,8 +21,6 @@
 #include <string>
 #include <dirent.h>
 #include <unistd.h>
-// #include "Server.hpp"
-// class Server;
 #include "Request.hpp"
 #include "HttpServer.hpp"
 #include "Cgi.hpp"
@@ -50,7 +48,6 @@ private:
     int _status;
     Request &_request;
     HttpServer &_server;
-    // Server *_serv;
     Location _location;
     std::string _responseMsg;
     std::string _headers;
@@ -75,20 +72,21 @@ public:
 
     void buildHeaders();
     void getErrorPage(std::string);
-    void setErrorPage(int _status);          //TODO 8
-    void manageErrorHeaders(int _status);    // TODO 1
-    void generateResponse();                 // TODO 2
-    std::string getPath(std::string);        // TODO 3
-    std::string getUriFilePath(std::string); // TODO 4
+    void setErrorPage(int _status);
+    void manageErrorHeaders(int _status);
+    void generateResponse();
+    std::string getPath(std::string);
+    std::string getUriFilePath(std::string);
     std::string getRootDirectory();
-    void readFile(std::string path);             // TODO 7
-    void getMethod();                            //
-    void postMethod();                           //
-    void deleteMethod();                         //
-    void buildResponse();                        //
-    std::string getDefaultErrorPage(int status); //
+    void readFile(std::string path);
+    void parseCgiResponse(std::string &cgiResp);
+    void getMethod();
+    void postMethod();
+    void deleteMethod();
+    void buildResponse();
+    std::string getDefaultErrorPage(int status);
     std::string &getResponse();
-    std::string getHtmlTemplate(); //
+    std::string getHtmlTemplate();
     std::string &getHeaders();
     std::string notFoundPage();
     bool indexIsExist();
@@ -96,12 +94,11 @@ public:
     void indexingFiles();
     Location isLocationExist();
     Location getRedirection(std::string locName);
-    bool isDirectory(const std::string &); //TODO 5
-    std::string getDirectory();            // TODO 6
+    bool isDirectory(const std::string &);
+    std::string getDirectory();
     std::string getDispContentFilename(std::string);
     std::string getUploadDir();
     void clearAll();
-    // std::string readFile
 };
 
 #endif

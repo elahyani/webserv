@@ -9,6 +9,7 @@ Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) 
 		throw std::runtime_error(": No such file or directory {" + _cgiPath + '}');
 	if (access(_cgiPath.c_str(), X_OK) == -1)
 		throw std::runtime_error(": " + _cgiPath + ": Permission denied.");
+	std::cout << "file path =============> |" << (_root + "/" + _request.getStartLineVal("uri")) << "|" << std::endl;
 	_contentLength = std::atoi(_request.getHeaderVal("Content-Length").c_str());
 	this->setEnvCgi();
 	this->cgiExec();
@@ -39,6 +40,7 @@ Cgi &Cgi::operator=(Cgi const &ths)
 
 void Cgi::setEnvCgi()
 {
+	std::cout << "----------> " << _root + "/" + _request.getStartLineVal("script-name") << std::endl;
 	setenv("REQUEST_METHOD", _request.getStartLineVal("method").c_str(), 1);
 	setenv("SERVER_PROTOCOL", _request.getStartLineVal("protocol").c_str(), 1);
 	setenv("CONTENT_TYPE", _request.getHeaderVal("Content-Type").c_str(), 1);
@@ -51,7 +53,7 @@ void Cgi::setEnvCgi()
 	setenv("SERVER_NAME", _server.getHost().c_str(), 1);
 	setenv("SERVER_PORT", std::to_string(_port).c_str(), 1);
 	setenv("SCRIPT_NAME", _request.getStartLineVal("script-name").c_str(), 1);
-	setenv("SCRIPT_FILENAME", (_root + "/" + _request.getStartLineVal("script-name")).c_str(), 1);
+	setenv("SCRIPT_FILENAME", (_root + "/" + _request.getStartLineVal("uri")).c_str(), 1);
 	setenv("REDIRECT_STATUS", std::to_string(_request.getStatusCode()).c_str(), 1);
 }
 
