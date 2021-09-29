@@ -14,7 +14,7 @@ extern char** environ;
 class Cgi
 {
 private:
-	Request _request;
+	Request &_request;
 	HttpServer _server;
 	short _port;
 	std::string _root;
@@ -23,7 +23,6 @@ private:
 	int _contentLength;
 	
 public:
-	Cgi();
 	Cgi(Request &, Location &, HttpServer &, short &);
 	Cgi(Cgi const &);
 	~Cgi();

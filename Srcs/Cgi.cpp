@@ -1,11 +1,8 @@
 #include "Cgi.hpp"
 
-Cgi::Cgi() : _port(0), _root(""), _cgiPath(""), _cgiResult(""), _contentLength(0)
-{
-}
-
 Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) : _request(request), _server(server), _port(port), _root(""), _cgiPath(""), _cgiResult(""), _contentLength(0)
 {
+	std::cout << "had if cgi -> " << _request.getReqBody() << std::endl;
 	_root = (location.getRoot().size()) ? location.getRoot().c_str() : _server.getRoot().c_str();
 	_cgiPath = location.getFastCgiPass();
 	if (access(_cgiPath.c_str(), F_OK) == -1)
@@ -17,10 +14,9 @@ Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) 
 	this->cgiExec();
 }
 
-Cgi::Cgi(Cgi const &ths)
+Cgi::Cgi(Cgi const &ths) : _request(ths._request)
 {
 	*this = ths;
-	return;
 }
 
 Cgi::~Cgi()
@@ -92,14 +88,14 @@ void Cgi::cgiExec()
 	{
 		close(pipeFDsRead[1]);
 		close(pipeFDsWrite[0]);
-		for (size_t i = 0; i < _request.getBody().size(); i++)
-		{
-			std::cout << "booody -> " << _request.getBody()[i].body << std::endl;
-			if (_request.getBody()[i].body.size())
-				_request.setReqBody(_request.getBody()[i].body);
-		}
+		// for (size_t i = 0; i < _request.getBody().size(); i++)
+		// {
+		// 	std::cout << "booody -> " << _request.getBody()[i].body << std::endl;
+		// 	if (_request.getBody()[i].body.size())
+		// 		_request.setReqBody(_request.getBody()[i].body);
+		// }
 		std::cout << "body = " << _request.getReqBody() << std::endl;
-		_request.setReqBody("name=hello");
+		// _request.setReqBody("name=hello");
 		if (_contentLength)
 			write(pipeFDsWrite[1], _request.getReqBody().c_str(), _request.getReqBody().size());
 		close(pipeFDsWrite[1]);

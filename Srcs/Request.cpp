@@ -184,8 +184,13 @@ void Request::parseRequest()
 					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
 			}
 			// std::cout << "len:" << tmp.find("Content-Length") << std::endl;
-			else if (this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos)
+			else if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || tmp.find("\r\n\r\n") != std::string::npos)
+			{
+				std::cout << "-----------> |" << this->_headers["Boundary"].size() << "|" << std::endl;
+				std::cout << "-----------> |" << tmp << "|" << std::endl;
+				std::cout << "AM OUT BUT WITH WHAT?" << std::endl;
 				break;
+			}
 		}
 		if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || _headers["Content-Length"].size())
 			parseBody();
@@ -227,40 +232,55 @@ void Request::parseBody()
 	int i = 0;
 
 	std::cout << "BODIES LEN: " << _bLen << std::endl;
-	// std::cout << "BODY" << std::endl;
-	while (std::getline(s, tmp))
+	std::cout << "-+-+-+-+-+-+-+-" << std::endl;
+	std::cout << _content.substr(_content.find("\r\n\r\n") + 4) << std::endl;
+	std::cout << "-+-+-+-+-+-+-+-" << std::endl;
+	// exit(1);
+	if (this->_headers["Boundary"].size())
 	{
-		if (tmp.find(bodyBoundary) != std::string::npos)
+		while (std::getline(s, tmp))
 		{
-			if (tmp.compare(bodyBoundary + "\r") == 0 || tmp.compare(bodyBoundary + "--\r") == 0)
+			if (tmp.find(bodyBoundary) != std::string::npos)
 			{
-				if (bodies[i].contentType.size()) // i = 0;
+				if (tmp.compare(bodyBoundary + "\r") == 0 || tmp.compare(bodyBoundary + "--\r") == 0)
 				{
-					// std::cout << "››››››››››››››››››››››››››››› ADD BODY" << std::endl;
-					_bodiesList.push_back(bodies[i]);
-					bodies[i].contentDesp = "";
-					bodies[i].contentType = "";
-					bodies[i].body = "";
-					i++;
+					if (bodies[i].contentType.size()) // i = 0;
+					{
+						// std::cout << "››››››››››››››››››››››››››››› ADD BODY" << std::endl;
+						_bodiesList.push_back(bodies[i]);
+						bodies[i].contentDesp = "";
+						bodies[i].contentType = "";
+						bodies[i].body = "";
+						i++;
+					}
 				}
 			}
+			if (i == _bLen)
+				break;
+			else if (!bodies[i].contentDesp.size() && tmp.find("Content-Disposition") != std::string::npos)
+			{
+				bodies[i].contentDesp = tmp.substr(tmp.find(": ") + 2);
+				bodies[i].contentType.pop_back();
+			}
+			else if (!bodies[i].contentType.size() && tmp.find("Content-Type") != std::string::npos)
+			{
+				bodies[i].contentType = tmp.substr(tmp.find(": ") + 2);
+				bodies[i].contentType.pop_back();
+			}
+			else if (bodies[i].contentType.size() && tmp.compare(bodyBoundary) != 0 && tmp.compare("\r") != 0)
+			{
+				bodies[i].body.append(tmp + "\n");
+			}
 		}
-		if (i == _bLen)
-			break;
-		else if (!bodies[i].contentDesp.size() && tmp.find("Content-Disposition") != std::string::npos)
-		{
-			bodies[i].contentDesp = tmp.substr(tmp.find(": ") + 2);
-			bodies[i].contentType.pop_back();
-		}
-		else if (!bodies[i].contentType.size() && tmp.find("Content-Type") != std::string::npos)
-		{
-			bodies[i].contentType = tmp.substr(tmp.find(": ") + 2);
-			bodies[i].contentType.pop_back();
-		}
-		else if (bodies[i].contentType.size() && tmp.compare(bodyBoundary) != 0 && tmp.compare("\r") != 0)
-		{
-			bodies[i].body.append(tmp + "\n");
-		}
+	}
+	else
+	{
+
+		std::cout << "I WAS HERE" << std::endl;
+		this->_bLen++;
+		setReqBody(_content.substr(_content.find("\r\n\r\n") + 4));
+		std::cout << "bodyyyyy -> " << getReqBody() << std::endl;
+
 	}
 	// exit(1);
 }

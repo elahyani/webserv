@@ -575,6 +575,7 @@ void Response::generateResponse()
     if (_location.isCGI())
     {
         std::cout << "IS CGI" << std::endl;
+        std::cout << "hadi f respo -> " << _request.getReqBody() << std::endl;
         Cgi cgi(_request, _location, _server, _port);
         _body = cgi.getCgiResult();
         std::cout << "=========================================" << std::endl;
