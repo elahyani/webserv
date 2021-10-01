@@ -17,7 +17,9 @@ Server::Server(ConfigFileParser & parser) :	_parser(parser),
 											_addrLen(0),
 											_maxSockFD(0),
 											_isChunked(false),
-											_contentLength(0)
+											_contentLength(0),
+											_portServer(0),
+											_mbs(0)
 {
 	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->makeSockets();
@@ -187,20 +189,30 @@ void Server::newConnectHandling(int &sockFD)
 		_accptMaster.insert(std::pair<int, int>(accptSockFD, sockFD));
 }
 
-bool Server::detectEndRequest(std::string &buffReq)
+bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 {
+	getServerBySocket(accptSockFD, &_server, &_portServer);
+	_mbs = _server.getClientMaxBodySize() * 1024 * 1024;
 	if (!(buffReq.find("\r\n\r\n") == std::string::npos))
 	{
 		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n") + 4);
 		if (headers.find("Content-Length") != std::string::npos)
 		{
-			size_t length = std::stoi(headers.substr(headers.find("Content-Length: ") + 16));
-			std::string body = buffReq.substr(buffReq.find("\r\n\r\n") + 4);
-			std::cout << "------------------------------>> " << length << std::endl;
-			// if (length > )
-			// 	return true;
-			 if (body.length() < length)
-				return false;
+			try
+			{
+				size_t length = std::stoi(headers.substr(headers.find("Content-Length: ") + 16));
+				std::string body = buffReq.substr(buffReq.find("\r\n\r\n") + 4);
+
+				if (length > (size_t)_mbs)
+					return true;
+				else if (body.length() < length)
+					return false;
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+			}
+			
 		}
 		else if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
 		{
@@ -228,15 +240,14 @@ void Server::accptedConnectHandling(int &accptSockFD)
 		std::map<int, std::string>::iterator it = _clients.find(accptSockFD);
 		if (it != _clients.end())
 			it->second += _buffRes;
-		if (detectEndRequest(it->second))
+		if (detectEndRequest(it->second, accptSockFD))
 		{
 			std::cout << "*********************" << std::endl;
 			std::cout << it->second << std::endl;
 			std::cout << "*********************" << std::endl;
-			// getServerBySocket(accptSockFD, &server, &port);
 			if (_isChunked)
 				it->second = unchunkingRequest(it->second);
-			_request.setRequestData(it->second);
+			_request.setRequestData(it->second, _mbs);
 			_request.parseRequest();
 			_request.printRequest();
 			if (FD_ISSET(accptSockFD, &_writeFDs))
@@ -316,20 +327,24 @@ void Server::getServerBySocket(int &accptSockFD, HttpServer *server, short *port
 
 void Server::responseHandling(int &accptSockFD)
 {
-	HttpServer server;
-	short port = 0;
-	getServerBySocket(accptSockFD, &server, &port);
-	Response response(this->_request, server, port);
+	Response response(this->_request, _server, _portServer);
 	std::string msgRes(""); // Will hold the data that we will send
 	response.buildResponse();
 	msgRes.append(response.getHeaders());
-	response.clearAll();
-    _request.clearRequest();
 	if (FD_ISSET(accptSockFD, &_writeFDs))
 	{
 		if (send(accptSockFD, msgRes.c_str(), msgRes.length(), 0) != (ssize_t)msgRes.length())
 		{
 			throw std::runtime_error("Unable to send the response to client in socket " + std::to_string(accptSockFD));
 		}
+		if (_request.getHeaderVal("Connection").compare("close") == 0)
+		{
+			std::cout << "Disconnected socket " << std::to_string(accptSockFD) << std::endl;
+			close(accptSockFD);
+			FD_CLR(accptSockFD, &_masterFDs);
+			FD_CLR(accptSockFD, &_writeFDs);
+		}
+		_request.clearRequest();
+		response.clearAll();
 	}
 }

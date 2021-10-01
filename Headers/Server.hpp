@@ -66,6 +66,10 @@ private:
 	bool _isChunked;
 	size_t _contentLength;
 
+	HttpServer _server;
+	short _portServer;
+	int _mbs;
+
 public:
 	Server();
 	Server(ConfigFileParser &);
@@ -83,7 +87,7 @@ public:
 	void accptedConnectHandling(int &);
 	void responseHandling(int &);
 	void getServerBySocket(int &, HttpServer *, short *);
-	bool detectEndRequest(std::string &);
+	bool detectEndRequest(std::string &, int &);
 	std::string unchunkingRequest(std::string &body);
 };
 

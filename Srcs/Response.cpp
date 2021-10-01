@@ -288,6 +288,7 @@ std::string Response::getHtmlTemplate()
 
 Location Response::getRedirection(std::string locName)
 {
+    _request.setHeaderVal("Connection", "close");
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
         if (_location.getLocationName().compare(locName) == 0)
@@ -487,7 +488,7 @@ void Response::postMethod()
             std::stringstream ss(_request.getBody()[i].body);
             while (std::getline(ss, buffer))
             {
-                std::cout << "->" + buffer << std::endl;
+                // std::cout << "->" + buffer << std::endl;
                 file << buffer.append("\n");
                 // file << buffer.substr(0, buffer.find("\r")).append("\n");
             }
