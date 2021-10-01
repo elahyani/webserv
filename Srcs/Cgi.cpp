@@ -30,6 +30,7 @@ Cgi &Cgi::operator=(Cgi const &ths)
 		this->_server = ths._server;
 		this->_port = ths._port;
 		this->_root = ths._root;
+		this->_cgiPath = ths._cgiPath;
 		this->_cgiResult = ths._cgiResult;
 	}
 	return *this;
