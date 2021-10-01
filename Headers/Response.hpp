@@ -78,6 +78,7 @@ public:
     std::string getPath(std::string);
     std::string getUriFilePath(std::string);
     std::string getRootDirectory();
+    std::string getContentType();
     void readFile(std::string path);
     void parseCgiResponse(std::string &cgiResp);
     void getMethod();

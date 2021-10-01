@@ -536,6 +536,18 @@ void Response::deleteMethod()
     }
 }
 
+std::string Response::getContentType()
+{
+    if (_request.getHeaderVal("Content-Type").size())
+        return _request.getHeaderVal("Content-Type");
+    else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("html") == 0 || _request.getStartLineVal("uri").compare("/") == 0)
+        return "text/html; charset=UTF-8";
+    else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("json") == 0)
+        return "application/json";
+    else
+        return "text/plain";
+}
+
 void Response::buildHeaders()
 {
     time_t rawTime;
@@ -563,7 +575,7 @@ void Response::buildHeaders()
         this->_headers.append("\r\n");
         this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
         this->_headers.append("\r\n");
-        this->_headers.append("Content-Type: text/html; charset=UTF-8");
+        this->_headers.append("Content-Type: " + getContentType());
         this->_headers.append("\r\n");
         this->_headers.append("Content-Length: " + std::to_string(_body.length()));
         this->_headers.append("\r\n\r\n");

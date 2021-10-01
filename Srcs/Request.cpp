@@ -227,6 +227,7 @@ void Request::parseRequest()
 		std::cout << "CATCHED :)" << std::endl;
 		_statusCode = 400;
 		setStartLineVal("protocol", "HTTP/1.1");
+		setHeaderVal("Connection", "close");
 		std::cerr << e.what() << '\n';
 	}
 	checkReqErrors();
