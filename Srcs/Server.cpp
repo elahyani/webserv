@@ -7,7 +7,9 @@ Server::Server() :	_masterSockFD(0),
 					_addrLen(0),
 					_maxSockFD(0),
 					_isChunked(false),
-					_contentLength(0)
+					_contentLength(0),
+					_portServer(0),
+					_mbs(0)
 {}
 
 Server::Server(ConfigFileParser & parser) :	_parser(parser),
@@ -196,7 +198,7 @@ bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 	if (!(buffReq.find("\r\n\r\n") == std::string::npos))
 	{
 		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n") + 4);
-		if (headers.find("Content-Length") != std::string::npos)
+		if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
 		{
 			try
 			{
@@ -214,10 +216,11 @@ bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 			}
 			
 		}
-		else if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
+		else if (headers.find("Content-Length") != std::string::npos)
 		{
-			_isChunked = true;
-			if (buffReq.find("0\r\n\r\n") == std::string::npos)
+			size_t length = std::atoi(headers.substr(headers.find("Content-Length: ")).c_str() + 16);
+			std::string body = buffReq.substr(buffReq.find("\r\n\r\n") + 4);
+			if (body.length() < length)
 				return false;
 		}
 		return true;
@@ -292,8 +295,11 @@ std::string Server::unchunkingRequest(std::string &request)
 		if (chunkSize == 0) end++;
 		std::getline(bodyStream, line);
 		if (std::strcmp(line.c_str(), "\r\n")) end++;
-		unchunkedData.append(line.c_str(), chunkSize);
+		std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
+		std::cout << unchunkedData << std::endl;
+		std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
 		if (end == 2) break ;
+		unchunkedData.append(line.c_str(), chunkSize);
 		_contentLength += chunkSize;
 	}
 	_isChunked = false;
