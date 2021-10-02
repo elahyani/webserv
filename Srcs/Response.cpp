@@ -625,7 +625,14 @@ void Response::parseCgiResponse(std::string &cgiResp)
 void Response::generateResponse()
 {
     _location = isLocationExist();
-    if (_location.isCGI())
+    std::vector<std::string>::iterator reqMethod = std::find(_location.getAllowedMethods().begin(), _location.getAllowedMethods().end(), _request.getStartLineVal("method"));
+
+    if (reqMethod == _location.getAllowedMethods().end())
+    {
+        _status = NOT_ALLOWED_STATUS;
+        setErrorPage(_status);
+    }
+    else if (_location.isCGI())
     {
         std::cout << "IS CGI" << std::endl;
         std::cout << "hadi f respo -> " << _request.getReqBody() << std::endl;

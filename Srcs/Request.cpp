@@ -324,7 +324,8 @@ void Request::parseBody()
 		while (std::getline(s, tmp))
 		{
 			if (tmp.back() != '\r')
-				body.append(tmp);
+				tmp.pop_back();
+			body.append(tmp);
 		}
 		if (body.size())
 			this->_bLen++;
@@ -341,7 +342,7 @@ int Request::checkReqErrors()
 
 	// std::cout << "max body size -> " << _serverData.getClientMaxBodySize() << std::endl;
 
-	// std::cout << "--> lens |" << getReqBody().size() << "|" << getBody().size() << "|" << _bLen << "|" << std::endl;
+	std::cout << "--> lens |" << getReqBody().size() << "|" << getBody().size() << "|" << _bLen << "|" << std::endl;
 	for (size_t i = 0; i < _method.size(); i++)
 	{
 		if (std::islower(_method[i]))
@@ -363,7 +364,7 @@ int Request::checkReqErrors()
 		this->_statusCode = 400;
 	}
 	else if (this->_method.compare("GET") != 0 && this->_method.compare("POST") != 0 && this->_method.compare("DELETE") != 0)
-		this->_statusCode = 405;
+		this->_statusCode = 501;
 	else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size())
 		this->_statusCode = 400;
 	else if (_headers["Content-Length"].size() && !_bLen && _statusCode != 413)
