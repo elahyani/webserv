@@ -57,7 +57,7 @@ Request::~Request()
 
 void Request::setRequestData(const std::string &buffer, int &max_body_size)
 {
-	this->_content.append(buffer);
+	this->_content = buffer;
 	_maxBodySize = max_body_size;
 }
 
@@ -205,6 +205,21 @@ void Request::parseRequest()
 						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 					_headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
 					_headers["Transfer-Encoding"].pop_back();
+				}
+				else
+					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
+			}
+			else if (tmp.find("cookie") != std::string::npos)
+			{
+				if (!_headers["cookie"].size())
+				{
+					if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
+					_headers["cookie"] = tmp.substr(tmp.find(": ") + 2);
+					_headers["cookie"].pop_back();
+					split(_headers["cookie"], '&');
+					for (size_t i = 0; i < _mapTmp.size(); i++)
+						_cookies.push_back(_mapTmp[i]);
 				}
 				else
 					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
@@ -379,6 +394,7 @@ void Request::printRequest()
 	std::cout << "Connection        -> |" << this->_headers["Connection"] << "|" << std::endl;
 	std::cout << "Content Type      -> |" << this->_headers["Content-Type"] << "|" << std::endl;
 	std::cout << "Content Length    -> |" << this->_headers["Content-Length"] << "|" << std::endl;
+	std::cout << "Cookie            -> |" << this->_headers["cookie"] << "|" << std::endl;
 	std::cout << "Transfer Encoding -> |" << this->_headers["Transfer-Encoding"] << "|" << std::endl;
 	std::cout << "Boundary          -> |" << this->_headers["Boundary"] << "|" << std::endl;
 	// for (size_t i = 0; i < _bodiesList.size(); i++)
@@ -462,4 +478,5 @@ void Request::clearRequest()
 	this->_urlQuery.clear();
 	this->_protocol.clear();
 	this->_content.clear();
+	this->_cookies.clear();
 }

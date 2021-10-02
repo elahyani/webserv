@@ -143,7 +143,7 @@ void Server::waitingForConnections() {
 	for(;;) {
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
-		usleep(1);
+		usleep(2000);
 		// std::cout << "==> " <<  _maxSockFD << std::endl;
 		struct timeval _tv = {0, 0};
 		int activity = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);

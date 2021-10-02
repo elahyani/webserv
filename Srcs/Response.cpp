@@ -578,6 +578,8 @@ void Response::buildHeaders()
         this->_headers.append("Content-Type: " + getContentType());
         this->_headers.append("\r\n");
         this->_headers.append("Content-Length: " + std::to_string(_body.length()));
+        this->_headers.append("\r\n");
+        this->_headers.append("Set-cookie: " + _request.getHeaderVal("cookie"));
         this->_headers.append("\r\n\r\n");
         this->_headers.append(_body);
     }
