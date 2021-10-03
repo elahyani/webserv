@@ -38,7 +38,6 @@ ConfigFileParser::ConfigFileParser(ConfigFileParser const &src)
 
 ConfigFileParser &ConfigFileParser::operator=(ConfigFileParser const &src)
 {
-	//! use assign
 	if (this != &src)
 	{
 		this->_location = src._location;
@@ -131,9 +130,7 @@ void ConfigFileParser::checkUnit(std::string buffer)
 	while (buffer[i])
 	{
 		if (buffer.find("m") == std::string::npos || (!std::isdigit(buffer[i]) && buffer[i] != 'm'))
-		{
 			throw std::invalid_argument("Exception:\tUnrecognized or Missing unit!");
-		}
 		i++;
 	}
 }
@@ -220,15 +217,12 @@ void ConfigFileParser::parseLocation(std::string _data)
 		if (buffer.find("{") != std::string::npos)
 		{
 			if (buffer.compare("{") == 0)
-			{
 				this->_inLocation = true;
-			}
 			else
 				throw std::invalid_argument("Exception:\tOnly a { is allowed in this line");
 		}
 		else if (buffer.find("}") != std::string::npos)
 		{
-
 			if (buffer.compare("}") == 0)
 			{
 				checkLocAttr();
@@ -309,10 +303,7 @@ void ConfigFileParser::parseLocation(std::string _data)
 					}
 				}
 				else
-				{
-
 					throw std::invalid_argument("Exception:\tDuplicated Allow_methods attribute in `" + this->_location.getLocationName() + "`");
-				}
 			}
 			else if (buffer.find("return") != std::string::npos)
 			{
@@ -351,10 +342,7 @@ void ConfigFileParser::parseLocation(std::string _data)
 				buffer.pop_back();
 				std::string tmp = trimContent(buffer.substr(buffer.find("=") + 1));
 				if (_isEnabled > 1)
-				{
-					//std::cout << _isEnabled << std::endl;
 					throw std::invalid_argument("Exception:\tDuplicated upload_enable");
-				}
 				if (!tmp.size())
 					throw std::invalid_argument("Exception:\tUpload_enable value not found");
 				this->_location.setUploadEnable(tmp);
@@ -395,7 +383,7 @@ void ConfigFileParser::checkLocationName(std::string &buffer)
 			int i = 0;
 			while (_mapTmp[1][i])
 			{
-				if (!isalpha(_mapTmp[1][i]))
+				if (!isalpha(_mapTmp[1][i]) && _mapTmp[1][i] != '_')
 					throw std::invalid_argument("Exception\tLocation name is invalid");
 				i++;
 			}
@@ -451,7 +439,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 			{
 				if (!_isServ)
 					throw std::invalid_argument("Exception:\tOpening brackets without server REALLY! :/");
-				if (this->_inServer)
+				else if (this->_inServer)
 					throw std::invalid_argument("Exception:\tCannot define server inside server");
 
 				this->_inServer = !this->_inServer;
@@ -560,7 +548,7 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 						this->split(s, ' ');
 						if (_mapTmp.size() != 1)
 							throw std::invalid_argument("Exception:\tWrong number of arguments!");
-						if (!this->_server.getRoot().size())
+						else if (!this->_server.getRoot().size())
 							throw std::invalid_argument("Exception:\tRoot path not found");
 					}
 					else
@@ -573,7 +561,6 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 			{
 				syntaxChecker(buffer, 0);
 				buffer.pop_back();
-
 				std::string s = buffer.substr(buffer.find(":") + 1);
 				size_t k = 0;
 				s = trimContent(s);

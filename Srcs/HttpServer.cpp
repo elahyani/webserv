@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpServer.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/13 11:39:58 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/25 12:52:39 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/28 10:22:56 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,13 +34,11 @@ HttpServer::HttpServer(HttpServer const &src)
 
 HttpServer &HttpServer::operator=(HttpServer const &src)
 {
-	//! use assign
 	if (this != &src)
 	{
 		this->_ports.assign(src._ports.begin(), src._ports.end());
 		this->_host = src._host;
 		this->_clientMaxBodySize = src._clientMaxBodySize;
-		//! assign to map
 		this->_errorsPages = src._errorsPages;
 		this->_root = src._root;
 		this->_serverName.assign(src._serverName.begin(), src._serverName.end());

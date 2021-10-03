@@ -339,7 +339,7 @@ void Server::responseHandling(int &accptSockFD)
 		}
 		if (_request.getHeaderVal("Connection").compare("close") == 0)
 		{
-			std::cout << "Disconnected socket " << std::to_string(accptSockFD) << std::endl;
+			std::cout << "X - Disconnected socket " << std::to_string(accptSockFD) << std::endl;
 			close(accptSockFD);
 			FD_CLR(accptSockFD, &_masterFDs);
 			FD_CLR(accptSockFD, &_writeFDs);
