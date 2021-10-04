@@ -531,7 +531,7 @@ std::string Response::getContentType()
 {
     if (_request.getHeaderVal("Content-Type").size())
         return _request.getHeaderVal("Content-Type");
-    else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("html") == 0 || _request.getStartLineVal("uri").compare(_location.getLocationName()) == 0)
+    else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("html") == 0 || _request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("php") == 0 || _request.getStartLineVal("uri").compare(_location.getLocationName()) == 0)
         return "text/html; charset=UTF-8";
     else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("json") == 0)
         return "application/json";
@@ -584,6 +584,9 @@ void Response::parseCgiResponse(std::string &cgiResp)
     time_t rawTime;
     std::string tm;
 
+    std::cout << "------------------------------------------------------------" << std::endl;
+    std::cout << cgiResp << std::endl;
+    std::cout << "------------------------------------------------------------" << std::endl;
     time(&rawTime);
     tm = ctime(&rawTime);
     tm.pop_back();
@@ -602,6 +605,14 @@ void Response::parseCgiResponse(std::string &cgiResp)
     {
         if (buffer.find("X-Powered-By:") != std::string::npos)
             this->_headers.append("X-Powered-By: " + buffer.substr(buffer.find(": ") + 2));
+        else if (buffer.find("Set-Cookie:") != std::string::npos)
+            this->_headers.append("Set-Cookie: " + buffer.substr(buffer.find(": ") + 2));
+        else if (buffer.find("Expires:") != std::string::npos)
+            this->_headers.append("Expires: " + buffer.substr(buffer.find(": ") + 2));
+        else if (buffer.find("Cache-Control:") != std::string::npos)
+            this->_headers.append("Cache-Control: " + buffer.substr(buffer.find(": ") + 2));
+        else if (buffer.find("Pragma:") != std::string::npos)
+            this->_headers.append("Pragma: " + buffer.substr(buffer.find(": ") + 2));
         else if (buffer.find("Content-type:") != std::string::npos)
             this->_headers.append("Content-type: " + buffer.substr(buffer.find(": ") + 2));
         else if (buffer.find("\r\n\r\n"))

@@ -209,15 +209,15 @@ void Request::parseRequest()
 				else
 					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
 			}
-			else if (tmp.find("cookie") != std::string::npos)
+			else if (tmp.find("Cookie") != std::string::npos)
 			{
-				if (!_headers["cookie"].size())
+				if (!_headers["Cookie"].size())
 				{
 					if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
 						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
-					_headers["cookie"] = tmp.substr(tmp.find(": ") + 2);
-					_headers["cookie"].pop_back();
-					split(_headers["cookie"], '&');
+					_headers["Cookie"] = tmp.substr(tmp.find(": ") + 2);
+					_headers["Cookie"].pop_back();
+					split(_headers["Cookie"], '&');
 					for (size_t i = 0; i < _mapTmp.size(); i++)
 						_cookies.push_back(_mapTmp[i]);
 				}
@@ -323,7 +323,7 @@ void Request::parseBody()
 		std::cout << "I WAS HERE" << std::endl;
 		while (std::getline(s, tmp))
 		{
-			if (tmp.back() != '\r')
+			if (tmp.back() == '\r')
 				tmp.pop_back();
 			body.append(tmp);
 		}
@@ -389,13 +389,14 @@ void Request::printRequest()
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
 	std::cout << "Method            -> |" << this->_startLine["method"] << "|" << std::endl;
 	std::cout << "Url               -> |" << this->_startLine["uri"] << "|" << std::endl;
+	std::cout << "Query               -> |" << this->_startLine["query"] << "|" << std::endl;
 	std::cout << "Protocol Version  -> |" << this->_startLine["protocol"] << "|" << std::endl;
 	std::cout << "Script Name       -> |" << this->_startLine["script-name"] << "|" << std::endl;
 	std::cout << "Host              -> |" << this->_headers["Host"] << "|" << std::endl;
 	std::cout << "Connection        -> |" << this->_headers["Connection"] << "|" << std::endl;
 	std::cout << "Content Type      -> |" << this->_headers["Content-Type"] << "|" << std::endl;
 	std::cout << "Content Length    -> |" << this->_headers["Content-Length"] << "|" << std::endl;
-	std::cout << "Cookie            -> |" << this->_headers["cookie"] << "|" << std::endl;
+	std::cout << "Cookie            -> |" << this->_headers["Cookie"] << "|" << std::endl;
 	std::cout << "Transfer Encoding -> |" << this->_headers["Transfer-Encoding"] << "|" << std::endl;
 	std::cout << "Boundary          -> |" << this->_headers["Boundary"] << "|" << std::endl;
 	// for (size_t i = 0; i < _bodiesList.size(); i++)
