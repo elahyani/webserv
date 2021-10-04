@@ -8,7 +8,7 @@
 # include <string>
 # include <unistd.h>
 
-// Environement variables change during the program
+// Environement variables change during the program by setenv 
 extern char** environ;
 
 class Cgi
