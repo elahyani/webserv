@@ -7,7 +7,9 @@ Server::Server() :	_masterSockFD(0),
 					_addrLen(0),
 					_maxSockFD(0),
 					_isChunked(false),
-					_contentLength(0)
+					_contentLength(0),
+					_portServer(0),
+					_mbs(0)
 {}
 
 Server::Server(ConfigFileParser & parser) :	_parser(parser),
@@ -196,7 +198,15 @@ bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 	if (!(buffReq.find("\r\n\r\n") == std::string::npos))
 	{
 		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n") + 4);
-		if (headers.find("Content-Length") != std::string::npos)
+		if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
+		{
+			_isChunked = true;
+			if (buffReq.find("0\r\n\r\n") != std::string::npos)
+				return true;
+			else
+				return false;
+		}
+		else if (headers.find("Content-Length") != std::string::npos)
 		{
 			try
 			{
@@ -212,23 +222,15 @@ bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 			{
 				std::cerr << e.what() << '\n';
 			}
-			
-		}
-		else if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
-		{
-			_isChunked = true;
-			if (buffReq.find("0\r\n\r\n") == std::string::npos)
-				return false;
 		}
 		return true;
 	}
 	return false;
 }
+
 // body.len > max * 1024 * 1024;
 void Server::accptedConnectHandling(int &accptSockFD)
 {
-	// HttpServer server;
-	// short port = 0;
 	char _buffRes[BUFFER_SIZE + 1] = { 0 };
 	bzero(_buffRes, sizeof(_buffRes));
 	int valRead = recv(accptSockFD, _buffRes, BUFFER_SIZE, 0);
@@ -269,7 +271,20 @@ void Server::accptedConnectHandling(int &accptSockFD)
 		return ; // Socket is connected but doesn't send request.
 }
 
+bool checkChunkSize(std::string & size) {
+	std::string cmp = "0123456789ABCDEFabcdef";
+	for(size_t i = 0; i < size.size(); i++) {
+		if (cmp.find(size[i]) == std::string::npos)
+			return false;
+	}
+	return true;
+}
+
 size_t getChunkedDataSize(std::string & chunkSize) {
+	//check valid hex value
+	chunkSize.pop_back();
+	if (!checkChunkSize(chunkSize))
+		throw std::runtime_error("Invalid character in chunk size");
  	size_t size = 0;
 	std::stringstream stream(chunkSize);
 	stream >> std::hex >> size;
@@ -280,22 +295,25 @@ std::string Server::unchunkingRequest(std::string &request)
 {
 	std::string body = request.substr(request.find("\r\n\r\n") + 4);
 	std::string unchunkedData = request.substr(0, request.find("\r\n\r\n") + 4);
-	std::string line("");
-	size_t chunkSize;
-	
 	_contentLength = 0;
-	std::stringstream bodyStream(body);
-	for(;;) {
-		int end = 0;
+	for (size_t i = 0;i < body.size();)
+	{
+		std::string tmpBody = body.substr(i, std::string::npos);
+		size_t chunkSize = 0;
+		std::stringstream bodyStream(tmpBody);
+		std::string line("");
 		std::getline(bodyStream, line);
-		chunkSize = getChunkedDataSize(line);
-		if (chunkSize == 0) end++;
-		std::getline(bodyStream, line);
-		if (std::strcmp(line.c_str(), "\r\n")) end++;
-		unchunkedData.append(line.c_str(), chunkSize);
-		if (end == 2) break ;
+		i += line.length() + 1;
+		if (line.find("0") == std::string::npos)
+			chunkSize = getChunkedDataSize(line);
+		unchunkedData.append(body.c_str() + i, chunkSize);
+		i += chunkSize + 2;
 		_contentLength += chunkSize;
 	}
+	std::cout << "*********************" << std::endl;
+	std::cout << unchunkedData << std::endl;
+	std::cout << _contentLength << std::endl;
+	std::cout << "*********************" << std::endl;
 	_isChunked = false;
 	return unchunkedData;
 }

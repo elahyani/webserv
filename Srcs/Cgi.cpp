@@ -1,6 +1,6 @@
 #include "Cgi.hpp"
 
-Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) : _request(request), _server(server), _port(port), _root(""), _cgiPath(""), _cgiResult(""), _contentLength(0)
+Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) : _request(request), _server(server), _port(port), _root(""), _cgiPath(""), _cgiResult("")
 {
 	std::cout << "had if cgi -> " << _request.getReqBody() << std::endl;
 	_root = (location.getRoot().size()) ? location.getRoot().c_str() : _server.getRoot().c_str();
@@ -9,8 +9,6 @@ Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) 
 		throw std::runtime_error(": No such file or directory {" + _cgiPath + '}');
 	if (access(_cgiPath.c_str(), X_OK) == -1)
 		throw std::runtime_error(": " + _cgiPath + ": Permission denied.");
-	std::cout << "file path =============> |" << (_root + "/" + _request.getStartLineVal("uri")) << "|" << std::endl;
-	_contentLength = std::atoi(_request.getHeaderVal("Content-Length").c_str());
 	this->setEnvCgi();
 	this->cgiExec();
 }
@@ -32,8 +30,8 @@ Cgi &Cgi::operator=(Cgi const &ths)
 		this->_server = ths._server;
 		this->_port = ths._port;
 		this->_root = ths._root;
+		this->_cgiPath = ths._cgiPath;
 		this->_cgiResult = ths._cgiResult;
-		this->_contentLength = ths._contentLength;
 	}
 	return *this;
 }
@@ -99,8 +97,7 @@ void Cgi::cgiExec()
 		// }
 		std::cout << "body = " << _request.getReqBody() << std::endl;
 		// _request.setReqBody("name=hello");
-		if (_contentLength)
-			write(pipeFDsWrite[1], _request.getReqBody().c_str(), _request.getReqBody().size());
+		write(pipeFDsWrite[1], _request.getReqBody().c_str(), _request.getReqBody().size());
 		close(pipeFDsWrite[1]);
 		bzero(buffer, BUFFER_SIZE);
 		while ((readBytes = read(pipeFDsRead[0], buffer, BUFFER_SIZE)) > 0)

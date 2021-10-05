@@ -72,10 +72,8 @@ void Request::parseRequest()
 	{
 		while (std::getline(s, tmp))
 		{
-			// std::cout << ">>>>>>>>>>>>>>>>>>>>>>> " << tmp << std::endl;
 			if (!this->_method.size() && !this->_protocol.size())
 			{
-				std::cout << "__>" + tmp << std::endl;
 				this->split(tmp, ' ');
 				if (this->_mapTmp.size() == 3)
 				{
@@ -233,7 +231,7 @@ void Request::parseRequest()
 				break;
 			}
 		}
-		if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || _headers["Content-Length"].size())
+		if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || _headers["Content-Length"].size() || _headers["Transfer-Encoding"].size())
 			parseBody();
 		// exit(1);
 	}
@@ -281,6 +279,7 @@ void Request::parseBody()
 	// exit(1);
 	if (this->_headers["Boundary"].size())
 	{
+		std::cout << "read body" << std::endl;
 		while (std::getline(s, tmp))
 		{
 			if (tmp.find(bodyBoundary) != std::string::npos)
@@ -365,14 +364,26 @@ int Request::checkReqErrors()
 	}
 	else if (this->_method.compare("GET") != 0 && this->_method.compare("POST") != 0 && this->_method.compare("DELETE") != 0)
 		this->_statusCode = 501;
-	else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size())
+	else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size() && !this->_headers["Transfer-Encoding"].size())
+	{
+		std::cout << "1" << std::endl;
 		this->_statusCode = 400;
+	}
 	else if (_headers["Content-Length"].size() && !_bLen && _statusCode != 413)
+	{
+		std::cout << "2" << std::endl;
 		this->_statusCode = 400;
+	}
 	else if (!_startLine["uri"].size() || (_startLine["uri"].size() && _startLine["uri"][0] != '/'))
+	{
+		std::cout << "3" << std::endl;
 		this->_statusCode = 400;
+	}
 	else if (!_headers["Host"].size())
+	{
+		std::cout << "4" << std::endl;
 		this->_statusCode = 400;
+	}
 
 	if (this->_statusCode != 200)
 		setHeaderVal("Connection", "close");

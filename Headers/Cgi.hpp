@@ -8,7 +8,7 @@
 # include <string>
 # include <unistd.h>
 
-// Environement variables change during the program
+// Environement variables change during the program by setenv 
 extern char** environ;
 
 class Cgi
@@ -20,7 +20,6 @@ private:
 	std::string _root;
 	std::string _cgiPath;
 	std::string _cgiResult;
-	int _contentLength;
 	
 public:
 	Cgi(Request &, Location &, HttpServer &, short &);
