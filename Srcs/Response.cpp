@@ -630,33 +630,26 @@ void Response::parseCgiResponse(std::string &cgiResp)
             else if (buffer.find("Pragma:") != std::string::npos)
                 this->_headers.append("Pragma: " + buffer.substr(buffer.find(": ") + 2));
             else if (buffer.find("Content-type:") != std::string::npos)
-            {
-                std::cout << "AM IN" << std::endl;
                 this->_headers.append("Content-type: " + buffer.substr(buffer.find(": ") + 2));
-            }
             else if (buffer.compare("\r\n\r\n") == 0)
-            {
-                std::cout << "OKOKO" << std::endl;
                 break;
-            }
         }
         this->_body = cgiResp.substr(cgiResp.find("\r\n\r\n") + 4);
-        this->_headers.append("\r\n");
-        this->_headers.append("Content-Length: " + std::to_string(_body.length()));
     }
     else if (_location.getLocationName().find(".py") != std::string::npos)
     {
         while (std::getline(s, buffer))
         {
             if (buffer.find("Content-type:") != std::string::npos)
-                this->_headers.append("Content-type: " + buffer.substr(buffer.find(": ") + 2) + "\r\n");
+                this->_headers.append("Content-type: " + buffer.substr(buffer.find(": ") + 2));
         }
         this->_body = cgiResp.substr(cgiResp.find("\n\n") + 2);
-        this->_headers.append("\r\n");
-        this->_headers.append("Content-Length: " + std::to_string(_body.length()));
     }
+    this->_headers.append("\r\n");
+    this->_headers.append("Content-Length: " + std::to_string(_body.size()));
     this->_headers.append("\r\n\r\n");
     this->_headers.append(_body);
+
 }
 
 void Response::generateResponse()
@@ -664,7 +657,6 @@ void Response::generateResponse()
     _location = isLocationExist();
     std::vector<std::string>::iterator reqMethod = std::find(_location.getAllowedMethods().begin(), _location.getAllowedMethods().end(), _request.getStartLineVal("method"));
 
-    std::cout << "_localtion ---->> " << _location.getLocationName() << std::endl;
     if (reqMethod == _location.getAllowedMethods().end())
         setErrorPage(NOT_ALLOWED_STATUS);
     else if (_location.isCGI())
