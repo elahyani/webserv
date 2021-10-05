@@ -43,8 +43,9 @@ void Cgi::setEnvCgi()
 	setenv("SERVER_PROTOCOL", _request.getStartLineVal("protocol").c_str(), 1);
 	setenv("CONTENT_TYPE", _request.getHeaderVal("Content-Type").c_str(), 1);
 	setenv("CONTENT_LENGTH", _request.getHeaderVal("Content-Length").c_str(), 1);
-	setenv("PATH_INFO", _request.getHeaderVal("url").c_str(), 1);
+	setenv("PATH_INFO", _request.getHeaderVal("uri").c_str(), 1);
 	setenv("QUERY_STRING", _request.getStartLineVal("query").c_str(), 1);
+	setenv("HTTP_COOKIE", _request.getHeaderVal("Cookie").c_str(), 1);
 	setenv("SERVER_SOFTWARE", "webserv", 1);
 	setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
 	setenv("DOCUMENT_ROOT", _root.c_str(), 1);

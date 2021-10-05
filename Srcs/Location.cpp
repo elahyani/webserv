@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/12 15:23:32 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/26 11:53:18 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/28 10:23:38 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,16 +34,13 @@ Location::Location(Location const &src)
 
 Location &Location::operator=(Location const &src)
 {
-	//! use assign
 	if (this != &src)
 	{
 		this->_autoindex = src._autoindex;
 		this->_locationName = src._locationName;
 		this->_root = src._root;
 		this->_index = src._index;
-		// this->allowedMethods = src._allowedMethods;
 		this->_allowedMethods.assign(src._allowedMethods.begin(), src._allowedMethods.end());
-		//! how to assign to map
 		this->_ret = src._ret;
 		this->_fastCgiPass = src._fastCgiPass;
 		this->_uploadEnable = src._uploadEnable;

@@ -36,6 +36,7 @@ private:
     std::map<int, std::string> _errors;
     std::map<int, std::string> _mapTmp;
     std::vector<Bodies> _bodiesList;
+    std::vector<std::string> _cookies;
     std::string _content;
     std::string _method; // GET POST DELETE
     std::string _uriPath;

@@ -57,7 +57,7 @@ Request::~Request()
 
 void Request::setRequestData(const std::string &buffer, int &max_body_size)
 {
-	this->_content.append(buffer);
+	this->_content = buffer;
 	_maxBodySize = max_body_size;
 }
 
@@ -72,10 +72,8 @@ void Request::parseRequest()
 	{
 		while (std::getline(s, tmp))
 		{
-			// std::cout << ">>>>>>>>>>>>>>>>>>>>>>> " << tmp << std::endl;
 			if (!this->_method.size() && !this->_protocol.size())
 			{
-				std::cout << "__>" + tmp << std::endl;
 				this->split(tmp, ' ');
 				if (this->_mapTmp.size() == 3)
 				{
@@ -209,6 +207,21 @@ void Request::parseRequest()
 				else
 					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
 			}
+			else if (tmp.find("Cookie") != std::string::npos)
+			{
+				if (!_headers["Cookie"].size())
+				{
+					if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
+					_headers["Cookie"] = tmp.substr(tmp.find(": ") + 2);
+					_headers["Cookie"].pop_back();
+					split(_headers["Cookie"], '&');
+					for (size_t i = 0; i < _mapTmp.size(); i++)
+						_cookies.push_back(_mapTmp[i]);
+				}
+				else
+					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
+			}
 			// std::cout << "len:" << tmp.find("Content-Length") << std::endl;
 			else if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || tmp.find("\r\n\r\n") != std::string::npos)
 			{
@@ -218,7 +231,7 @@ void Request::parseRequest()
 				break;
 			}
 		}
-		if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || _headers["Content-Length"].size())
+		if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || _headers["Content-Length"].size() || _headers["Transfer-Encoding"].size())
 			parseBody();
 		// exit(1);
 	}
@@ -266,6 +279,7 @@ void Request::parseBody()
 	// exit(1);
 	if (this->_headers["Boundary"].size())
 	{
+		std::cout << "read body" << std::endl;
 		while (std::getline(s, tmp))
 		{
 			if (tmp.find(bodyBoundary) != std::string::npos)
@@ -308,8 +322,9 @@ void Request::parseBody()
 		std::cout << "I WAS HERE" << std::endl;
 		while (std::getline(s, tmp))
 		{
-			if (tmp.back() != '\r')
-				body.append(tmp);
+			if (tmp.back() == '\r')
+				tmp.pop_back();
+			body.append(tmp);
 		}
 		if (body.size())
 			this->_bLen++;
@@ -326,7 +341,7 @@ int Request::checkReqErrors()
 
 	// std::cout << "max body size -> " << _serverData.getClientMaxBodySize() << std::endl;
 
-	// std::cout << "--> lens |" << getReqBody().size() << "|" << getBody().size() << "|" << _bLen << "|" << std::endl;
+	std::cout << "--> lens |" << getReqBody().size() << "|" << getBody().size() << "|" << _bLen << "|" << std::endl;
 	for (size_t i = 0; i < _method.size(); i++)
 	{
 		if (std::islower(_method[i]))
@@ -348,15 +363,27 @@ int Request::checkReqErrors()
 		this->_statusCode = 400;
 	}
 	else if (this->_method.compare("GET") != 0 && this->_method.compare("POST") != 0 && this->_method.compare("DELETE") != 0)
-		this->_statusCode = 405;
-	else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size())
+		this->_statusCode = 501;
+	else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size() && !this->_headers["Transfer-Encoding"].size())
+	{
+		std::cout << "1" << std::endl;
 		this->_statusCode = 400;
+	}
 	else if (_headers["Content-Length"].size() && !_bLen && _statusCode != 413)
+	{
+		std::cout << "2" << std::endl;
 		this->_statusCode = 400;
+	}
 	else if (!_startLine["uri"].size() || (_startLine["uri"].size() && _startLine["uri"][0] != '/'))
+	{
+		std::cout << "3" << std::endl;
 		this->_statusCode = 400;
+	}
 	else if (!_headers["Host"].size())
+	{
+		std::cout << "4" << std::endl;
 		this->_statusCode = 400;
+	}
 
 	if (this->_statusCode != 200)
 		setHeaderVal("Connection", "close");
@@ -373,12 +400,14 @@ void Request::printRequest()
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
 	std::cout << "Method            -> |" << this->_startLine["method"] << "|" << std::endl;
 	std::cout << "Url               -> |" << this->_startLine["uri"] << "|" << std::endl;
+	std::cout << "Query               -> |" << this->_startLine["query"] << "|" << std::endl;
 	std::cout << "Protocol Version  -> |" << this->_startLine["protocol"] << "|" << std::endl;
 	std::cout << "Script Name       -> |" << this->_startLine["script-name"] << "|" << std::endl;
 	std::cout << "Host              -> |" << this->_headers["Host"] << "|" << std::endl;
 	std::cout << "Connection        -> |" << this->_headers["Connection"] << "|" << std::endl;
 	std::cout << "Content Type      -> |" << this->_headers["Content-Type"] << "|" << std::endl;
 	std::cout << "Content Length    -> |" << this->_headers["Content-Length"] << "|" << std::endl;
+	std::cout << "Cookie            -> |" << this->_headers["Cookie"] << "|" << std::endl;
 	std::cout << "Transfer Encoding -> |" << this->_headers["Transfer-Encoding"] << "|" << std::endl;
 	std::cout << "Boundary          -> |" << this->_headers["Boundary"] << "|" << std::endl;
 	// for (size_t i = 0; i < _bodiesList.size(); i++)
@@ -462,4 +491,5 @@ void Request::clearRequest()
 	this->_urlQuery.clear();
 	this->_protocol.clear();
 	this->_content.clear();
+	this->_cookies.clear();
 }

@@ -145,7 +145,7 @@ void Server::waitingForConnections() {
 	for(;;) {
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
-		usleep(1);
+		usleep(2000);
 		// std::cout << "==> " <<  _maxSockFD << std::endl;
 		struct timeval _tv = {0, 0};
 		int activity = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
@@ -201,8 +201,10 @@ bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 		if (headers.find("Transfer-Encoding: chunked") != std::string::npos)
 		{
 			_isChunked = true;
-			if (buffReq.find("0/r/n/r/n") == std::string::npos)
+			if (buffReq.find("0\r\n\r\n") != std::string::npos)
 				return true;
+			else
+				return false;
 		}
 		else if (headers.find("Content-Length") != std::string::npos)
 		{
@@ -269,7 +271,20 @@ void Server::accptedConnectHandling(int &accptSockFD)
 		return ; // Socket is connected but doesn't send request.
 }
 
+bool checkChunkSize(std::string & size) {
+	std::string cmp = "0123456789ABCDEFabcdef";
+	for(size_t i = 0; i < size.size(); i++) {
+		if (cmp.find(size[i]) == std::string::npos)
+			return false;
+	}
+	return true;
+}
+
 size_t getChunkedDataSize(std::string & chunkSize) {
+	//check valid hex value
+	chunkSize.pop_back();
+	if (!checkChunkSize(chunkSize))
+		throw std::runtime_error("Invalid character in chunk size");
  	size_t size = 0;
 	std::stringstream stream(chunkSize);
 	stream >> std::hex >> size;
@@ -289,12 +304,16 @@ std::string Server::unchunkingRequest(std::string &request)
 		std::string line("");
 		std::getline(bodyStream, line);
 		i += line.length() + 1;
-		chunkSize = getChunkedDataSize(line);
+		if (line.find("0") == std::string::npos)
+			chunkSize = getChunkedDataSize(line);
 		unchunkedData.append(body.c_str() + i, chunkSize);
 		i += chunkSize + 2;
 		_contentLength += chunkSize;
 	}
+	std::cout << "*********************" << std::endl;
 	std::cout << unchunkedData << std::endl;
+	std::cout << _contentLength << std::endl;
+	std::cout << "*********************" << std::endl;
 	_isChunked = false;
 	return unchunkedData;
 }
@@ -338,7 +357,7 @@ void Server::responseHandling(int &accptSockFD)
 		}
 		if (_request.getHeaderVal("Connection").compare("close") == 0)
 		{
-			std::cout << "Disconnected socket " << std::to_string(accptSockFD) << std::endl;
+			std::cout << "X - Disconnected socket " << std::to_string(accptSockFD) << std::endl;
 			close(accptSockFD);
 			FD_CLR(accptSockFD, &_masterFDs);
 			FD_CLR(accptSockFD, &_writeFDs);
