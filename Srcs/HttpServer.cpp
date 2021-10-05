@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/13 11:39:58 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/15 14:05:09 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/25 12:52:39 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,16 +37,17 @@ HttpServer &HttpServer::operator=(HttpServer const &src)
 	//! use assign
 	if (this != &src)
 	{
-		this->_ports = src._ports;
+		this->_ports.assign(src._ports.begin(), src._ports.end());
 		this->_host = src._host;
 		this->_clientMaxBodySize = src._clientMaxBodySize;
+		//! assign to map
 		this->_errorsPages = src._errorsPages;
 		this->_root = src._root;
-		this->_serverName = src._serverName;
+		this->_serverName.assign(src._serverName.begin(), src._serverName.end());
 		this->_errorCode = src._errorCode;
 		this->_errorPagePath = src._errorPagePath;
 		this->_locationsNumber = src._locationsNumber;
-		this->_locations = src._locations;
+		this->_locations.assign(src._locations.begin(), src._locations.end());
 	}
 	return *this;
 }
@@ -131,8 +132,13 @@ std::string &HttpServer::getErrorPagePath()
 	return this->_errorPagePath;
 }
 
-void HttpServer::setLocation(Location const &_location)
+void HttpServer::setLocation(Location &_location)
 {
+	for (size_t i = 0; i < this->_locations.size(); i++)
+	{
+		if (this->_locations[i].getLocationName() == _location.getLocationName())
+			throw std::invalid_argument("Error: duplicated location path: " + _location.getLocationName());
+	}
 	this->_locations.push_back(_location);
 }
 

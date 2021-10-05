@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 16:02:14 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/15 13:13:02 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/25 12:58:40 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ public:
 	void clearAll();
 
 	void setAutoIndex(std::string);
-	const bool &getAutoIndex() const;
+	bool &getAutoIndex();
 
 	void setLocationName(std::string);
 	std::string &getLocationName();
@@ -62,14 +62,14 @@ public:
 	void setFastCgiPass(std::string);
 	std::string &getFastCgiPass();
 
+	void setIsCGI(const bool &cgi);
+	bool &isCGI();
+
 	void setUploadEnable(std::string);
-	const bool &getUploadEnable() const;
+	bool &getUploadEnable();
 
 	void setUploadStore(std::string);
 	std::string &getUploadStore();
-
-	void setIsCGI(bool const &iscgi);
-	const bool &isCGI() const;
 };
 
 #endif

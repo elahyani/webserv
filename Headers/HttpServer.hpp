@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/13 11:22:44 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/15 14:06:40 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/09/25 12:51:20 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ public:
 	void setErrorPagePath(std::string);
 	std::string &getErrorPagePath();
 
-	void setLocation(Location const &);
+	void setLocation(Location &);
 	std::vector<Location> &getLocations();
 
 	void clearAll();

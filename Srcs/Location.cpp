@@ -6,7 +6,7 @@
 /*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/12 15:23:32 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/15 13:13:50 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/09/26 11:53:18 by ichejra          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,9 @@ Location &Location::operator=(Location const &src)
 		this->_locationName = src._locationName;
 		this->_root = src._root;
 		this->_index = src._index;
-		this->_allowedMethods = src._allowedMethods;
+		// this->allowedMethods = src._allowedMethods;
+		this->_allowedMethods.assign(src._allowedMethods.begin(), src._allowedMethods.end());
+		//! how to assign to map
 		this->_ret = src._ret;
 		this->_fastCgiPass = src._fastCgiPass;
 		this->_uploadEnable = src._uploadEnable;
@@ -58,7 +60,7 @@ void Location::setAutoIndex(std::string index)
 		this->_autoindex = true;
 }
 
-bool const &Location::getAutoIndex() const
+bool &Location::getAutoIndex()
 {
 	return this->_autoindex;
 }
@@ -104,6 +106,8 @@ std::vector<std::string> &Location::getAllowedMethods()
 
 void Location::setReturn(int code, std::string _ret)
 {
+	if (code <= 0)
+		throw std::invalid_argument("Exception\tReturn code must be a non-zero positive number");
 	this->_ret.insert(std::pair<int, std::string>(code, _ret));
 }
 
@@ -117,12 +121,12 @@ void Location::setFastCgiPass(std::string _cgiPass)
 	this->_fastCgiPass = _cgiPass;
 }
 
-void Location::setIsCGI(bool const &iscgi)
+void Location::setIsCGI(const bool &cgi)
 {
-	_isCGI = iscgi;
+	this->_isCGI = cgi;
 }
 
-const bool &Location::isCGI() const
+bool &Location::isCGI()
 {
 	return this->_isCGI;
 }
@@ -140,7 +144,7 @@ void Location::setUploadEnable(std::string uploadEnable)
 		this->_uploadEnable = true;
 }
 
-const bool &Location::getUploadEnable() const
+bool &Location::getUploadEnable()
 {
 	return this->_uploadEnable;
 }

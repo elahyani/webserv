@@ -1,7 +1,9 @@
+<<<<<<< HEAD
 .DS_STORE
 .vscode
 main.c
 .editorconfig
+toFix
 <<<<<<< HEAD
 =======
 webserv
@@ -9,3 +11,16 @@ Objs
 >>>>>>> f0a9e58a0aa94e7ec39fa49e5bddcf61410dfd75
 a.out
 output
+=======
+.DS_STORE
+a.out
+.vscode
+output
+out
+pp.c
+ppp
+TCPClient.c
+TCPClient.o
+TCPServer.c
+TCPServer.o
+>>>>>>> 83ad90ea5fe307bd36b7ee7f0936492724b97dc9

@@ -23,27 +23,30 @@
 struct Bodies
 {
     std::string contentType;
-    std::string body;
     std::string contentDesp;
+    std::string body;
 };
 
 class Request
 {
 private:
+    // HttpServer _serverData;
     std::map<std::string, std::string> _headers;
     std::map<std::string, std::string> _startLine;
     std::map<int, std::string> _errors;
     std::map<int, std::string> _mapTmp;
-    std::vector<std::string> _methods;
     std::vector<Bodies> _bodiesList;
     std::string _content;
     std::string _method; // GET POST DELETE
-    std::string _urlPath;
+    std::string _uriPath;
     std::string _urlQuery; // .?.....
     std::string _protocol; // http/1.1
+    std::string _scriptName;
+    std::string _body;
     int _bLen;
     int _statusCode;
     bool _requestError;
+    int _maxBodySize;
 
 public:
     Request();
@@ -52,15 +55,17 @@ public:
     Request &operator=(const Request &rhs);
     ~Request();
 
-    void setRequestData(const std::string &);
+    void setRequestData(const std::string &, int &);
     void readRequest();
     void parseRequest();
     void parseBody();
     int getBodiesLen(std::string);
     bool checkRequest(std::string &);
     void printRequest();
-    void split(std::string, std::string);
+    void split(std::string, char);
     int checkReqErrors();
+    void setReqBody(std::string const &);
+    std::string &getReqBody();
 
     std::vector<Bodies> getBody();
 

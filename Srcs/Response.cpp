@@ -3,28 +3,30 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
+/*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/06 14:49:51 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/07 16:46:02 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/10/01 23:41:19 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(Request &req, HttpServer &server /* , Server *serv */) : _status(-1),
-                                                                            _request(req),
-                                                                            _server(server),
-                                                                            _responseMsg(""),
-                                                                            _headers(""),
-                                                                            _body(""),
-                                                                            _indexPath(""),
-                                                                            _autoIndexPage(""),
-                                                                            _dirPath(""),
-                                                                            _dr(""),
-                                                                            _autoIndex(false),
-                                                                            _notFound(false),
-                                                                            _isLocation(false)
+Response::Response(Request &req, HttpServer &server, short &port) : _status(-1),
+                                                                    _request(req),
+                                                                    _server(server),
+                                                                    _responseMsg(""),
+                                                                    _headers(""),
+                                                                    _body(""),
+                                                                    _indexPath(""),
+                                                                    _autoIndexPage(""),
+                                                                    _dirPath(""),
+                                                                    _dr(""),
+                                                                    _autoIndex(false),
+                                                                    _notFound(false),
+                                                                    _isLocation(false),
+                                                                    _port(port),
+                                                                    _cgiBody("")
 {
     this->_errors[200] = "OK";
     this->_errors[301] = "Moved Permanently";
@@ -34,14 +36,14 @@ Response::Response(Request &req, HttpServer &server /* , Server *serv */) : _sta
     this->_errors[404] = "Not Found";
     this->_errors[405] = "Not Allowed";
     this->_errors[411] = "Length Required";
-    this->_errors[413] = "Payload Too Large";
+    this->_errors[413] = "Request Entity Too Large";
     this->_errors[414] = "Uri Too Long";
     this->_errors[415] = "Unsupported Media Type";
     this->_errors[500] = "Internal Server Error";
     this->_errors[501] = "Not Implemented";
     this->_errors[502] = "Bad Gateway";
     this->_errors[504] = "Gateway Timeout";
-    this->_errors[505] = "Http Version Not Supported";
+    this->_errors[505] = "HTTP Version Not Supported";
     this->_status = this->_request.getStatusCode();
 
     // std::cout << "status >>>>> " << this->_status << std::endl;
@@ -54,9 +56,6 @@ Response::~Response()
 void Response::clearAll()
 {
     _status = 0;
-    _server.clearAll();
-    _request.clearRequest();
-    _location.clearAll();
     _responseMsg.clear();
     _headers.clear();
     _body.clear();
@@ -69,18 +68,9 @@ void Response::clearAll()
     _isLocation = false;
     _errors.clear();
     _dirContent.clear();
-}
-
-void Response::getErrorPage(std::string ErrorPagePath)
-{
-    std::ifstream indexFile(ErrorPagePath);
-    if (indexFile)
-    {
-        std::cout << "ERROR PAGE PATH >>> VALID" << std::endl;
-        std::ostringstream ss;
-        ss << indexFile.rdbuf();
-        _body = ss.str();
-    }
+    // _request.clearRequest();
+    _location.clearAll();
+    _server.clearAll();
 }
 
 void Response::manageErrorHeaders(int _status)
@@ -101,7 +91,8 @@ void Response::manageErrorHeaders(int _status)
     this->_headers.append("Server: webServ\r\n");
     this->_headers.append("Date: " + tm.append(" GMT"));
     this->_headers.append("\r\n");
-    this->_headers.append("Connection: keep-alive\r\n");
+    this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
+    this->_headers.append("\r\n");
     this->_headers.append("Content-Type: text/html; charset=UTF-8");
     this->_headers.append("\r\n");
     this->_headers.append("Content-Length: " + std::to_string(_body.length()));
@@ -109,61 +100,36 @@ void Response::manageErrorHeaders(int _status)
     this->_headers.append(_body);
 }
 
-void Response::manageErrors()
+void Response::getErrorPage(std::string ErrorPagePath)
 {
-    if (_status == BAD_REQUEST_STATUS)
+    std::ifstream indexFile(ErrorPagePath);
+    if (indexFile)
     {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
+        std::cout << "ERROR PAGE PATH >>> VALID" << std::endl;
+        std::ostringstream ss;
+        ss << indexFile.rdbuf();
+        _body = ss.str();
     }
-    else if (_status == HTTP_VERSION_NOT_SUPPORTED_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
-    else if (_status == NOT_ALLOWED_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
-    else if (_status == NOT_FOUND_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
-    else if (_status == FORBIDDEN_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
-    else if (_status == INTERNAL_SERVER_ERROR_STATUS)
-    {
-        if (_server.getErrorsPages()[_status].length())
-            getErrorPage(_server.getErrorsPages()[_status]);
-        else
-            _body = getDefaultErrorPage(_status);
-    }
+    else
+        _body = getDefaultErrorPage(_status);
+    indexFile.close();
+}
+
+void Response::setErrorPage(int _status)
+{
+    if (_server.getErrorsPages()[_status].length())
+        getErrorPage(_server.getErrorsPages()[_status]);
+    else
+        _body = getDefaultErrorPage(_status);
     manageErrorHeaders(_status);
 }
 
 void Response::readFile(std::string path)
 {
-    std::cout << "---------------> " << path << std::endl;
     if (access(path.c_str(), F_OK) != 0)
     {
-        std::cout << "OK" << std::endl;
         _status = NOT_FOUND_STATUS;
-        manageErrors();
+        setErrorPage(_status);
     }
     else
     {
@@ -175,18 +141,18 @@ void Response::readFile(std::string path)
                 std::ostringstream ss;
                 ss << file.rdbuf();
                 _body = ss.str();
-                file.close();
             }
             else
             {
                 _status = INTERNAL_SERVER_ERROR_STATUS;
-                manageErrors();
+                setErrorPage(_status);
             }
+            file.close();
         }
         else
         {
             _status = FORBIDDEN_STATUS;
-            manageErrors();
+            setErrorPage(_status);
         }
     }
 }
@@ -194,9 +160,9 @@ void Response::readFile(std::string path)
 void Response::indexingFiles()
 {
     std::cout << "------------------------------------------------------------" << std::endl;
-    std::cout << getPath(_request.getStartLineVal("url")) << std::endl;
+    std::cout << getPath(_request.getStartLineVal("uri")) << std::endl;
     std::cout << "------------------------------------------------------------" << std::endl;
-    DIR *directory = opendir(getPath(_request.getStartLineVal("url")).c_str());
+    DIR *directory = opendir(getPath(_request.getStartLineVal("uri")).c_str());
     struct dirent *en;
     std::string fileName;
 
@@ -322,6 +288,7 @@ std::string Response::getHtmlTemplate()
 
 Location Response::getRedirection(std::string locName)
 {
+    _request.setHeaderVal("Connection", "close");
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
         if (_location.getLocationName().compare(locName) == 0)
@@ -335,23 +302,53 @@ Location Response::getRedirection(std::string locName)
 
 Location Response::isLocationExist()
 {
-    // std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].getIsCGI() << "|" << std::endl;
+    std::cout << "IN LOCATION" << std::endl;
+    // std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].isCGI() << "|" << std::endl;
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
-        if (_request.getStartLineVal("url").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
+        if (_request.getStartLineVal("uri").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
         {
             _location = _server.getLocations()[i];
             _isLocation = true;
+            if (_request.getStartLineVal("uri").find(".php") != std::string::npos)
+            {
+                std::cout << "PHP------------->" << std::endl;
+                for (size_t i = 0; i < _server.getLocations().size(); i++)
+                {
+                    if (_server.getLocations()[i].getLocationName().find(".php") != std::string::npos)
+                    {
+                        _location = _server.getLocations()[i];
+                        if (_location.getFastCgiPass().size())
+                            _location.setIsCGI(true);
+                        return _location;
+                    }
+                }
+            }
+            else if (_request.getStartLineVal("uri").find(".py") != std::string::npos)
+            {
+                std::cout << "PYT------------->" << std::endl;
+                for (size_t i = 0; i < _server.getLocations().size(); i++)
+                {
+
+                    if (_server.getLocations()[i].getLocationName().find(".py") != std::string::npos)
+                    {
+                        _location = _server.getLocations()[i];
+                        if (_location.getFastCgiPass().size())
+                            _location.setIsCGI(true);
+                        return _location;
+                    }
+                }
+            }
         }
     }
     if (_location.getReturn().size())
     {
-        if (_location.getLocationName().compare(_request.getStartLineVal("url")) == 0)
+        if (_location.getLocationName().compare(_request.getStartLineVal("uri")) == 0)
         {
             if (_location.getReturn().begin()->first == MOVED_PERMANENTLY_STATUS)
             {
                 _status = MOVED_PERMANENTLY_STATUS;
-                _request.setStartLineVal("url", _location.getReturn().begin()->second);
+                _request.setStartLineVal("uri", _location.getReturn().begin()->second);
                 _redirectedLocation = _location.getReturn().begin()->second;
                 _location.clearAll();
                 return getRedirection(_location.getLocationName());
@@ -399,9 +396,9 @@ std::string Response::getPath(std::string uriFilePath)
 void Response::getMethod()
 {
     std::cout << "GET METHOD" << std::endl;
-    std::string fileNameFromUri = getUriFilePath(_request.getStartLineVal("url"));
+    std::string fileNameFromUri = getUriFilePath(_request.getStartLineVal("uri"));
     std::string directoryPath = getPath(fileNameFromUri);
-    std::cout << "uri_> |" << _request.getStartLineVal("url") << "|" << std::endl;
+    std::cout << "uri_> |" << _request.getStartLineVal("uri") << "|" << std::endl;
     std::cout << "fileNameFromUri _> |" << fileNameFromUri << "|" << std::endl;
     std::cout << "root _> |" << _server.getRoot() << "|" << std::endl;
     std::cout << "PATH _> |" << directoryPath << "|" << std::endl;
@@ -416,10 +413,10 @@ void Response::getMethod()
         else
         {
             _status = NOT_FOUND_STATUS;
-            manageErrors();
+            setErrorPage(_status);
         }
     }
-    else if (_isLocation && _request.getStartLineVal("url").compare(_location.getLocationName()) == 0)
+    else if (_isLocation && _request.getStartLineVal("uri").compare(_location.getLocationName()) == 0)
     {
         if (_location.getIndex().size() && fileNameFromUri.find(_location.getIndex()) != std::string::npos)
         {
@@ -440,6 +437,7 @@ void Response::getMethod()
                     std::cout << "INDEX PATH >>> INVALID" << std::endl;
                     _body = getHtmlTemplate();
                 }
+                indexFile.close();
             }
             else
             {
@@ -450,32 +448,73 @@ void Response::getMethod()
     }
     else
     {
-        std::cout << "FILE READED" << std::endl;
+        std::cout << "FILE READ" << std::endl;
         readFile(directoryPath);
     }
+}
+
+std::string Response::getDispContentFilename(std::string contentDisp)
+{
+    std::string tmp = contentDisp.substr(contentDisp.find("filename=") + 10);
+    std::string filename = tmp.substr(0, tmp.find("\""));
+    return filename;
+}
+
+std::string Response::getUploadDir()
+{
+    std::string upDir = getRootDirectory().append(_location.getUploadStore());
+    if (upDir.back() != '/')
+        upDir.append("/");
+    return upDir;
 }
 
 void Response::postMethod()
 {
     std::cout << "POST METHOD" << std::endl;
+    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("uri")));
+    std::string dispoFilename;
+    std::string fileDir;
+    std::string buffer;
+
+    if (_location.getUploadEnable())
+    {
+        std::cout << "-------------------Upload Enabled-------------------" << std::endl;
+        for (size_t i = 0; i < _request.getBody().size(); i++)
+        {
+            std::cout << "---------------==============*****************++++++++++++" << std::endl;
+            dispoFilename = getDispContentFilename(_request.getBody()[i].contentDesp);
+            fileDir = getUploadDir().append(dispoFilename);
+            std::ofstream file(fileDir);
+            std::stringstream ss(_request.getBody()[i].body);
+            while (std::getline(ss, buffer))
+            {
+                // std::cout << "->" + buffer << std::endl;
+                file << buffer.append("\n");
+                // file << buffer.substr(0, buffer.find("\r")).append("\n");
+            }
+            file.close();
+            _body = "<html><head><body><div><h5>File Uploaded successfully</h5></div></body></head></html>";
+        }
+        std::cout << "The File -> [" << dispoFilename << "] is uploaded!" << std::endl;
+    }
 }
 
 void Response::deleteMethod()
 {
     std::cout << "DELETE METHOD" << std::endl;
-    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("url")));
+    std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("uri")));
 
     if (isDirectory(directoryPath))
     {
         _status = NOT_FOUND_STATUS;
-        manageErrors();
+        setErrorPage(_status);
     }
     else
     {
         if (access(directoryPath.c_str(), F_OK) != 0)
         {
             _status = NOT_FOUND_STATUS;
-            manageErrors();
+            setErrorPage(_status);
         }
         else
         {
@@ -484,17 +523,29 @@ void Response::deleteMethod()
                 if (std::remove(directoryPath.c_str()) != 0)
                 {
                     _status = INTERNAL_SERVER_ERROR_STATUS;
-                    manageErrors();
+                    setErrorPage(_status);
                 }
                 std::cout << "DELETED" << std::endl;
             }
             else
             {
                 _status = FORBIDDEN_STATUS;
-                manageErrors();
+                setErrorPage(_status);
             }
         }
     }
+}
+
+std::string Response::getContentType()
+{
+    if (_request.getHeaderVal("Content-Type").size())
+        return _request.getHeaderVal("Content-Type");
+    else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("html") == 0 || _request.getStartLineVal("uri").compare("/") == 0)
+        return "text/html; charset=UTF-8";
+    else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("json") == 0)
+        return "application/json";
+    else
+        return "text/plain";
 }
 
 void Response::buildHeaders()
@@ -522,9 +573,9 @@ void Response::buildHeaders()
         this->_headers.append("Server: webServ\r\n");
         this->_headers.append("Date: " + tm.append(" GMT"));
         this->_headers.append("\r\n");
-        this->_headers.append("Connection: keep-alive");
+        this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
         this->_headers.append("\r\n");
-        this->_headers.append("Content-Type: text/html; charset=UTF-8");
+        this->_headers.append("Content-Type: " + getContentType());
         this->_headers.append("\r\n");
         this->_headers.append("Content-Length: " + std::to_string(_body.length()));
         this->_headers.append("\r\n\r\n");
@@ -532,23 +583,92 @@ void Response::buildHeaders()
     }
 }
 
+void Response::parseCgiResponse(std::string &cgiResp)
+{
+    std::string buffer;
+    std::istringstream s(cgiResp);
+    time_t rawTime;
+    std::string tm;
+
+    time(&rawTime);
+    tm = ctime(&rawTime);
+    tm.pop_back();
+    this->_headers.append("HTTP/1.1");
+    this->_headers.append(" ");
+    this->_headers.append(std::to_string(_status));
+    this->_headers.append(" ");
+    this->_headers.append(this->_errors[_status]);
+    this->_headers.append("\r\n");
+    this->_headers.append("Server: webServ\r\n");
+    this->_headers.append("Date: " + tm.append(" GMT"));
+    this->_headers.append("\r\n");
+    this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
+    this->_headers.append("\r\n");
+    while (std::getline(s, buffer))
+    {
+        if (buffer.find("X-Powered-By:") != std::string::npos)
+            this->_headers.append("X-Powered-By: " + buffer.substr(buffer.find(": ") + 2));
+        else if (buffer.find("Content-type:") != std::string::npos)
+            this->_headers.append("Content-type: " + buffer.substr(buffer.find(": ") + 2));
+        else if (buffer.find("\r\n\r\n"))
+            break;
+    }
+    this->_body = cgiResp.substr(cgiResp.find("\r\n\r\n") + 4);
+    this->_headers.append("\r\n");
+    this->_headers.append("Content-Length: " + std::to_string(_body.length()));
+    this->_headers.append("\r\n\r\n");
+    this->_headers.append(_body);
+}
+
 void Response::generateResponse()
 {
     _location = isLocationExist();
-    if (_request.getStartLineVal("method").compare("GET") == 0)
-        getMethod();
-    else if (_request.getStartLineVal("method").compare("POST") == 0)
-        postMethod();
-    else if (_request.getStartLineVal("method").compare("DELETE") == 0)
-        deleteMethod();
-    buildHeaders();
+    if (_location.isCGI())
+    {
+        std::cout << "IS CGI" << std::endl;
+        std::cout << "hadi f respo -> " << _request.getReqBody() << std::endl;
+        std::string filePath = getRootDirectory() + _request.getStartLineVal("uri");
+        if (access(filePath.c_str(), F_OK) == 0)
+        {
+            if (access(filePath.c_str(), R_OK) == 0 && access(filePath.c_str(), W_OK) == 0)
+            {
+                Cgi cgi(_request, _location, _server, _port);
+                parseCgiResponse(cgi.getCgiResult());
+                std::cout << "==============================" << std::endl;
+                std::cout << _body << std::endl;
+                std::cout << "==============================" << std::endl;
+            }
+            else
+            {
+                _status = FORBIDDEN_STATUS;
+                setErrorPage(_status);
+                buildHeaders();
+            }
+        }
+        else
+        {
+            _status = NOT_FOUND_STATUS;
+            setErrorPage(_status);
+            buildHeaders();
+        }
+    }
+    else
+    {
+        if (_request.getStartLineVal("method").compare("GET") == 0)
+            getMethod();
+        else if (_request.getStartLineVal("method").compare("POST") == 0)
+            postMethod();
+        else if (_request.getStartLineVal("method").compare("DELETE") == 0)
+            deleteMethod();
+        buildHeaders();
+    }
 }
 
 void Response::buildResponse()
 {
     // check for errors
     if (_status != OK_STATUS)
-        manageErrors();
+        setErrorPage(_status);
     else
         generateResponse();
 }
