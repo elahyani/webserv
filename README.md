@@ -27,3 +27,5 @@ http://nginx.org/en/docs/beginners_guide.html
 http://www.csce.uark.edu/~sgauch/cgicode/
 
 http://www.wijata.com/cgi/cgispec.html#[3]
+// curl -i -X POST -H Content-Type: multipart/form-data -F data=@Makefile http://localhost:5000/
+// curl --resolve example.com:5050:127.0.0.1 http://example.com:5050/

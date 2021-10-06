@@ -146,7 +146,6 @@ void Server::waitingForConnections() {
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
 		usleep(2000);
-		// std::cout << "==> " <<  _maxSockFD << std::endl;
 		struct timeval _tv = {0, 0};
 		int activity = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
 		if (activity == -1)
@@ -228,7 +227,6 @@ bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 	return false;
 }
 
-// body.len > max * 1024 * 1024;
 void Server::accptedConnectHandling(int &accptSockFD)
 {
 	char _buffRes[BUFFER_SIZE + 1] = { 0 };
@@ -261,7 +259,7 @@ void Server::accptedConnectHandling(int &accptSockFD)
 	}
 	else if (valRead == 0)
 	{
-		std::cout << "Disconnected socket " << std::to_string(accptSockFD) << std::endl;
+		std::cout << "Disconnected socket: " << std::to_string(accptSockFD) << std::endl;
 		close(accptSockFD);
 		FD_CLR(accptSockFD, &_masterFDs);
 		FD_CLR(accptSockFD, &_writeFDs);
@@ -281,7 +279,6 @@ bool checkChunkSize(std::string & size) {
 }
 
 size_t getChunkedDataSize(std::string & chunkSize) {
-	//check valid hex value
 	chunkSize.pop_back();
 	if (!checkChunkSize(chunkSize))
 		throw std::runtime_error("Invalid character in chunk size");
@@ -310,10 +307,6 @@ std::string Server::unchunkingRequest(std::string &request)
 		i += chunkSize + 2;
 		_contentLength += chunkSize;
 	}
-	std::cout << "*********************" << std::endl;
-	std::cout << unchunkedData << std::endl;
-	std::cout << _contentLength << std::endl;
-	std::cout << "*********************" << std::endl;
 	_isChunked = false;
 	return unchunkedData;
 }
@@ -357,7 +350,7 @@ void Server::responseHandling(int &accptSockFD)
 		}
 		if (_request.getHeaderVal("Connection").compare("close") == 0)
 		{
-			std::cout << "X - Disconnected socket " << std::to_string(accptSockFD) << std::endl;
+			std::cout << "Disconnected socket: " << std::to_string(accptSockFD) << std::endl;
 			close(accptSockFD);
 			FD_CLR(accptSockFD, &_masterFDs);
 			FD_CLR(accptSockFD, &_writeFDs);
