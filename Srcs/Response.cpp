@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
+/*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/06 14:49:51 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/28 09:25:49 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/10/05 17:06:49 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,13 +15,11 @@
 Response::Response(Request &req, HttpServer &server, short &port) : _status(-1),
                                                                     _request(req),
                                                                     _server(server),
-                                                                    _responseMsg(""),
                                                                     _headers(""),
                                                                     _body(""),
                                                                     _indexPath(""),
                                                                     _autoIndexPage(""),
                                                                     _dirPath(""),
-                                                                    _dr(""),
                                                                     _autoIndex(false),
                                                                     _notFound(false),
                                                                     _isLocation(false),
@@ -36,41 +34,67 @@ Response::Response(Request &req, HttpServer &server, short &port) : _status(-1),
     this->_errors[404] = "Not Found";
     this->_errors[405] = "Not Allowed";
     this->_errors[411] = "Length Required";
-    this->_errors[413] = "Payload Too Large";
+    this->_errors[413] = "Request Entity Too Large";
     this->_errors[414] = "Uri Too Long";
     this->_errors[415] = "Unsupported Media Type";
     this->_errors[500] = "Internal Server Error";
     this->_errors[501] = "Not Implemented";
     this->_errors[502] = "Bad Gateway";
     this->_errors[504] = "Gateway Timeout";
-    this->_errors[505] = "Http Version Not Supported";
+    this->_errors[505] = "HTTP Version Not Supported";
     this->_status = this->_request.getStatusCode();
+}
 
-    // std::cout << "status >>>>> " << this->_status << std::endl;
+Response::Response(const Response &ths) : _request(ths._request), _server(ths._server)
+{
+    *this = ths;
+}
+
+Response &Response::operator=(const Response &ths)
+{
+    if (this != &ths)
+    {
+        this->_status = ths._status;
+        this->_request = ths._request;
+        this->_server = ths._server;
+        this->_location = ths._location;
+        this->_headers = ths._headers;
+        this->_body = ths._body;
+        this->_indexPath = ths._indexPath;
+        this->_autoIndexPage = ths._autoIndexPage;
+        this->_dirPath = ths._dirPath;
+        this->_autoIndex = ths._autoIndex;
+        this->_notFound = ths._notFound;
+        this->_isLocation = ths._isLocation;
+        this->_port = ths._port;
+        this->_errors = ths._errors;
+        this->_dirContent = ths._dirContent;
+        this->_redirectedLocation = ths._redirectedLocation;
+        this->_cgiBody = ths._cgiBody;
+    }
+    return *this;
 }
 
 Response::~Response()
 {
+    this->clearAll();
 }
 
 void Response::clearAll()
 {
     _status = 0;
-    _server.clearAll();
-    _request.clearRequest();
-    _location.clearAll();
-    _responseMsg.clear();
     _headers.clear();
     _body.clear();
     _indexPath.clear();
     _autoIndexPage.clear();
     _dirPath.clear();
-    _dr.clear();
     _autoIndex = false;
     _notFound = false;
     _isLocation = false;
     _errors.clear();
     _dirContent.clear();
+    _location.clearAll();
+    _server.clearAll();
 }
 
 void Response::manageErrorHeaders(int _status)
@@ -105,17 +129,18 @@ void Response::getErrorPage(std::string ErrorPagePath)
     std::ifstream indexFile(ErrorPagePath);
     if (indexFile)
     {
-        std::cout << "ERROR PAGE PATH >>> VALID" << std::endl;
         std::ostringstream ss;
         ss << indexFile.rdbuf();
         _body = ss.str();
     }
     else
         _body = getDefaultErrorPage(_status);
+    indexFile.close();
 }
 
-void Response::setErrorPage(int _status)
+void Response::setErrorPage(int st)
 {
+    _status = st;
     if (_server.getErrorsPages()[_status].length())
         getErrorPage(_server.getErrorsPages()[_status]);
     else
@@ -126,10 +151,7 @@ void Response::setErrorPage(int _status)
 void Response::readFile(std::string path)
 {
     if (access(path.c_str(), F_OK) != 0)
-    {
-        _status = NOT_FOUND_STATUS;
-        setErrorPage(_status);
-    }
+        setErrorPage(NOT_FOUND_STATUS);
     else
     {
         if (access(path.c_str(), R_OK) == 0)
@@ -140,27 +162,18 @@ void Response::readFile(std::string path)
                 std::ostringstream ss;
                 ss << file.rdbuf();
                 _body = ss.str();
-                file.close();
             }
             else
-            {
-                _status = INTERNAL_SERVER_ERROR_STATUS;
-                setErrorPage(_status);
-            }
+                setErrorPage(INTERNAL_SERVER_ERROR_STATUS);
+            file.close();
         }
         else
-        {
-            _status = FORBIDDEN_STATUS;
-            setErrorPage(_status);
-        }
+            setErrorPage(FORBIDDEN_STATUS);
     }
 }
 
 void Response::indexingFiles()
 {
-    std::cout << "------------------------------------------------------------" << std::endl;
-    std::cout << getPath(_request.getStartLineVal("uri")) << std::endl;
-    std::cout << "------------------------------------------------------------" << std::endl;
     DIR *directory = opendir(getPath(_request.getStartLineVal("uri")).c_str());
     struct dirent *en;
     std::string fileName;
@@ -190,11 +203,8 @@ void Response::indexingFiles()
             </div>\n\
         </body>\n\
     </html>\n";
-
-    std::cout << "+++++++++++++++++++++++++++++++++++++++++---------------------" << std::endl;
-    std::cout << _autoIndexPage << std::endl;
+    _request.setHeaderVal("Content-Type", "text/html; charset=UTF-8");
     _body = _autoIndexPage;
-    std::cout << "+++++++++++++++++++++++++++++++++++++++++---------------------" << std::endl;
 }
 
 bool Response::isDirectory(const std::string &path)
@@ -256,11 +266,6 @@ std::string Response::getDefaultErrorPage(int status)
     return errorPage;
 }
 
-std::string &Response::getResponse()
-{
-    return this->_responseMsg;
-}
-
 std::string Response::getHtmlTemplate()
 {
     std::string htmlTemplate = "<!DOCTYPE html>\n\
@@ -287,29 +292,25 @@ std::string Response::getHtmlTemplate()
 
 Location Response::getRedirection(std::string locName)
 {
+    _request.setHeaderVal("Connection", "close");
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
-        if (_location.getLocationName().compare(locName) == 0)
-        {
+        if (_server.getLocations()[i].getLocationName().compare(locName) == 0)
             return _server.getLocations()[i];
-            break;
-        }
     }
     return _location;
 }
 
 Location Response::isLocationExist()
 {
-    // std::cout << "locName |" << _server.getLocations()[i].getLocationName() << "| - isCGI |" << _server.getLocations()[i].isCGI() << "|" << std::endl;
     for (size_t i = 0; i < _server.getLocations().size(); i++)
     {
-        if (_request.getStartLineVal("uri").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
+        if (_request.getStartLineVal("uri").compare(_server.getLocations()[i].getLocationName()) == 0 || _request.getStartLineVal("uri").find(_server.getLocations()[i].getLocationName()) != std::string::npos)
         {
             _location = _server.getLocations()[i];
             _isLocation = true;
             if (_request.getStartLineVal("uri").find(".php") != std::string::npos)
             {
-                std::cout << "PHP------------->" << std::endl;
                 for (size_t i = 0; i < _server.getLocations().size(); i++)
                 {
                     if (_server.getLocations()[i].getLocationName().find(".php") != std::string::npos)
@@ -317,22 +318,20 @@ Location Response::isLocationExist()
                         _location = _server.getLocations()[i];
                         if (_location.getFastCgiPass().size())
                             _location.setIsCGI(true);
-                        break;
+                        return _location;
                     }
                 }
             }
             else if (_request.getStartLineVal("uri").find(".py") != std::string::npos)
             {
-                std::cout << "PYT------------->" << std::endl;
                 for (size_t i = 0; i < _server.getLocations().size(); i++)
                 {
-
                     if (_server.getLocations()[i].getLocationName().find(".py") != std::string::npos)
                     {
                         _location = _server.getLocations()[i];
                         if (_location.getFastCgiPass().size())
                             _location.setIsCGI(true);
-                        break;
+                        return _location;
                     }
                 }
             }
@@ -347,9 +346,7 @@ Location Response::isLocationExist()
                 _status = MOVED_PERMANENTLY_STATUS;
                 _request.setStartLineVal("uri", _location.getReturn().begin()->second);
                 _redirectedLocation = _location.getReturn().begin()->second;
-                _location.clearAll();
-                std::cout << "url --> " << _request.getStartLineVal("url") << std::endl;
-                return getRedirection(_location.getLocationName());
+                return getRedirection(_redirectedLocation);
             }
         }
         else
@@ -365,10 +362,7 @@ std::string Response::getUriFilePath(std::string uri)
     if (path.back() != '/')
         path.append("/");
     if ((!_location.getAutoIndex() && uri.compare(_location.getLocationName()) == 0 && _location.getIndex().size()) || path.compare(_location.getIndex()) == 0)
-    {
-        std::cout << uri << " | " << _location.getLocationName() << std::endl;
         return path.append(_location.getIndex());
-    }
     else
         _body = getHtmlTemplate();
     return uri;
@@ -384,7 +378,6 @@ std::string Response::getRootDirectory()
 std::string Response::getPath(std::string uriFilePath)
 {
     std::string path = getRootDirectory();
-    std::cout << "dir ___> |" << path << "|" << std::endl;
     if (uriFilePath.front() != '/')
         uriFilePath = "/" + uriFilePath;
     path.append(uriFilePath);
@@ -393,61 +386,41 @@ std::string Response::getPath(std::string uriFilePath)
 
 void Response::getMethod()
 {
-    std::cout << "GET METHOD" << std::endl;
     std::string fileNameFromUri = getUriFilePath(_request.getStartLineVal("uri"));
     std::string directoryPath = getPath(fileNameFromUri);
-    std::cout << "uri_> |" << _request.getStartLineVal("uri") << "|" << std::endl;
-    std::cout << "fileNameFromUri _> |" << fileNameFromUri << "|" << std::endl;
-    std::cout << "root _> |" << _server.getRoot() << "|" << std::endl;
-    std::cout << "PATH _> |" << directoryPath << "|" << std::endl;
 
     if (isDirectory(directoryPath))
     {
-        std::cout << "is Directory" << std::endl;
         if (_location.getAutoIndex())
             indexingFiles();
         else if (_isLocation && !_location.getIndex().size())
             _body = getHtmlTemplate();
         else
-        {
-            _status = NOT_FOUND_STATUS;
-            setErrorPage(_status);
-        }
+            setErrorPage(NOT_FOUND_STATUS);
     }
     else if (_isLocation && _request.getStartLineVal("uri").compare(_location.getLocationName()) == 0)
     {
         if (_location.getIndex().size() && fileNameFromUri.find(_location.getIndex()) != std::string::npos)
         {
-            std::cout << "IS INDEX" << std::endl;
             if (_location.getIndex().size())
             {
-                std::cout << "ROOT && INDEX >>> EXIST" << std::endl;
                 std::ifstream indexFile(getRootDirectory() + "/" + _location.getIndex());
                 if (indexFile)
                 {
-                    std::cout << "INDEX PATH >>> VALID" << std::endl;
                     std::ostringstream ss;
                     ss << indexFile.rdbuf();
                     _body = ss.str();
                 }
                 else
-                {
-                    std::cout << "INDEX PATH >>> INVALID" << std::endl;
                     _body = getHtmlTemplate();
-                }
+                indexFile.close();
             }
             else
-            {
-                std::cout << "NO INDEX IN THIS LOCATION" << std::endl;
                 _body = getHtmlTemplate();
-            }
         }
     }
     else
-    {
-        std::cout << "FILE READ" << std::endl;
         readFile(directoryPath);
-    }
 }
 
 std::string Response::getDispContentFilename(std::string contentDisp)
@@ -460,6 +433,7 @@ std::string Response::getDispContentFilename(std::string contentDisp)
 std::string Response::getUploadDir()
 {
     std::string upDir = getRootDirectory().append(_location.getUploadStore());
+
     if (upDir.back() != '/')
         upDir.append("/");
     return upDir;
@@ -467,7 +441,6 @@ std::string Response::getUploadDir()
 
 void Response::postMethod()
 {
-    std::cout << "POST METHOD" << std::endl;
     std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("uri")));
     std::string dispoFilename;
     std::string fileDir;
@@ -475,61 +448,65 @@ void Response::postMethod()
 
     if (_location.getUploadEnable())
     {
-        std::cout << "-------------------Upload Enabled-------------------" << std::endl;
         for (size_t i = 0; i < _request.getBody().size(); i++)
         {
-            std::cout << "---------------==============*****************++++++++++++" << std::endl;
             dispoFilename = getDispContentFilename(_request.getBody()[i].contentDesp);
-            fileDir = getUploadDir().append(dispoFilename);
-            std::ofstream file(fileDir);
-            std::stringstream ss(_request.getBody()[i].body);
-            while (std::getline(ss, buffer))
+            if (!isDirectory(getUploadDir()))
+                setErrorPage(NOT_FOUND_STATUS);
+            else
             {
-                std::cout << "->" + buffer << std::endl;
-                file << buffer.append("\n");
-                // file << buffer.substr(0, buffer.find("\r")).append("\n");
+                fileDir = getUploadDir().append(dispoFilename);
+                if (access(fileDir.c_str(), F_OK) == 0 && access(fileDir.c_str(), W_OK) != 0)
+                {
+                    setErrorPage(FORBIDDEN_STATUS);
+                    return;
+                }
+                std::ofstream file(fileDir);
+                std::stringstream ss(_request.getBody()[i].body);
+                while (std::getline(ss, buffer))
+                {
+                    file << buffer.append("\n");
+                }
+                file.close();
+                _body = "<html><head><body><div><h5>File Uploaded successfully</h5></div></body></head></html>";
             }
-            _body = "<html><head><body><div><h5>File Uploaded successfully</h5></div></body></head></html>";
         }
-        std::cout << "The File -> [" << dispoFilename << "] is uploaded!" << std::endl;
     }
 }
 
 void Response::deleteMethod()
 {
-    std::cout << "DELETE METHOD" << std::endl;
     std::string directoryPath = getPath(getUriFilePath(_request.getStartLineVal("uri")));
 
     if (isDirectory(directoryPath))
-    {
-        _status = NOT_FOUND_STATUS;
-        setErrorPage(_status);
-    }
+        setErrorPage(NOT_FOUND_STATUS);
     else
     {
         if (access(directoryPath.c_str(), F_OK) != 0)
-        {
-            _status = NOT_FOUND_STATUS;
-            setErrorPage(_status);
-        }
+            setErrorPage(NOT_FOUND_STATUS);
         else
         {
             if (access(directoryPath.c_str(), W_OK) == 0)
             {
                 if (std::remove(directoryPath.c_str()) != 0)
-                {
-                    _status = INTERNAL_SERVER_ERROR_STATUS;
-                    setErrorPage(_status);
-                }
-                std::cout << "DELETED" << std::endl;
+                    setErrorPage(INTERNAL_SERVER_ERROR_STATUS);
             }
             else
-            {
-                _status = FORBIDDEN_STATUS;
-                setErrorPage(_status);
-            }
+                setErrorPage(FORBIDDEN_STATUS);
         }
     }
+}
+
+std::string Response::getContentType()
+{
+    if (_request.getHeaderVal("Content-Type").size())
+        return _request.getHeaderVal("Content-Type");
+    else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("html") == 0 || _request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("php") == 0 || _request.getStartLineVal("uri").compare(_location.getLocationName()) == 0)
+        return "text/html; charset=UTF-8";
+    else if (_request.getStartLineVal("uri").substr(_request.getStartLineVal("uri").find(".") + 1).compare("json") == 0)
+        return "application/json";
+    else
+        return "text/plain";
 }
 
 void Response::buildHeaders()
@@ -559,40 +536,122 @@ void Response::buildHeaders()
         this->_headers.append("\r\n");
         this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
         this->_headers.append("\r\n");
-        this->_headers.append("Content-Type: text/html; charset=UTF-8");
-        this->_headers.append("\r\n");
-        this->_headers.append("Content-Length: " + std::to_string(_body.length()));
+        this->_headers.append("Content-Type: " + getContentType());
+        if (_request.getHeaderVal("Transfer-Encoding").size())
+        {
+            this->_headers.append("\r\n");
+            this->_headers.append("Transfer-Encoding: " + _request.getHeaderVal("Transfer-Encoding"));
+        }
+        else
+        {
+            this->_headers.append("\r\n");
+            this->_headers.append("Content-Length: " + std::to_string(_body.length()));
+        }
+        if (_request.getHeaderVal("cookie").size())
+        {
+            this->_headers.append("\r\n");
+            this->_headers.append("Set-cookie: " + _request.getHeaderVal("cookie"));
+        }
         this->_headers.append("\r\n\r\n");
         this->_headers.append(_body);
     }
 }
 
+void Response::parseCgiResponse(std::string &cgiResp)
+{
+    std::string buffer;
+    std::istringstream s(cgiResp);
+    time_t rawTime;
+    std::string tm;
+
+    time(&rawTime);
+    tm = ctime(&rawTime);
+    tm.pop_back();
+    this->_headers.append("HTTP/1.1");
+    this->_headers.append(" ");
+    this->_headers.append(std::to_string(_status));
+    this->_headers.append(" ");
+    this->_headers.append(this->_errors[_status]);
+    this->_headers.append("\r\n");
+    this->_headers.append("Server: webServ\r\n");
+    this->_headers.append("Date: " + tm.append(" GMT"));
+    this->_headers.append("\r\n");
+    this->_headers.append("Connection: " + _request.getHeaderVal("Connection"));
+    this->_headers.append("\r\n");
+    if (_location.getLocationName().find(".php") != std::string::npos)
+    {
+        while (std::getline(s, buffer))
+        {
+            if (buffer.find("X-Powered-By:") != std::string::npos)
+                this->_headers.append("X-Powered-By: " + buffer.substr(buffer.find(": ") + 2));
+            else if (buffer.find("Set-Cookie:") != std::string::npos)
+                this->_headers.append("Set-Cookie: " + buffer.substr(buffer.find(": ") + 2));
+            else if (buffer.find("Expires:") != std::string::npos)
+                this->_headers.append("Expires: " + buffer.substr(buffer.find(": ") + 2));
+            else if (buffer.find("Cache-Control:") != std::string::npos)
+                this->_headers.append("Cache-Control: " + buffer.substr(buffer.find(": ") + 2));
+            else if (buffer.find("Pragma:") != std::string::npos)
+                this->_headers.append("Pragma: " + buffer.substr(buffer.find(": ") + 2));
+            else if (buffer.find("Content-type:") != std::string::npos)
+                this->_headers.append("Content-type: " + buffer.substr(buffer.find(": ") + 2));
+            else if (buffer.compare("\r\n\r\n") == 0)
+                break;
+        }
+        this->_body = cgiResp.substr(cgiResp.find("\r\n\r\n") + 4);
+    }
+    else if (_location.getLocationName().find(".py") != std::string::npos)
+    {
+        while (std::getline(s, buffer))
+        {
+            if (buffer.find("Content-type:") != std::string::npos)
+                this->_headers.append("Content-type: " + buffer.substr(buffer.find(": ") + 2));
+        }
+        this->_body = cgiResp.substr(cgiResp.find("\n\n") + 2);
+    }
+    this->_headers.append("\r\n");
+    this->_headers.append("Content-Length: " + std::to_string(_body.size()));
+    this->_headers.append("\r\n\r\n");
+    this->_headers.append(_body);
+}
+
 void Response::generateResponse()
 {
     _location = isLocationExist();
-    std::cout << "-------------> " << _location.getLocationName() << std::endl;
-    std::cout << "-------------> " << _location.isCGI() << std::endl;
-    if (_location.isCGI())
+    std::vector<std::string>::iterator reqMethod = std::find(_location.getAllowedMethods().begin(), _location.getAllowedMethods().end(), _request.getStartLineVal("method"));
+
+    if (reqMethod == _location.getAllowedMethods().end())
+        setErrorPage(NOT_ALLOWED_STATUS);
+    else if (_location.isCGI())
     {
-        std::cout << "IS CGI" << std::endl;
-        Cgi cgi(_request, _location, _server, _port);
-        _cgiBody = cgi.getCgiResult();
-        std::cout << "=========================================" << std::endl;
-        std::cout << _cgiBody << std::endl;
-        std::cout << "=========================================" << std::endl;
+        std::string filePath = getRootDirectory() + _request.getStartLineVal("uri");
+        if (access(filePath.c_str(), F_OK) == 0)
+        {
+            if (access(filePath.c_str(), R_OK) == 0 && access(filePath.c_str(), W_OK) == 0)
+            {
+                Cgi cgi(_request, _location, _server, _port);
+                parseCgiResponse(cgi.getCgiResult());
+            }
+            else
+                setErrorPage(FORBIDDEN_STATUS);
+        }
+        else
+            setErrorPage(NOT_FOUND_STATUS);
     }
-    else if (_request.getStartLineVal("method").compare("GET") == 0)
-        getMethod();
-    else if (_request.getStartLineVal("method").compare("POST") == 0)
-        postMethod();
-    else if (_request.getStartLineVal("method").compare("DELETE") == 0)
-        deleteMethod();
-    buildHeaders();
+    else
+    {
+        if (_request.getStartLineVal("method").compare("GET") == 0)
+            getMethod();
+        else if (_request.getStartLineVal("method").compare("POST") == 0)
+            postMethod();
+        else if (_request.getStartLineVal("method").compare("DELETE") == 0)
+            deleteMethod();
+        if (_status == OK_STATUS || _status == MOVED_PERMANENTLY_STATUS)
+            buildHeaders();
+    }
 }
 
 void Response::buildResponse()
 {
-    // check for errors
     if (_status != OK_STATUS)
         setErrorPage(_status);
     else
