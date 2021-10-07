@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigFileParser.hpp                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ichejra <ichejra@student.42.fr>            +#+  +:+       +#+        */
+/*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/09 15:23:05 by ichejra           #+#    #+#             */
-/*   Updated: 2021/09/28 08:46:51 by ichejra          ###   ########.fr       */
+/*   Updated: 2021/10/05 16:24:48 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ public:
 	void parseLocation(std::string);
 	void checkLocationName(std::string &buffer);
 	void checkLocAttr(void);
-	void chekDupServerName(void);
+	void chekDupServerName();
 	std::vector<HttpServer> &getServers();
 };
 

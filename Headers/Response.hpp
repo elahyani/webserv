@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
+/*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/06 14:48:42 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/07 16:44:19 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/10/05 15:49:28 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,13 +49,11 @@ private:
     Request &_request;
     HttpServer &_server;
     Location _location;
-    std::string _responseMsg;
     std::string _headers;
     std::string _body;
     std::string _indexPath;
     std::string _autoIndexPage;
     std::string _dirPath;
-    std::string _dr;
     bool _autoIndex;
     bool _notFound;
     bool _isLocation;
@@ -66,8 +64,9 @@ private:
     std::string _cgiBody;
 
 public:
-    Response();
-    Response(Request &req, HttpServer &server, short &port);
+    Response(Request &, HttpServer &, short &);
+    Response(const Response &);
+    Response &operator=(const Response &);
     ~Response();
 
     void buildHeaders();
@@ -86,7 +85,6 @@ public:
     void deleteMethod();
     void buildResponse();
     std::string getDefaultErrorPage(int status);
-    std::string &getResponse();
     std::string getHtmlTemplate();
     std::string &getHeaders();
     std::string notFoundPage();

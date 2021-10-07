@@ -6,7 +6,7 @@
 /*   By: asaadi <asaadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 16:54:02 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/21 08:40:38 by asaadi           ###   ########.fr       */
+/*   Updated: 2021/10/05 16:37:06 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,8 @@ Request::Request() : _content(""),
 					 _body(""),
 					 _bLen(0),
 					 _statusCode(200),
-					 _maxBodySize(0)
+					 _maxBodySize(0),
+					 _isvalid(1)
 {
 	_headers["Connection"] = "keep-alive";
 }
@@ -29,7 +30,6 @@ Request::Request() : _content(""),
 Request::Request(const Request &src)
 {
 	*this = src;
-	(void)src;
 }
 
 Request &Request::operator=(const Request &rhs)
@@ -41,23 +41,32 @@ Request &Request::operator=(const Request &rhs)
 		this->_errors = rhs._errors;
 		this->_mapTmp = rhs._mapTmp;
 		this->_bodiesList = rhs._bodiesList;
+		this->_cookies = rhs._cookies;
 		this->_content = rhs._content;
 		this->_method = rhs._method;
 		this->_uriPath = rhs._uriPath;
 		this->_urlQuery = rhs._urlQuery;
 		this->_protocol = rhs._protocol;
+		this->_scriptName = rhs._scriptName;
+		this->_body = rhs._body;
+		this->_bLen = rhs._bLen;
+		this->_statusCode = rhs._statusCode;
+		this->_requestError = rhs._requestError;
+		this->_maxBodySize = rhs._maxBodySize;
+		this->_isvalid = rhs._isvalid;
 	}
 	return *this;
 }
 
 Request::~Request()
 {
-	// clearRequest();
+	clearRequest();
 }
 
-void Request::setRequestData(const std::string &buffer, int &max_body_size)
+void Request::setRequestData(const std::string &buffer, int &max_body_size, int &isvalid)
 {
 	this->_content = buffer;
+	this->_isvalid = isvalid;
 	_maxBodySize = max_body_size;
 }
 
@@ -72,7 +81,7 @@ void Request::parseRequest()
 	{
 		while (std::getline(s, tmp))
 		{
-			if (!this->_method.size() && !this->_protocol.size())
+			if (!this->_method.size() && !this->_uriPath.size() && !this->_protocol.size())
 			{
 				this->split(tmp, ' ');
 				if (this->_mapTmp.size() == 3)
@@ -89,8 +98,14 @@ void Request::parseRequest()
 					{
 						if (_protocol.substr(0, _protocol.find("/")).compare("HTTP") != 0)
 							throw std::runtime_error("Exception: Syntax error at line 2-> " + tmp);
-						if (_protocol.substr(_protocol.find("/") + 1).compare("1.1") != 0)
+						std::string version = _protocol.substr(_protocol.find("/") + 1);
+						if (!std::isdigit(version[0]) || version[1] != '.' || !std::isdigit(version[2]))
+							throw std::runtime_error("Exception: Syntax error at line 2-> " + tmp);
+						else if (_protocol.substr(_protocol.find("/") + 1).compare("1.1") != 0)
+						{
+							_statusCode = 505;
 							throw std::runtime_error("Bad Request: Wrrong HTTP version!");
+						}
 					}
 					if (this->_uriPath.find("?") != std::string::npos)
 					{
@@ -171,7 +186,6 @@ void Request::parseRequest()
 					_headers["Content-Length"].pop_back();
 					if (!_headers["Content-Length"].size())
 						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
-					std::cout << "++++++________++++++++++==============>>> |" << _headers["Content-Length"] << "|" << _maxBodySize << "|" << std::endl;
 					for (size_t i = 0; i < _headers["Content-Length"].size(); i++)
 					{
 						if (!std::isdigit(_headers["Content-Length"][i]))
@@ -188,7 +202,6 @@ void Request::parseRequest()
 					catch (const std::exception &e)
 					{
 						this->_statusCode = 413;
-						std::cout << "CATCHED 413:)" << std::endl;
 						std::cerr << e.what() << '\n';
 					}
 				}
@@ -199,6 +212,8 @@ void Request::parseRequest()
 			{
 				if (!_headers["Transfer-Encoding"].size())
 				{
+					if (!_isvalid)
+						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 					if (tmp.find(":") == std::string::npos || std::count(tmp.begin(), tmp.end(), ':') > 1)
 						throw std::runtime_error("Exception: Syntax error at line -> " + tmp);
 					_headers["Transfer-Encoding"] = tmp.substr(tmp.find(": ") + 2);
@@ -222,25 +237,20 @@ void Request::parseRequest()
 				else
 					throw std::runtime_error("Execption: Duplicated Header : " + tmp);
 			}
-			// std::cout << "len:" << tmp.find("Content-Length") << std::endl;
 			else if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || tmp.find("\r\n\r\n") != std::string::npos)
-			{
-				std::cout << "-----------> |" << this->_headers["Boundary"].size() << "|" << std::endl;
-				std::cout << "-----------> |" << tmp << "|" << std::endl;
-				std::cout << "AM OUT BUT WITH WHAT?" << std::endl;
 				break;
-			}
 		}
 		if ((this->_headers["Boundary"].size() && tmp.find(this->_headers["Boundary"]) != std::string::npos) || _headers["Content-Length"].size() || _headers["Transfer-Encoding"].size())
 			parseBody();
-		// exit(1);
 	}
 	catch (const std::exception &e)
 	{
-		std::cout << "CATCHED :)" << std::endl;
-		_statusCode = 400;
-		setStartLineVal("protocol", "HTTP/1.1");
-		setHeaderVal("Connection", "close");
+		if (_statusCode == 200)
+		{
+			_statusCode = 400;
+			setStartLineVal("protocol", "HTTP/1.1");
+			setHeaderVal("Connection", "close");
+		}
 		std::cerr << e.what() << '\n';
 	}
 	checkReqErrors();
@@ -262,7 +272,6 @@ int Request::getBodiesLen(std::string buffer)
 	return len;
 }
 
-//! refactor this shit
 void Request::parseBody()
 {
 	std::string tmp;
@@ -272,14 +281,8 @@ void Request::parseBody()
 	std::string bodyBoundary = "--" + this->_headers["Boundary"];
 	int i = 0;
 
-	std::cout << "BODIES LEN: " << _bLen << std::endl;
-	std::cout << "-+-+-+-+-+-+-+-" << std::endl;
-	std::cout << _content.substr(_content.find("\r\n\r\n") + 4) << std::endl;
-	std::cout << "-+-+-+-+-+-+-+-" << std::endl;
-	// exit(1);
 	if (this->_headers["Boundary"].size())
 	{
-		std::cout << "read body" << std::endl;
 		while (std::getline(s, tmp))
 		{
 			if (tmp.find(bodyBoundary) != std::string::npos)
@@ -288,7 +291,6 @@ void Request::parseBody()
 				{
 					if (bodies[i].contentType.size()) // i = 0;
 					{
-						// std::cout << "››››››››››››››››››››››››››››› ADD BODY" << std::endl;
 						_bodiesList.push_back(bodies[i]);
 						bodies[i].contentDesp = "";
 						bodies[i].contentType = "";
@@ -319,7 +321,6 @@ void Request::parseBody()
 	{
 		std::string body = "";
 
-		std::cout << "I WAS HERE" << std::endl;
 		while (std::getline(s, tmp))
 		{
 			if (tmp.back() == '\r')
@@ -329,64 +330,41 @@ void Request::parseBody()
 		if (body.size())
 			this->_bLen++;
 		setReqBody(body);
-		// std::cout << "bodyyyyy -> " << getReqBody() << std::endl;
 	}
-	// exit(1);
 }
-//! *******************************************
-//! *******************************************
+
 int Request::checkReqErrors()
 {
-	std::string pVersion = this->_protocol.substr(this->_protocol.find("/") + 1);
-
-	// std::cout << "max body size -> " << _serverData.getClientMaxBodySize() << std::endl;
-
-	std::cout << "--> lens |" << getReqBody().size() << "|" << getBody().size() << "|" << _bLen << "|" << std::endl;
-	for (size_t i = 0; i < _method.size(); i++)
+	if (_statusCode == 200)
 	{
-		if (std::islower(_method[i]))
+		for (size_t i = 0; i < _method.size(); i++)
 		{
-			_statusCode = 400;
-			return this->_statusCode;
+			if (std::islower(_method[i]))
+			{
+				_statusCode = 400;
+				return this->_statusCode;
+			}
 		}
+		if (!_method.size())
+			this->_statusCode = 400;
+		else if (this->_protocol.compare("HTTP/1.1") != 0 && _statusCode == 200)
+		{
+			setStartLineVal("protocol", "HTTP/1.1");
+			this->_statusCode = 400;
+		}
+		else if (this->_method.compare("GET") != 0 && this->_method.compare("POST") != 0 && this->_method.compare("DELETE") != 0)
+			this->_statusCode = 501;
+		else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size() && !this->_headers["Transfer-Encoding"].size())
+			this->_statusCode = 400;
+		else if (_headers["Content-Length"].size() && !_bLen && _statusCode != 413)
+			this->_statusCode = 400;
+		else if (!_startLine["uri"].size() || (_startLine["uri"].size() && _startLine["uri"][0] != '/'))
+			this->_statusCode = 400;
+		else if (!_headers["Host"].size())
+			this->_statusCode = 400;
+		if (this->_statusCode == 400)
+			setHeaderVal("Connection", "close");
 	}
-	if (!_method.size())
-		this->_statusCode = 400;
-	else if (pVersion.compare("1.1") != 0)
-	{
-		setStartLineVal("protocol", "HTTP/1.1");
-		this->_statusCode = 505;
-	}
-	else if (this->_protocol.compare("HTTP/1.1") != 0)
-	{
-		setStartLineVal("protocol", "HTTP/1.1");
-		this->_statusCode = 400;
-	}
-	else if (this->_method.compare("GET") != 0 && this->_method.compare("POST") != 0 && this->_method.compare("DELETE") != 0)
-		this->_statusCode = 501;
-	else if (this->_method.compare("POST") == 0 && !this->_headers["Content-Length"].size() && !this->_headers["Transfer-Encoding"].size())
-	{
-		std::cout << "1" << std::endl;
-		this->_statusCode = 400;
-	}
-	else if (_headers["Content-Length"].size() && !_bLen && _statusCode != 413)
-	{
-		std::cout << "2" << std::endl;
-		this->_statusCode = 400;
-	}
-	else if (!_startLine["uri"].size() || (_startLine["uri"].size() && _startLine["uri"][0] != '/'))
-	{
-		std::cout << "3" << std::endl;
-		this->_statusCode = 400;
-	}
-	else if (!_headers["Host"].size())
-	{
-		std::cout << "4" << std::endl;
-		this->_statusCode = 400;
-	}
-
-	if (this->_statusCode != 200)
-		setHeaderVal("Connection", "close");
 	return this->_statusCode;
 }
 
@@ -397,7 +375,7 @@ int &Request::getStatusCode()
 
 void Request::printRequest()
 {
-	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
+	std::cout << "*************************************" << std::endl;
 	std::cout << "Method            -> |" << this->_startLine["method"] << "|" << std::endl;
 	std::cout << "Url               -> |" << this->_startLine["uri"] << "|" << std::endl;
 	std::cout << "Query             -> |" << this->_startLine["query"] << "|" << std::endl;
@@ -410,14 +388,19 @@ void Request::printRequest()
 	std::cout << "Cookie            -> |" << this->_headers["Cookie"] << "|" << std::endl;
 	std::cout << "Transfer Encoding -> |" << this->_headers["Transfer-Encoding"] << "|" << std::endl;
 	std::cout << "Boundary          -> |" << this->_headers["Boundary"] << "|" << std::endl;
-	// for (size_t i = 0; i < _bodiesList.size(); i++)
-	// {
-	// 	std::cout << "Content-Dispos... -> |" << this->_bodiesList[i].contentDesp << "|" << std::endl;
-	// 	std::cout << "Content-Type      -> |" << this->_bodiesList[i].contentType << "|" << std::endl;
-	// 	std::cout << "Body              -> |" << this->_bodiesList[i].body << "|" << std::endl;
-	// }
-	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
-	// exit(1);
+
+	if (_bodiesList.size())
+	{
+		for (size_t i = 0; i < _bodiesList.size(); i++)
+		{
+			std::cout << "Content-Dispos... -> |" << this->_bodiesList[i].contentDesp << "|" << std::endl;
+			std::cout << "Content-Type      -> |" << this->_bodiesList[i].contentType << "|" << std::endl;
+			std::cout << "Body              -> |" << this->_bodiesList[i].body << "|" << std::endl;
+		}
+	}
+	else if (this->getReqBody().size())
+		std::cout << "Body              -> |" << this->getReqBody() << "|" << std::endl;
+	std::cout << "*************************************" << std::endl;
 }
 
 void Request::split(std::string line, char splitter)
@@ -492,4 +475,6 @@ void Request::clearRequest()
 	this->_protocol.clear();
 	this->_content.clear();
 	this->_cookies.clear();
+	this->_scriptName.clear();
+	this->_body.clear();
 }

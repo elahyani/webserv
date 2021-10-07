@@ -30,8 +30,8 @@ class Request;
 class Server
 {
 private:
-	ConfigFileParser	_parser;
-	
+	ConfigFileParser _parser;
+
 	// Servers
 	std::vector<HttpServer> _servers;
 
@@ -69,6 +69,7 @@ private:
 	HttpServer _server;
 	short _portServer;
 	int _mbs;
+	int _isvalid;
 
 public:
 	Server();
@@ -90,6 +91,5 @@ public:
 	bool detectEndRequest(std::string &, int &);
 	std::string unchunkingRequest(std::string &body);
 };
-
 
 #endif

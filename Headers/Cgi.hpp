@@ -1,15 +1,15 @@
 #ifndef CGI_HPP
-# define CGI_HPP
+#define CGI_HPP
 
-# include "Request.hpp"
-# include "HttpServer.hpp"
-# include "Server.hpp"
-# include <cstdlib>
-# include <string>
-# include <unistd.h>
+#include "Request.hpp"
+#include "HttpServer.hpp"
+#include "Server.hpp"
+#include <cstdlib>
+#include <string>
+#include <unistd.h>
 
-// Environement variables change during the program by setenv 
-extern char** environ;
+// Environement variables change during the program by setenv unistd.h
+extern char **environ;
 
 class Cgi
 {
@@ -20,16 +20,16 @@ private:
 	std::string _root;
 	std::string _cgiPath;
 	std::string _cgiResult;
-	
+
 public:
 	Cgi(Request &, Location &, HttpServer &, short &);
 	Cgi(Cgi const &);
 	~Cgi();
-	Cgi & operator=(Cgi const &);
+	Cgi &operator=(Cgi const &);
 
 	void setEnvCgi();
 	void cgiExec();
-	std::string & getCgiResult();
+	std::string &getCgiResult();
 };
 
 #endif

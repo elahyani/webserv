@@ -13,8 +13,11 @@
 #include "ConfigFileParser.hpp"
 
 ConfigFileParser::ConfigFileParser() : _data(""),
+									   _serversNumber(0),
 									   _locationsNumber(0),
+									   _inServer(0),
 									   _inLocation(false),
+									   _filename(""),
 									   _countauto(0),
 									   _isEnabled(0),
 									   _isLoc(false),
@@ -40,14 +43,15 @@ ConfigFileParser &ConfigFileParser::operator=(ConfigFileParser const &src)
 {
 	if (this != &src)
 	{
-		this->_location = src._location;
-		this->_locationsNumber = src._locationsNumber;
 		this->_data = src._data;
+		this->_serversNumber = src._serversNumber;
+		this->_locationsNumber = src._locationsNumber;
 		this->_inServer = src._inServer;
 		this->_inLocation = src._inLocation;
 		this->_filename = src._filename;
 		this->_servers.assign(src._servers.begin(), src._servers.end());
 		this->_server = src._server;
+		this->_location = src._location;
 		this->_mapTmp = src._mapTmp;
 		this->_countauto = src._countauto;
 		this->_isEnabled = src._isEnabled;
@@ -182,7 +186,7 @@ void ConfigFileParser::checkLocAttr(void)
 		throw std::invalid_argument("Exception:\tFastCGI Not Found in : " + this->_location.getLocationName());
 }
 
-void ConfigFileParser::chekDupServerName(void)
+void ConfigFileParser::chekDupServerName()
 {
 	for (size_t i = 0; i < _serversNumber; i++)
 	{
@@ -623,42 +627,6 @@ void ConfigFileParser::parseConfigFile(int ac, char **av)
 	if (_inServer)
 		throw std::invalid_argument("Exception:\tSyntax Error 5");
 	chekDupServerName();
-}
-
-void ConfigFileParser::printContentData()
-{
-	std::cout << "-------------------[SERVER]-------------------" << std::endl;
-	for (std::vector<HttpServer>::iterator it = this->_servers.begin(); it != this->_servers.end(); ++it)
-	{
-		std::cout << "servers number       .... " << _serversNumber << std::endl;
-		for (size_t i = 0; i < it->getPorts().size(); i++)
-			std::cout << "listen on            .... |" << it->getPorts()[i] << "|" << std::endl;
-		std::cout << "Host                 .... |" << it->getHost() << "|" << std::endl;
-		for (size_t i = 0; i < it->getServerName().size(); i++)
-			std::cout << "Server name          .... |" << it->getServerName()[i] << "|" << std::endl;
-		std::cout << "Client Max Body Size .... |" << it->getClientMaxBodySize() << "|" << std::endl;
-		std::cout << "Root                 .... |" << it->getRoot() << "|" << std::endl;
-		for (std::map<int, std::string>::const_iterator err = it->getErrorsPages().begin(); err != it->getErrorsPages().end(); ++err)
-			std::cout << "Error Page           .... |" << err->first << "| | |" << err->second << "|" << std::endl;
-		std::cout << "••••••••••••••••••" << std::endl;
-		std::cout << "\n-------------------[LOCATIONS]-------------------" << std::endl;
-		for (size_t i = 0; i < it->getLocations().size(); i++)
-		{
-			std::cout << "LocationName         .... |" << it->getLocations()[i].getLocationName() << "|" << std::endl;
-			std::cout << "autoindex            .... |" << it->getLocations()[i].getAutoIndex() << "|" << std::endl;
-			std::cout << "root                 .... |" << it->getLocations()[i].getRoot() << "|" << std::endl;
-			std::cout << "index                .... |" << it->getLocations()[i].getIndex() << "|" << std::endl;
-			for (size_t j = 0; j < it->getLocations()[i].getAllowedMethods().size(); j++)
-				std::cout << "allow_methods        .... |" << it->getLocations()[i].getAllowedMethods()[j] << "|" << std::endl;
-			for (std::map<int, std::string>::const_iterator ret = it->getLocations()[i].getReturn().begin(); ret != it->getLocations()[i].getReturn().end(); ++ret)
-				std::cout << "return               .... |" << ret->first << "| |" << ret->second << "|" << std::endl;
-			std::cout << "fastCgiPass          .... |" << it->getLocations()[i].getFastCgiPass() << "|" << std::endl;
-			std::cout << "uploadEnable         .... |" << it->getLocations()[i].getUploadEnable() << "|" << std::endl;
-			std::cout << "uploadStore          .... |" << it->getLocations()[i].getUploadStore() << "|" << std::endl;
-			std::cout << "••••••••••••••••••" << std::endl;
-		}
-		std::cout << "\n››››››››››››››››››››››››››››››››››››››››››››››››" << std::endl;
-	}
 }
 
 std::vector<HttpServer> &ConfigFileParser::getServers()

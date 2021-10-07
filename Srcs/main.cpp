@@ -2,13 +2,10 @@
 
 int main(int ac, char **av)
 {
-  ConfigFileParser parser;
-
   try
   {
+    ConfigFileParser parser;
     parser.parseConfigFile(ac, av);
-    // parser.printContentData();
-    // exit(1);
     Server server(parser);
   }
   catch (const std::exception &exp)

@@ -1,27 +1,30 @@
 #include "Server.hpp"
 
 // Default constructor
-Server::Server() :	_masterSockFD(0),
-					_port(0),
-					_host(""),
-					_addrLen(0),
-					_maxSockFD(0),
-					_isChunked(false),
-					_contentLength(0),
-					_portServer(0),
-					_mbs(0)
-{}
+Server::Server() : _masterSockFD(0),
+				   _port(0),
+				   _host(""),
+				   _addrLen(0),
+				   _maxSockFD(0),
+				   _isChunked(false),
+				   _contentLength(0),
+				   _portServer(0),
+				   _mbs(0),
+				   _isvalid(1)
+{
+}
 
-Server::Server(ConfigFileParser & parser) :	_parser(parser),
-											_masterSockFD(0),
-											_port(0),
-											_host(""),
-											_addrLen(0),
-											_maxSockFD(0),
-											_isChunked(false),
-											_contentLength(0),
-											_portServer(0),
-											_mbs(0)
+Server::Server(ConfigFileParser &parser) : _parser(parser),
+										   _masterSockFD(0),
+										   _port(0),
+										   _host(""),
+										   _addrLen(0),
+										   _maxSockFD(0),
+										   _isChunked(false),
+										   _contentLength(0),
+										   _portServer(0),
+										   _mbs(0),
+										   _isvalid(1)
 {
 	_servers.assign(parser.getServers().begin(), parser.getServers().end());
 	this->makeSockets();
@@ -36,7 +39,8 @@ Server::Server(Server const &ths)
 }
 
 // Destructor
-Server::~Server() {
+Server::~Server()
+{
 	for (std::vector<int>::iterator it = _masterSockFDs.begin(); it != _masterSockFDs.end(); it++)
 	{
 		close(*it);
@@ -70,6 +74,11 @@ Server &Server::operator=(Server const &ths)
 		this->_clients = ths._clients;
 		this->_accptMaster = ths._accptMaster;
 		this->_request = ths._request;
+		this->_isChunked = ths._isChunked;
+		this->_contentLength = ths._contentLength;
+		this->_server = ths._server;
+		this->_mbs = ths._mbs;
+		this->_isvalid = ths._isvalid;
 	}
 	return *this;
 }
@@ -84,7 +93,8 @@ void Server::makeSockets()
 	{
 		_ports = itServer->getPorts();
 		_host = itServer->getHost();
-		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort) {
+		for (std::vector<short>::iterator itPort = _ports.begin(); itPort != _ports.end(); ++itPort)
+		{
 			_port = *itPort;
 			try
 			{
@@ -94,7 +104,7 @@ void Server::makeSockets()
 				this->bindSocket();
 				// Listen for socket connections
 				this->listenSocket();
-				std::cout << "New socket " + std::to_string(_masterSockFD) + " bind to "<< _host << ':' << _port << std::endl;
+				std::cout << "New socket " + std::to_string(_masterSockFD) + " bind to " << _host << ':' << _port << std::endl;
 			}
 			catch (const std::exception &e)
 			{
@@ -106,20 +116,22 @@ void Server::makeSockets()
 }
 
 // Socket creating
-void Server::createSocket() {
+void Server::createSocket()
+{
 	if ((_masterSockFD = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw std::runtime_error("Unable to create a socket.");
 	// set socket to non-blocking
 	if (fcntl(_masterSockFD, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error("Unable to set the socket " + std::to_string(_masterSockFD) + " to non-blocking.");
-	// set socket option of reusing address 
+	// set socket option of reusing address
 	int opt = 1;
 	if (setsockopt(_masterSockFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1)
 		throw std::runtime_error("Unable to set socket option to the socket " + std::to_string(_masterSockFD));
 }
 
 // Socket binding
-void Server::bindSocket() {
+void Server::bindSocket()
+{
 	std::memset(&_serverAddr, 0, sizeof(_serverAddr));
 	_addrLen = sizeof(_serverAddr);
 	_serverAddr.sin_family = AF_INET;
@@ -130,23 +142,26 @@ void Server::bindSocket() {
 }
 
 // Listen for incoming connections from clients
-void Server::listenSocket() {
-	if (listen(_masterSockFD, 2000) == -1)
+void Server::listenSocket()
+{
+	if (listen(_masterSockFD, BACKLOG) == -1)
 		throw std::runtime_error("Unable to listen for connections in the socket " + std::to_string(_masterSockFD));
-	// set socket to fd_set struct	
+	// set socket to fd_set struct
 	FD_SET(_masterSockFD, &_masterFDs);
 	_maxSockFD = (_masterSockFD > _maxSockFD) ? _masterSockFD : _maxSockFD;
 	// Add the socket to the sockets vector
 	_masterSockFDs.push_back(_masterSockFD);
 }
 
-void Server::waitingForConnections() {
+void Server::waitingForConnections()
+{
 	std::cout << "\t<Server running... waiting for connections./>" << std::endl;
-	for(;;) {
+	for (;;)
+	{
 		FD_ZERO(&_readFDs);
 		_readFDs = _masterFDs;
 		usleep(2000);
-		struct timeval _tv = {0, 0};
+		struct timeval _tv = {1, 0};
 		int activity = select(_maxSockFD + 1, &_readFDs, &_writeFDs, NULL, &_tv);
 		if (activity == -1)
 			throw std::runtime_error("Select failed to multiplexing Input/Output.");
@@ -230,7 +245,7 @@ bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 				else if (body.length() < length)
 					return false;
 			}
-			catch(const std::exception& e)
+			catch (const std::exception &e)
 			{
 				std::cerr << e.what() << '\n';
 			}
@@ -242,11 +257,10 @@ bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 
 void Server::accptedConnectHandling(int &accptSockFD)
 {
-	char _buffRes[BUFFER_SIZE + 1] = { 0 };
+	char _buffRes[BUFFER_SIZE + 1] = {0};
 	bzero(_buffRes, sizeof(_buffRes));
 	int valRead = recv(accptSockFD, _buffRes, BUFFER_SIZE, 0);
 	std::cout << "Activity in socket " << std::to_string(accptSockFD) << ", address: " << inet_ntoa(_clientAddr.sin_addr) << ':' << std::to_string(ntohs(_clientAddr.sin_port)) << std::endl;
-	
 	if (valRead > 0)
 	{
 		_buffRes[valRead] = '\0';
@@ -255,12 +269,19 @@ void Server::accptedConnectHandling(int &accptSockFD)
 			it->second += _buffRes;
 		if (detectEndRequest(it->second, accptSockFD))
 		{
-			std::cout << "*********************" << std::endl;
-			std::cout << it->second << std::endl;
-			std::cout << "*********************" << std::endl;
 			if (_isChunked)
-				it->second = unchunkingRequest(it->second);
-			_request.setRequestData(it->second, _mbs);
+			{
+				try
+				{
+					it->second = unchunkingRequest(it->second);
+				}
+				catch (std::exception &e)
+				{
+					_isvalid = 0;
+					std::cerr << "Error: " << e.what() << '\n';
+				}
+			}
+			_request.setRequestData(it->second, _mbs, _isvalid);
 			_request.parseRequest();
 			_request.printRequest();
 			if (FD_ISSET(accptSockFD, &_writeFDs))
@@ -279,23 +300,26 @@ void Server::accptedConnectHandling(int &accptSockFD)
 		_clients.erase(accptSockFD);
 	}
 	else
-		return ; // Socket is connected but doesn't send request.
+		return; // Socket is connected but doesn't send request.
 }
 
-bool checkChunkSize(std::string & size) {
+bool checkChunkSize(std::string &size)
+{
 	std::string cmp = "0123456789ABCDEFabcdef";
-	for(size_t i = 0; i < size.size(); i++) {
+	for (size_t i = 0; i < size.size(); i++)
+	{
 		if (cmp.find(size[i]) == std::string::npos)
 			return false;
 	}
 	return true;
 }
 
-size_t getChunkedDataSize(std::string & chunkSize) {
+size_t getChunkedDataSize(std::string &chunkSize)
+{
 	chunkSize.pop_back();
 	if (!checkChunkSize(chunkSize))
 		throw std::runtime_error("Invalid character in chunk size");
- 	size_t size = 0;
+	size_t size = 0;
 	std::stringstream stream(chunkSize);
 	stream >> std::hex >> size;
 	return size;
@@ -306,7 +330,7 @@ std::string Server::unchunkingRequest(std::string &request)
 	std::string body = request.substr(request.find("\r\n\r\n") + 4);
 	std::string unchunkedData = request.substr(0, request.find("\r\n\r\n") + 4);
 	_contentLength = 0;
-	for (size_t i = 0;i < body.size();)
+	for (size_t i = 0; i < body.size();)
 	{
 		std::string tmpBody = body.substr(i, std::string::npos);
 		size_t chunkSize = 0;
@@ -314,8 +338,8 @@ std::string Server::unchunkingRequest(std::string &request)
 		std::string line("");
 		std::getline(bodyStream, line);
 		i += line.length() + 1;
-		if (line.find("0") == std::string::npos)
-			chunkSize = getChunkedDataSize(line);
+		// if (line.find("0") == std::string::npos)
+		chunkSize = getChunkedDataSize(line);
 		unchunkedData.append(body.c_str() + i, chunkSize);
 		i += chunkSize + 2;
 		_contentLength += chunkSize;
@@ -342,7 +366,7 @@ void Server::getServerBySocket(int &accptSockFD, HttpServer *server, short *port
 				{
 					*server = *it;
 					*port = *itPort;
-					return ;
+					return;
 				}
 			}
 		}

@@ -2,7 +2,6 @@
 
 Cgi::Cgi(Request &request, Location &location, HttpServer &server, short &port) : _request(request), _server(server), _port(port), _root(""), _cgiPath(""), _cgiResult("")
 {
-	std::cout << "had if cgi -> " << _request.getReqBody() << std::endl;
 	_root = (location.getRoot().size()) ? location.getRoot().c_str() : _server.getRoot().c_str();
 	_cgiPath = location.getFastCgiPass();
 	if (access(_cgiPath.c_str(), F_OK) == -1)
@@ -38,7 +37,6 @@ Cgi &Cgi::operator=(Cgi const &ths)
 
 void Cgi::setEnvCgi()
 {
-	std::cout << "----------> " << _root + "/" + _request.getStartLineVal("script-name") << std::endl;
 	setenv("REQUEST_METHOD", _request.getStartLineVal("method").c_str(), 1);
 	setenv("SERVER_PROTOCOL", _request.getStartLineVal("protocol").c_str(), 1);
 	setenv("CONTENT_TYPE", _request.getHeaderVal("Content-Type").c_str(), 1);
@@ -89,14 +87,6 @@ void Cgi::cgiExec()
 	{
 		close(pipeFDsRead[1]);
 		close(pipeFDsWrite[0]);
-		// for (size_t i = 0; i < _request.getBody().size(); i++)
-		// {
-		// 	std::cout << "booody -> " << _request.getBody()[i].body << std::endl;
-		// 	if (_request.getBody()[i].body.size())
-		// 		_request.setReqBody(_request.getBody()[i].body);
-		// }
-		std::cout << "body = " << _request.getReqBody() << std::endl;
-		// _request.setReqBody("name=hello");
 		write(pipeFDsWrite[1], _request.getReqBody().c_str(), _request.getReqBody().size());
 		close(pipeFDsWrite[1]);
 		bzero(buffer, BUFFER_SIZE);
