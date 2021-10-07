@@ -6,58 +6,75 @@
 /*   By: elahyani <elahyani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/09/01 13:44:07 by elahyani          #+#    #+#             */
-/*   Updated: 2021/09/02 16:02:59 by elahyani         ###   ########.fr       */
+/*   Updated: 2021/09/17 12:04:14 by asaadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include <sys/socket.h>
 #include <iostream>
 #include <sstream>
+#include <cctype>
 #include <vector>
 #include <map>
-#include "Server.hpp"
-class Server;
 
 struct Bodies
 {
     std::string contentType;
-    std::string contentLength;
+    std::string contentDesp;
     std::string body;
 };
 
 class Request
 {
 private:
-    std::map<std::string, std::string> headers;
-    std::map<std::string, std::string> methods;
-    std::map<std::string, std::string> startLine;
-    std::map<int, std::string> mapTmp;
-    std::string method; // GET POST DELETE
-    std::string urlPath;
-    std::string pVersion; // http/1.1
-    std::string host;
-    std::string userAgent;
-    std::string connection;
-    std::string contentType;
-    std::string contentLength;
-    std::string transferEncoding;
-    std::string boundry;
-    std::string body;
-    std::vector<Bodies> bodies;
-    std::string content;
+    std::map<std::string, std::string> _headers;
+    std::map<std::string, std::string> _startLine;
+    std::map<int, std::string> _errors;
+    std::map<int, std::string> _mapTmp;
+    std::vector<std::string> _methods;
+    std::vector<Bodies> _bodiesList;
+    std::string _content;
+    std::string _method; // GET POST DELETE
+    std::string _uriPath;
+    std::string _urlQuery; // .?.....
+    std::string _protocol; // http/1.1
+    std::string _scriptName;
+    int _bLen;
+    int _statusCode;
+    bool _requestError;
 
 public:
     Request();
-    Request(std::string const &reqData);
+    // Request(const std::string &);
     Request(const Request &src);
     Request &operator=(const Request &rhs);
     ~Request();
 
+    void setRequestData(const std::string &);
+    void readRequest();
     void parseRequest();
+    void parseBody();
+    int getBodiesLen(std::string);
+    bool checkRequest(std::string &);
     void printRequest();
-    void tokenize(std::string, std::string);
+    void split(std::string, char);
+    int checkReqErrors();
+
+    std::vector<Bodies> getBody();
+
+    void setHeaderVal(std::string, std::string);
+    std::string &getHeaderVal(std::string const &key);
+
+    void setStartLineVal(std::string, std::string);
+    std::string &getStartLineVal(std::string const &key);
+    int &getStatusCode();
+    void clearRequest();
 };
 
 #endif
+
+// curl -i -X POST -H "Content-Type: multipart/form-data" -F "data=@Makefile" http://localhost:5000/
+// curl --resolve example.com:5050:127.0.0.1 http://example.com:5050/
