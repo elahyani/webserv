@@ -190,11 +190,24 @@ void Server::newConnectHandling(int &sockFD)
 		_accptMaster.insert(std::pair<int, int>(accptSockFD, sockFD));
 }
 
+bool checkContent(std::string &buffer)
+{
+	for (size_t i = 0; i < buffer.size(); i++)
+	{
+		if (buffer[i] != '\r' && buffer[i] != '\n')
+			return true;
+	}
+	buffer.clear();
+	return false;
+}
+
 bool Server::detectEndRequest(std::string &buffReq, int &accptSockFD)
 {
 	getServerBySocket(accptSockFD, &_server, &_portServer);
 	_mbs = _server.getClientMaxBodySize() * 1024 * 1024;
-	if (!(buffReq.find("\r\n\r\n") == std::string::npos))
+	if (!checkContent(buffReq))
+		return false;
+	else if (!(buffReq.find("\r\n\r\n") == std::string::npos))
 	{
 		std::string headers = buffReq.substr(0, buffReq.find("\r\n\r\n") + 4);
 		if (headers.find("Transfer-Encoding: chunked") != std::string::npos)

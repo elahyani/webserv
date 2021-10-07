@@ -400,7 +400,7 @@ void Request::printRequest()
 	std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
 	std::cout << "Method            -> |" << this->_startLine["method"] << "|" << std::endl;
 	std::cout << "Url               -> |" << this->_startLine["uri"] << "|" << std::endl;
-	std::cout << "Query               -> |" << this->_startLine["query"] << "|" << std::endl;
+	std::cout << "Query             -> |" << this->_startLine["query"] << "|" << std::endl;
 	std::cout << "Protocol Version  -> |" << this->_startLine["protocol"] << "|" << std::endl;
 	std::cout << "Script Name       -> |" << this->_startLine["script-name"] << "|" << std::endl;
 	std::cout << "Host              -> |" << this->_headers["Host"] << "|" << std::endl;
