@@ -13,6 +13,8 @@
 #include "ConfigFileParser.hpp"
 
 ConfigFileParser::ConfigFileParser() : _data(""),
+									   _serversNumber(0),
+									   _locationsNumber(0),
 									   _inServer(0),
 									   _inLocation(false),
 									   _filename(""),
