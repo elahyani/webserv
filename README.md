@@ -32,7 +32,7 @@
 - [CGI programming in C++](https://www.fi.muni.cz/usr/jkucera/tic/tic0305.html)
 - [Sample CGI Code](http://www.csce.uark.edu/~sgauch/cgicode/)
 
-<!--
+<!-- useful
 // curl -i -X POST -H Content-Type: multipart/form-data -F data=@Makefile http://localhost:5000/
 // curl --resolve example.com:5050:127.0.0.1 http://example.com:5050/
 -->
