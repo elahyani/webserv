@@ -2,7 +2,7 @@
 - *This is when you finally understand why a URL starts with HTTP*
 - *This project is here to make you write your HTTP server. You will be able to test it with a real browser. HTTP is one of the most used protocols on the internet. Knowing its arcane will be useful, even if you won’t be working on a website.*
 
-## RESOURCES
+## Resources
 ### HTTP
 - [HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP)
 - [An overview of HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)
@@ -37,7 +37,7 @@
 // curl --resolve example.com:5050:127.0.0.1 http://example.com:5050/
 -->
 
-## AUTHORS
+## Authors
 - ***[elahyani](https://github.com/elahyani)***
 - ***[asaadi](https://github.com/a-saadi)***
 - ***[ichejra](https://github.com/ichejra)***
