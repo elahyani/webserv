@@ -37,7 +37,7 @@
 // curl --resolve example.com:5050:127.0.0.1 http://example.com:5050/
 -->
 
-## Authors
+## AUTHORS
 - ***[elahyani](https://github.com/elahyani)***
 - ***[asaadi](https://github.com/a-saadi)***
 - ***[ichejra](https://github.com/ichejra)***
