@@ -13,6 +13,7 @@
 
 ### Nginx
 - [Nginx Beginner’s Guide](http://nginx.org/en/docs/beginners_guide.html)
+- [Nginx Config](https://www.notion.so/Notes-13f4e296055f42828219989a1e1e75c2)
 
 ### Server
 - [What is favicon.ico](https://www.cisco.com/c/en/us/support/docs/security/web-security-appliance/117995-qna-wsa-00.html)
